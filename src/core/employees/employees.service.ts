@@ -1,0 +1,364 @@
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { lastValueFrom } from 'rxjs';
+import { EmailService } from 'src/global/auth/services/email.service';
+import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
+import { Employees } from 'src/core/employees/data/entities/employees.entity';
+import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
+import { Repository } from 'typeorm';
+import { BaseEntityCrudService } from '../base-entity/base-entity.service';
+import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
+import { UserRole } from '../users/utils/enums/role.enum';
+import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
+
+@Injectable()
+export class EmployeesService extends BaseEntityCrudService<Employees> {
+  constructor(
+    @Inject(MicroserviceType.AUTHN) private readonly clientAuthn: ClientProxy,
+    @Inject(MicroserviceType.EMPLOYEE_MONITORING) private readonly clientEms: ClientProxy,
+    @InjectRepository(Employees) private readonly employeeRepository: Repository<Employees>,
+    private readonly plantillaPositionsService: PlantillaPositionsService,
+    private readonly emailService: EmailService,
+    private readonly officerInChargeViewService: OfficerInChargeViewService,
+  ) {
+    super(employeeRepository);
+  }
+
+  async getEmployeeNameById(_id: string) {
+    const empName = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('get_employee_fullname(emp._id)', 'fullName')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('emp._id = :_id', { _id })
+      .getRawOne();
+    return empName;
+  }
+
+  async getEmployeeDetails(_id: string) {
+    const empPosition = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'userId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_user_role(emp._id)', 'userRole')
+      .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('emp._id = :_id', { _id })
+      .getRawOne();
+
+    const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
+    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+    return {
+      userId,
+      ...employeePortalDetails,
+      companyId,
+      fullName,
+      isHRMPSB,
+      assignment: { id, name, positionId, positionTitle },
+      userRole,
+    };
+  }
+
+  async getEmployeeDetailByCompanyId(_companyId: string) {
+    const empPosition = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'userId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .addSelect('get_user_role(emp._id)', 'userRole')
+      //.addSelect('emp.photo_url')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('emp.company_id = :_companyId', { _companyId })
+      .getRawOne();
+    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+
+    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+
+    return {
+      userId,
+      companyId,
+      employeeFullName,
+      photoUrl: employeePortalDetails.photoUrl,
+      assignment: { id, name, positionId, positionTitle },
+      userRole,
+    };
+  }
+
+  async getCustomGroupsUnassignedMember(employeeIds: string[]) {
+    let unassignedEmployees;
+    if (employeeIds.length === 0) {
+      unassignedEmployees = await this.entityRepository.query(
+        `
+        SELECT 
+          emp._id employeeId,
+          emp.company_id companyId,
+          get_employee_fullname2(emp._id) fullName,
+          pp.position_title positionTitle,
+          get_employee_assignment(emp._id) assignment 
+        FROM employees emp INNER JOIN plantilla_positions pp ON 
+        emp._id = pp.employee_id_fk  
+        ORDER BY get_employee_fullname2(emp._id) ASC
+      `,
+      );
+    } else
+      unassignedEmployees = await this.entityRepository.query(
+        `
+      SELECT 
+        emp._id employeeId,
+        emp.company_id companyId,
+        get_employee_fullname2(emp._id) fullName,
+        pp.position_title positionTitle,
+        get_employee_assignment(emp._id) assignment 
+      FROM employees emp INNER JOIN plantilla_positions pp ON 
+      emp._id = pp.employee_id_fk WHERE emp._id NOT IN (?) 
+      ORDER BY get_employee_fullname2(emp._id) ASC
+    `,
+        [employeeIds],
+      );
+
+    return unassignedEmployees;
+  }
+
+  async getCustomGroupsAssignedMember(employeeIds: string[]) {
+    let assignedEmployees;
+    if (employeeIds.length === 0) return [];
+    else
+      assignedEmployees = await this.entityRepository.query(
+        `
+      SELECT 
+        emp._id employeeId,
+        emp.company_id companyId,
+        get_employee_fullname2(emp._id) fullName,
+        pp.position_title positionTitle,
+        get_employee_assignment(emp._id) assignment 
+      FROM employees emp INNER JOIN plantilla_positions pp ON 
+      emp._id = pp.employee_id_fk WHERE emp._id IN (?) ORDER BY get_employee_fullname2(emp._id) ASC;
+    `,
+        [employeeIds],
+      );
+
+    return assignedEmployees;
+  }
+
+  async getEmployeeDetailsEMS(_id: string) {
+    const empPosition = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'userId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_leave_form_assignment(pp._id)', 'name')
+      .addSelect("CONCAT('₱ ',FORMAT(get_salary_grade_amount(pp.salary_grade_id_fk),2))", 'salary')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_user_role(emp._id)', 'userRole')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('emp._id = :_id', { _id })
+      .getRawOne();
+    const { id, name, userId, companyId, positionId, positionTitle, userRole, salary } = empPosition;
+    return {
+      userId,
+      companyId,
+      assignment: { id, name, positionId, positionTitle, salary },
+      userRole,
+    };
+  }
+
+  async getEmployeeNameByIdForEmpMonitoring(ids: { employeeId: string; supervisorId: string }) {
+    try {
+      const { employeeId, supervisorId } = ids;
+      const employeeSignature = await this.getEmployeeSignature(employeeId);
+      const supervisorSignature = await this.getEmployeeSignature(supervisorId);
+      const employeeName = (await this.getEmployeeNameById(employeeId)).fullName;
+      const supervisorName = (await this.getEmployeeNameById(supervisorId)).fullName;
+      return { employeeName, employeeSignature, supervisorName, supervisorSignature };
+    } catch (error) {
+      console.log(error);
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  async getEmployeeSignature(_id: string) {
+    try {
+      return (await this.entityRepository.findOne({ select: ['signatureUrl'], where: { _id } })).signatureUrl;
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async getCompanyIdByEmployeeId(employeeId: string) {
+    return await this.employeeRepository.findOne({ where: { _id: employeeId }, select: ['companyId'] });
+  }
+
+  async getAllManagers() {
+    return await this.entityRepository.query(`
+      SELECT emp._id, get_employee_fullname2(emp._id) fullName FROM employees emp 
+      INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+      INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk 
+      WHERE sg.salary_grade >= 20 ORDER BY get_employee_fullname2(emp._id) ASC;
+    `);
+  }
+
+  async getAllEmployees() {
+    const empPositions = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'employeeId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('get_employee_fullname(emp._id)', 'fullName')
+      .addSelect('emp.first_name', 'firstName')
+      .addSelect('emp.middle_name', 'middleName')
+      .addSelect('emp.last_name', 'lastName')
+      .addSelect('emp.name_extension', 'nameExt')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .getRawMany();
+
+    const _empPositions = await Promise.all(
+      empPositions.map(async (empPosition) => {
+        const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+        return {
+          employmentDetails: { employeeId, userId, companyId, positionTitle, assignment: { id, name }, positionId, natureOfAppointment },
+          personalDetails: { fullName, firstName, middleName, lastName, nameExt },
+        };
+      }),
+    );
+    return _empPositions;
+  }
+
+  private async findEmailAddress(email: string) {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'find_user_email' }, email));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private async findTempEmailAddress(email: string) {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'find_pending_email' }, email));
+    } catch (error) {
+      //throw new HttpException('Email address already exists', HttpStatus.BAD_REQUEST);
+      return null;
+    }
+  }
+
+  private async createTempEmailAddress(email: string) {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'create_pending_email' }, { email }));
+    } catch (error) {
+      //throw new HttpException('Email address already exists', HttpStatus.BAD_REQUEST);
+      return null;
+    }
+  }
+
+  async addEmployeeWithRegisterLink(employeeDto: EmployeeDTO) {
+    //
+    try {
+      //1. Find if email exists
+
+      //const emailAddress = await this.findEmailAddress(employeeDto.email);
+
+      //if (emailAddress) throw new HttpException('Email address already exists', HttpStatus.BAD_REQUEST);
+
+      //2. Create Temp Email
+      //const createdTempEmail = await this.createTempEmailAddress(employeeDto.email);
+
+      //3. Check if assigned position exists
+      const position = await this.plantillaPositionsService.entityRepository.findOne({
+        where: { _id: employeeDto.positionId },
+      });
+      console.log(position);
+      if (!position) throw new HttpException('Position does not exists.', HttpStatus.BAD_REQUEST);
+
+      const { email, restDays, applicantId, scheduleId, ...restOfEmployeeDTO } = employeeDto;
+      const { _id, ...rest } = position;
+
+      //4. Get salary grade of position
+      const salaryGrade = (await this.plantillaPositionsService.entityRepository.query('SELECT get_plantilla_salary_grade(?) salaryGrade;', [employeeDto.positionId]))[0]
+        .salaryGrade;
+      const companyId = (await this.plantillaPositionsService.entityRepository.query('SELECT generate_company_id() companyId;', []))[0].companyId;
+
+      const role = this.getUserRole(parseInt(salaryGrade));
+      //5. Save employee
+      const employee = await this.saveEntity({ ...restOfEmployeeDTO, companyId, userRole: role });
+      //5.1 Add employee default schedule
+      const schedule = await lastValueFrom(this.clientEms.send('add_employee_schedule', { employeeId: employee._id, scheduleId, restDays, dateFrom: null, dateTo: null }));
+      //6. Assign Employee to plantilla
+      const { firstName, middleName, lastName, nameExtension } = restOfEmployeeDTO;
+
+      const updatedPosition = await this.plantillaPositionsService.updateEntity({
+        _id,
+        employeeId: employee._id,
+        //...rest,
+      });
+
+      //7. Send Email to Employee Portal User
+      const emailResult = await this.emailService.sendEmail(employeeDto.email, employee._id, salaryGrade, {
+        companyId,
+        firstName,
+        middleName,
+        lastName,
+        nameExt: nameExtension,
+      });
+
+      return {
+        createdUser: employee,
+        updatedPosition,
+        email: emailResult,
+        schedule,
+      };
+    } catch (error) {
+      throw new HttpException(error, 500);
+    }
+  }
+
+  async getEmployeeSupervisor(employeeId: string, isRpc?: boolean) {
+    try {
+      return (
+        await this.entityRepository.query(`SELECT get_employee_supervisor(?) supervisorId, get_employee_fullname(get_employee_supervisor(?)) employeeName`, [
+          employeeId,
+          employeeId,
+        ])
+      )[0].supervisorId;
+    } catch (error) {
+      if (isRpc) throw new RpcException(error);
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async getAllEmployeeNames() {
+    return await this.entityRepository.query(`SELECT _id employeeId, get_employee_fullname(_id) fullName, get_employee_position_or_oic(_id) positionTitle FROM employees;`);
+  }
+
+  async getEmployeesByNameMatch(name: string) {
+    return await this.entityRepository.query(
+      `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle  FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
+      [name],
+    );
+  }
+
+  async getSupervisorEmployees(data: { tags: any[] }) {
+    return '';
+  }
+
+  private getUserRole(salaryGrade: number) {
+    if (salaryGrade < 24) return UserRole.RANK_AND_FILE;
+    else if (salaryGrade === 24) return UserRole.DIVISION_MANAGER;
+    else if (salaryGrade === 26) return UserRole.DEPARTMENT_MANAGER;
+    else if (salaryGrade === 27) return UserRole.ASSISTANT_GENERAL_MANAGER;
+    else if (salaryGrade === 28) return UserRole.GENERAL_MANAGER;
+    else if (salaryGrade === 0) return UserRole.BOARD_MEMBER;
+  }
+}

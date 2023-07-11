@@ -1,0 +1,43 @@
+export enum WorkStation {
+  OFFICE = 'Office',
+  FIELD = 'Field',
+}
+
+export enum AppointmentType {
+  ORIGINAL = 'Original',
+  PROMOTION = 'Promotion',
+  REAPPOINTMENT = 'Reappointment',
+  COTERMINOUS = 'Coterminous',
+}
+
+/*
+  "Original",
+  "Promotion",
+  "Reappointment",
+  "Coterminous",
+*/
+
+export enum PublicationMode {
+  CASUAL = 'GSCWD Bulletin, Website, Agency facebook page',
+  PERMANENT = 'CSC Website www.csc.gov.ph',
+}
+
+export enum Supervisor {
+  SUPERVISORY_INDUSTRIAL_RELATIONS_DEVELOPMENT_OFFICER = 'Supervising Industrial Relations Development Officer A',
+  DIVISION_MANAGER = 'Division Manager A',
+  DEPARTMENT_MANAGER = 'Department Manager A',
+  ASSISTANT_GENERAL_MANAGER = 'Assistant General Manager',
+  GENERAL_MANAGER = 'General Manager',
+}
+
+/*
+  const publicationMode = [
+    "CSC Website www.csc.gov.ph",
+    "GSCWD Bulletin, Website, Agency facebook page",
+  ]
+    "Supervising Industrial Relations Development Officer A",
+    "Division Manager A",
+    "Department Manager A",
+    "Assistant General Manager",
+    "General Manager",
+*/

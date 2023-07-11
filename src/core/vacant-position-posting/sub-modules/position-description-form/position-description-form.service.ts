@@ -1,0 +1,159 @@
+import { ApplicantEndorsementStatus } from './../applicant-endorsement/utils/types/applicant-endorsement.enum';
+import { OccupationalGroupDutiesResponsibilitiesService } from './../../../occupational-group-duties-responsibilities/occupational-group-duties-responsibilities.service';
+import { PositionDescriptionFormDTO } from './data/position-description-form.dto';
+import { PositionDescriptionFormWorkingConditionService } from './parts/working-condition/working-condition.service';
+import { PositionDescriptionFormExternalContactsService } from './parts/contacts/external/external-contacts.service';
+import { PositionDescriptionFormInternalContactsService } from './parts/contacts/internal/internal-contacts.service';
+import { PositionDescriptionFormBasicService } from './parts/basic/basic.service';
+import { Injectable } from '@nestjs/common';
+import { getManager } from 'typeorm';
+import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
+
+@Injectable()
+export class PositionDescriptionFormService {
+  constructor(
+    private readonly positionDescriptionFormBasic: PositionDescriptionFormBasicService,
+    private readonly positionDescriptionFormInternalContacts: PositionDescriptionFormInternalContactsService,
+    private readonly positionDescriptionFormExternalContacts: PositionDescriptionFormExternalContactsService,
+    private readonly positionDescriptionFormWorkingConditionService: PositionDescriptionFormWorkingConditionService,
+    private readonly occupationalGroupDutiesResponsibilities: OccupationalGroupDutiesResponsibilitiesService,
+  ) {}
+
+  async savePositionDescriptionForm(postingApplicantId: string, positionDescriptionFormDTO: PositionDescriptionFormDTO) {
+    try {
+      const result = await getManager().transaction(async (transactionEntityManager) => {
+        const basic = await transactionEntityManager.save(this.positionDescriptionFormBasic.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.basic }));
+        const internal = await transactionEntityManager.save(
+          this.positionDescriptionFormInternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.internal }),
+        );
+        const external = await transactionEntityManager.save(
+          this.positionDescriptionFormExternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.external }),
+        );
+        const workingCondition = await transactionEntityManager.save(
+          this.positionDescriptionFormWorkingConditionService.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.workingCondition }),
+        );
+        return {
+          basic,
+          contacts: { internal, external },
+          workingCondition,
+        };
+      });
+      return result;
+    } catch (error) {}
+  }
+
+  async hasDbmCsc(postingApplicantId: string) {
+    try {
+      return (
+        await this.positionDescriptionFormBasic.entityRepository.query(
+          `SELECT IF(count(posting_applicants_id_fk)>0,true,false) hasDbmCsc FROM position_description_form_basic WHERE posting_applicants_id_fk = ? `,
+          [postingApplicantId],
+        )
+      )[0];
+    } catch (error) {}
+  }
+
+  async getPositionDescriptionFormByPostingApplicantId(postingApplicantId: string) {
+    try {
+      console.log('asdasd');
+      const { positionDetails, positionDescriptionFormBasic } = await this.positionDescriptionFormBasic.getPositionDescriptionFormBasicInfo(postingApplicantId);
+      console.log('here');
+      const internal = await this.positionDescriptionFormInternalContacts.getInternalContactFrequency(postingApplicantId);
+      console.log(internal);
+      const external = await this.positionDescriptionFormExternalContacts.getExternalContactFrequency(postingApplicantId);
+      const workingCondition = await this.positionDescriptionFormWorkingConditionService.getWorkingConditionFrequency(postingApplicantId);
+      const { generalFunctionOfUnit, jobSummary, education, experience, training, eligibility } = (
+        await this.positionDescriptionFormBasic.entityRepository.query(
+          `SELECT 
+             get_function_of_unit_section(?) generalFunctionOfUnit,
+             get_job_summary_by_item_number(?) jobSummary, 
+             education, 
+             experience, 
+             training, 
+             eligibility  
+           FROM plantilla_positions pp
+              INNER JOIN qualification_standards qs ON pp._id = qs.position_id_fk 
+           WHERE pp._id = ?
+          ;`,
+          [positionDetails.positionId, positionDescriptionFormBasic.itemNumber, positionDetails.positionId],
+        )
+      )[0];
+
+      const functionalManagerial = await this.positionDescriptionFormBasic.entityRepository.query(
+        `
+          SELECT cm.name competencyName,cm.desc description, p.level 'level' FROM competency_model cm 
+          INNER JOIN domain d ON d._id = cm.domain_id_fk
+            INNER JOIN proficiency p ON p.competency_id_fk = cm._id
+            INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
+            INNER JOIN occupational_group og ON og._id = pcpl.occupational_group_id_fk
+            INNER JOIN plantilla_positions pp ON pp._id = og.position_id_fk 
+          WHERE pp._id = ? AND (d.type='Functional' OR d.type='Cross-Cutting Functional' OR d.type='Leadership/Managerial');
+      `,
+        [positionDetails.positionId],
+      );
+
+      const core = await this.positionDescriptionFormBasic.entityRepository.query(
+        `
+          SELECT cm.name competencyName,cm.desc description, p.level 'level' FROM competency_model cm 
+          INNER JOIN domain d ON d._id = cm.domain_id_fk
+            INNER JOIN proficiency p ON p.competency_id_fk = cm._id
+            INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
+            INNER JOIN occupational_group og ON og._id = pcpl.occupational_group_id_fk
+            INNER JOIN plantilla_positions pp ON pp._id = og.position_id_fk 
+          WHERE pp._id = ? AND d.type='Core' ;
+       `,
+        [positionDetails.positionId],
+      );
+
+      const coreDuty = await this.occupationalGroupDutiesResponsibilities.getDutiesAndResponsibilitiesByPositionId(positionDetails.positionId, DutyType.CORE);
+      const supportDuty = await this.occupationalGroupDutiesResponsibilities.getDutiesAndResponsibilitiesByPositionId(positionDetails.positionId, DutyType.SUPPORT);
+      const employee = (
+        await this.positionDescriptionFormBasic.entityRepository.query(
+          `
+        SELECT applicantName 
+        FROM posting_applicants_detailed_view padv
+          INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = padv.postingApplicantId
+        WHERE ae.status = ? AND posting_applicant_id_fk=? 
+      `,
+          [ApplicantEndorsementStatus.SELECTED_BY_APPOINTING_AUTHORITY, postingApplicantId],
+        )
+      )[0].applicantName;
+
+      const hrdDepartmentManager = (
+        await this.positionDescriptionFormBasic.entityRepository.query(`
+        SELECT employeeName,positionTitle FROM ((SELECT get_employee_fullname(employee_id_fk) employeeName,pp.position_title positionTitle  FROM plantilla_positions pp
+          INNER JOIN department_positions dp ON dp.position_id_fk = pp._id
+          INNER JOIN departments d ON d._id = dp.department_id_fk 
+        WHERE pp.position_title = 'Department Manager A' 
+        AND d.name = 'Human Resource Department') UNION (SELECT employeeFullName employeeName, oicPosition positionTitle FROM officer_in_charge_view oicv WHERE oicv.oicOrgName=CAST('Human Resource Department' AS BINARY))) AS signatory WHERE employeeName IS NOT NULL;`)
+      )[0];
+
+      return {
+        positionDetails,
+        positionDescriptionFormBasic,
+        contacts: { internal, external },
+        workingCondition,
+        generalFunctionOfUnit,
+        jobSummary,
+        qualificationStandards: {
+          education,
+          experience,
+          eligibility,
+          training,
+        },
+        competencies: {
+          core,
+          functionalManagerial,
+        },
+        dutiesAndResponsibilities: {
+          core: coreDuty,
+          support: supportDuty,
+        },
+        signatories: {
+          employee,
+          hrdDepartmentManager,
+        },
+      };
+    } catch (error) {}
+  }
+}

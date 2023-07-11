@@ -1,0 +1,8 @@
+#CREATE committee
+POST http://192.168.99.124:4003/api/committees/
+content-type: application/json
+
+{
+    "name": "Personnel Selection Board",
+    "description": "This is a description for Personnel Selection Board"
+}
