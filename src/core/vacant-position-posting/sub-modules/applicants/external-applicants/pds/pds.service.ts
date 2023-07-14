@@ -1,7 +1,5 @@
-import { PDSWorkExperience } from './parts/work-experience/data/entities/pds-workexperience.entity';
 import { PDSEducationSecondary } from './parts/education/pds-education-secondary/data/entities/pds-education-secondary.entity';
 import { PDSEducationElementary } from './parts/education/pds-education-elementary/data/entities/pds-education-elementary.entity';
-import { PDSFamilyChildren } from './parts/family-background/pds-family-children/data/entities/pds-family-children.entity';
 import { PDSFamilyParents } from './parts/family-background/pds-family-parents/data/entities/pds-family-parents.entity';
 import { PDSFamilySpouse } from './parts/family-background/pds-family-spouse/data/entities/pds-family-spouse.entity';
 import { PDSBasicResidentialAddress } from './parts/basic-info/address/pds-basic-residential-address/data/entities/pds-basic-residential-address.entity';
@@ -40,6 +38,7 @@ import { PDSVoluntaryWorkService } from './parts/voluntary-work/pds-voluntary-wo
 import { PDSWorkExperienceService } from './parts/work-experience/pds-workexperience.service';
 import { PDSBasicGovernmentAgenciesIds } from './parts/basic-info/pds-basic-government-agencies-ids/data/entities/pds-basic-government-agencies-id.entity';
 import { PDSGovernmentIssuedId } from './parts/other-information/c4-questions/government-issued-id/data/entities/pds-government-issued-id.entity';
+import { WorkExperienceSheetService } from './parts/work-experience-sheet/work-experience-sheet.service';
 
 @Injectable()
 export class PDSService {
@@ -72,7 +71,8 @@ export class PDSService {
     private pdsImmigrantService: PDSImmigrantService,
     private pdsIndigenousPWDSoloParentService: PDSIndigenousPWDSoloParentService,
     private pdsReferencesService: PDSReferencesService,
-    private pdsGovernmentIssuedIdService: PDSGovernmentIssuedIdService, //#endregion services
+    private pdsGovernmentIssuedIdService: PDSGovernmentIssuedIdService,
+    private workExperienceSheetService: WorkExperienceSheetService, //#endregion services
   ) {}
 
   async updatePDS(externalApplicantId: string, pdsDTO: PdsDTOUpdate) {
@@ -393,6 +393,16 @@ export class PDSService {
       isExists,
       externalApplicantId,
     };
+  }
+
+  async getApplicantPdsWithWorkExperience(applicantId: string) {
+    const externalApplicantId = (
+      await this.pdsBasicPersonalInfoService.entityRepository.query(`SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id = ?`, [applicantId])
+    )[0].externalApplicantId;
+    console.log(externalApplicantId);
+    const pds = await this.getPDSEmp(externalApplicantId);
+    const workExperienceSheet = await this.workExperienceSheetService.getWorkExperienceSheet(applicantId);
+    return { ...pds, workExperienceSheet };
   }
 
   async getPDSEmp(externalApplicantId: string) {

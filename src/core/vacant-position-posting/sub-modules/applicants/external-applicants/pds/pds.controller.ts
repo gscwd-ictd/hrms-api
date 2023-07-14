@@ -21,6 +21,12 @@ export class PDSController {
     return await this.pdsService.getPDSEmp(externalApplicantId);
   }
 
+  @Get('/psb/:applicant_id')
+  async getApplicantPdsWithWorkExperience(@Param('applicant_id') applicantId: string) {
+    console.log('asdasdasd');
+    return await this.pdsService.getApplicantPdsWithWorkExperience(applicantId);
+  }
+
   @Put(':applicant_id')
   async updatePDS(@Param('applicant_id') externalApplicantId: string, @Body() pdsDTO: PdsDTOUpdate) {
     return await this.pdsService.updatePDS(externalApplicantId, pdsDTO);

@@ -60,7 +60,7 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
       const updateResult = await this.entityRepository
         .createQueryBuilder()
         .update(VppPsb)
-        .set({ employeeId })
+        .set({ employeeId, acknowledgedSchedule: true })
         .where('vacant_position_posting_id_fk = :vppId AND psb_no= :psbNo', { vppId, psbNo })
         .execute();
 

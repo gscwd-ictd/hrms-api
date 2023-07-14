@@ -1,6 +1,6 @@
 import { lastValueFrom } from 'rxjs';
 import { MicroserviceType } from './../../../../global/utils/enums/microservice-type.enum';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { VacantPositionPosting } from 'src/core/vacant-position-posting/data/entities/vacant-position-posting.entity';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -131,4 +131,6 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
       throw new HttpException(error.message, error.status);
     }
   }
+
+  
 }

@@ -1,4 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { VacantPositionPostingService } from '../../vacant-position-posting.service';
 
 @Controller('applicants')
@@ -8,4 +9,6 @@ export class ApplicantsController {
   async getApplicants(@Param('posting_id') postingId: string) {
     return await this.vacantPositionPostingService.applicantDetails(postingId);
   }
+
+  
 }

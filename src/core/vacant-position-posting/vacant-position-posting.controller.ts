@@ -7,6 +7,8 @@ import { VppScheduleDto } from './sub-modules/vpp-schedule/data/dtos/vpp-schedul
 import { VacantPositionPostingService } from './vacant-position-posting.service';
 import { ExternalApplicantLoginGuard } from './sub-modules/applicants/external-applicants/guards/external-applicants.guard';
 import { ExternalApplicantsPDSGuard } from './sub-modules/applicants/external-applicants/guards/external-applicants-pds.guard';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { HighestSecondaryLevelAttainment } from './sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum';
 
 @Controller('vacant-position-postings')
 export class VacantPositionPostingController {
@@ -144,5 +146,15 @@ export class VacantPositionPostingController {
   @Get('/psb-details/:vpp_id')
   async getPsbDetails(@Param('vpp_id') vppId: string) {
     return await this.vacantPositionPostingService.getPsbDetails(vppId);
+  }
+
+  @Get('/squirtser/mikay/squirtster/:vpp_id')
+  async resetAppointingAuthorityProcedure(@Param('vpp_id') vppId: string) {
+    return await this.vacantPositionPostingService.entityRepository.query(`CALL sp_reset_appointing_authority_procedure(?);`, [vppId]);
+  }
+
+  @MessagePattern('get_employee_id_by_posting_applicant_id')
+  async getEmployeeIdByPostingApplicantId(@Payload() postingApplicantId: string) {
+    return await this.vacantPositionPostingService.getEmployeeIdByPostingApplicantId(postingApplicantId);
   }
 }

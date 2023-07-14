@@ -166,19 +166,20 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         applicantEndorsementDTO.postingApplicantIds.map(async (selection) => {
           const updateResult = await this.updateEndorsementStatus(selection, ApplicantEndorsementStatus.SELECTED_BY_APPOINTING_AUTHORITY);
           if (updateResult.affected > 0) {
-            await this.entityRepository.query(
-              `
-            UPDATE vacant_position_posting 
-            SET posting_status = 'Appointing authority selection done' 
-            WHERE _id=?`,
-              [vppId],
-            );
             const name = await this.getApplicantName(selection);
             return { postingApplicantId: selection, name };
           }
         }),
       );
-      return appointingAuthoritySelectionList;
+      await this.entityRepository.query(
+        `
+      UPDATE vacant_position_posting 
+      SET posting_status = 'Appointing authority selection done' 
+      WHERE _id=?`,
+        [vppId],
+      );
+      if (appointingAuthoritySelectionList.length > 0) return appointingAuthoritySelectionList;
+      return [{ postingApplicantId: null, name: null }];
     } catch (error) {}
   }
 

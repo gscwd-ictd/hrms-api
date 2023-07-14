@@ -6,6 +6,7 @@ import { PDSFamilyBackgroundModule } from './parts/family-background/pds-family-
 import { PDSLearningDevelopmentModule } from './parts/learning-development/pds-learning-development.module';
 import { PDSOtherInformationModule } from './parts/other-information/pds-other-information.module';
 import { PDSVoluntaryWorkModule } from './parts/voluntary-work/pds-voluntary-work.module';
+import { WorkExperienceSheetModule } from './parts/work-experience-sheet/work-experience-sheet.module';
 import { PDSWorkExperienceModule } from './parts/work-experience/pds-workexperience.module';
 import { PDSController } from './pds.controller';
 import { PDSService } from './pds.service';
@@ -20,6 +21,7 @@ import { PDSService } from './pds.service';
     PDSLearningDevelopmentModule,
     PDSVoluntaryWorkModule,
     PDSOtherInformationModule,
+    WorkExperienceSheetModule,
   ],
   controllers: [PDSController],
   providers: [PDSService],

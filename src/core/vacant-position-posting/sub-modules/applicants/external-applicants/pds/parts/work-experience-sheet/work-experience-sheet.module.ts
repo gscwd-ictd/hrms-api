@@ -32,5 +32,6 @@ import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum'
     ApplicantsService,
   ],
   controllers: [WorkExperienceSheetController],
+  exports: [WorkExperienceSheetService, WorkExperienceSheetAccomplishmentsService, WorkExperienceSheetAccomplishmentsService, WorkExperienceSheetDutiesService, ApplicantsService],
 })
 export class WorkExperienceSheetModule {}

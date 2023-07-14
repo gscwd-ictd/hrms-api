@@ -23,10 +23,11 @@ export class EmployeeTagsController {
     return await this.employeeTagsService.getTagsByEmployeeId(employeeId);
   }
 
-  @MessagePattern('update_employee_tags')
-  async updateEmployeeTags(){
-    
+  @MessagePattern('get_employee_by_tag_id')
+  async getEmployeeByTagId(@Payload() tagId: string) {
+    return await this.employeeTagsService.getEmployeeByTagId(tagId);
   }
+
+  @MessagePattern('update_employee_tags')
+  async updateEmployeeTags() {}
 }
-
-

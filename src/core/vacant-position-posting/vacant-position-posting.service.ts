@@ -13,6 +13,7 @@ import { VppPsbApplicantsService } from './sub-modules/vpp-psb-applicants/vpp-ps
 import { VppPsbService } from './sub-modules/vpp-psb/vpp-psb.service';
 import { VppScheduleService } from './sub-modules/vpp-schedule/vpp-schedule.service';
 import { PostingStatus } from './utils/enums/posting-status.enum';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class VacantPositionPostingService extends BaseEntityCrudService<VacantPositionPosting> {
@@ -512,6 +513,15 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       return { id: vppId, noOfApplicants, psbMembers, schedule: { exam: examSchedule, interview: interviewSchedule } };
     } catch (error) {
       throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async getEmployeeIdByPostingApplicantId(postingApplicantId: string) {
+    try {
+      const employeeId = (await this.entityRepository.query(`SELECT employee_id_fk employeeId FROM posting_applicants WHERE _id = ?`, [postingApplicantId]))[0].employeeId;
+      return employeeId;
+    } catch (error) {
+      throw new RpcException(error);
     }
   }
 

@@ -192,14 +192,24 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       )
     )[0];
 
-    const { dateOfPanelInterview } = (
-      await this.entityRepository.query(
-        `SELECT DATE_FORMAT(schedule,'%M %d, %Y %H:%i%p') dateOfPanelInterview 
+    const { dateOfPanelInterview } =
+      (
+        await this.entityRepository.query(
+          `SELECT DATE_FORMAT(schedule,'%M %d, %Y %H:%i%p') dateOfPanelInterview 
           FROM vpp_schedule 
          WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
-        [vppId],
-      )
-    )[0];
+          [vppId],
+        )
+      ).length > 0
+        ? (
+            await this.entityRepository.query(
+              `SELECT DATE_FORMAT(schedule,'%M %d, %Y %H:%i%p') dateOfPanelInterview 
+        FROM vpp_schedule 
+       WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
+              [vppId],
+            )
+          )[0]
+        : { dateOfPanelInterview: null };
 
     const { allPsbSubmitted } = (
       await this.entityRepository.query(
@@ -220,8 +230,12 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
         [vppId],
       )
     )[0];
-
-    const ranking = (await this.entityRepository.query(`CALL sp_get_ranking_of_applicants(?);`, [vppId]))[0];
+    let ranking;
+    try {
+      ranking = (await this.entityRepository.query(`CALL sp_get_ranking_of_applicants(?);`, [vppId]))[0];
+    } catch {
+      ranking = [];
+    }
 
     const interviewDone = (
       await this.entityRepository.query(`SELECT IF(posting_status = 'Interview done', true,false) interviewDone FROM vacant_position_posting WHERE _id=?`, [vppId])
