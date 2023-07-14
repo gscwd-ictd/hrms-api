@@ -76,9 +76,8 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       `
         SELECT 
           emp._id employeeId, 
-          get_employee_fullname2(emp._id) employeeName, 
-          get_employee_position_or_oic(emp._id) position, 
-          get_employee_assignment_or_oic(emp._id) assignment
+          get_employee_fullname2(emp._id) fullName, 
+          get_employee_position_or_oic(emp._id) positionTitle
         FROM employee_tags et 
           INNER JOIN employees emp ON emp._id = et.employee_id_fk 
         WHERE et.tag_id_fk = ?
