@@ -1,4 +1,4 @@
-export class CompetencyModelOccupationDTO{
-    occupationId: string;
-    competencyModelId: string;
+export class CompetencyModelOccupationDTO {
+  occupationId: string;
+  competencyModelId: string;
 }

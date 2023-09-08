@@ -16,7 +16,7 @@ export class PDSVoluntaryWork extends DefaultTable {
   @Column({ nullable: true })
   to: Date;
 
-  @Column({ name: 'number_of_hours' })
+  @Column({ name: 'number_of_hours', nullable: true })
   numberOfHours: number;
 
   @ManyToOne(() => ExternalApplicants, (externalApplicants) => externalApplicants._id)

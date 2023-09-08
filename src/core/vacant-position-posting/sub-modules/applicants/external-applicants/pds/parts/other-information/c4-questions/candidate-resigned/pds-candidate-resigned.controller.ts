@@ -1,8 +1,6 @@
-import { Controller } from "@nestjs/common";
+import { Controller } from '@nestjs/common';
 
 @Controller('pds/other-information/candidate-resigned')
-export class PDSCandidateResignedController{
-    constructor(){
-        
-    }
+export class PDSCandidateResignedController {
+  constructor() {}
 }

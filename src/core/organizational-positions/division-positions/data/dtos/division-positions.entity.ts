@@ -2,7 +2,6 @@ import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { Divisions } from 'src/core/organization/division/data/entities/divisions.entity';
 import { PlantillaPositions } from 'src/core/plantilla-positions/data/entities/plantilla-positions.entity';
 
-
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'division_positions' })

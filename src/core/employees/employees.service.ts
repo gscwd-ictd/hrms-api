@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { lastValueFrom } from 'rxjs';
@@ -163,10 +163,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :_id', { _id })
       .getRawOne();
+
+    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, _id));
+
     const { id, name, userId, companyId, positionId, positionTitle, userRole, salary } = empPosition;
     return {
       userId,
       companyId,
+      photoUrl: employeePortalDetails.photoUrl,
       assignment: { id, name, positionId, positionTitle, salary },
       userRole,
     };
@@ -237,11 +241,20 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return _empPositions;
   }
 
-  private async findEmailAddress(email: string) {
+  async findEmailAddress(email: string) {
     try {
       return await lastValueFrom(this.clientAuthn.send({ msg: 'find_user_email' }, email));
     } catch (error) {
       return null;
+    }
+  }
+
+  async findEmailAddressById(employeeId: string) {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'find_email_by_employee_id' }, employeeId));
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
     }
   }
 
@@ -266,16 +279,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async addEmployeeWithRegisterLink(employeeDto: EmployeeDTO) {
     //
     try {
-      //1. Find if email exists
-
-      //const emailAddress = await this.findEmailAddress(employeeDto.email);
-
-      //if (emailAddress) throw new HttpException('Email address already exists', HttpStatus.BAD_REQUEST);
-
-      //2. Create Temp Email
-      //const createdTempEmail = await this.createTempEmailAddress(employeeDto.email);
-
-      //3. Check if assigned position exists
       const position = await this.plantillaPositionsService.entityRepository.findOne({
         where: { _id: employeeDto.positionId },
       });
@@ -349,8 +352,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
-  async getSupervisorEmployees(data: { tags: any[] }) {
-    return '';
+  async getAllRegularEmployeeIds() {
+    try {
+      const employeeIds = await this.entityRepository.query(
+        `SELECT emp._id employeeId,emp.company_id companyId FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE user_role IN ('rank_and_file','division_manager','department_manager','general_manager','assistant_general_manager') AND company_id IS NOT NULL AND company_id <> '';`,
+      );
+      console.log(employeeIds);
+      return employeeIds;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   private getUserRole(salaryGrade: number) {

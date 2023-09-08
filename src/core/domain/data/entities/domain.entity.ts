@@ -1,4 +1,3 @@
-
 import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { CompetencyModel } from 'src/core/competency-model/data/entities/competency-model.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';

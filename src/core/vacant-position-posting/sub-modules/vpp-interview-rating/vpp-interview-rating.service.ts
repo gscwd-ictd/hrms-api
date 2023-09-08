@@ -428,7 +428,13 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     }
 
     const { houseNumber, street, subdivision, barangay, city, province, zipCode } = residentialAddress;
-    const line1 = houseNumber + ', ' + street + ', ' + subdivision;
+
+    const _houseNumber = houseNumber === 'N/A' ? '' : houseNumber.concat(', ');
+    const _street = street === 'N/A' ? '' : street.concat(', ');
+    const _subdivision = subdivision === 'N/A' ? '' : subdivision;
+
+    const line1 = _houseNumber + _street + _subdivision;
+
     const line2 = barangay + ', ' + city;
     const data = (
       await this.entityRepository.query(
@@ -447,6 +453,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     CONCAT(DATE_FORMAT(vppv.postingDate,'%M %d, %Y'),' to ',DATE_FORMAT(vppv.postingDeadline,'%M %d, %Y')) publicationPeriod, 
     pdfb.publication_mode publicationMode,
     DATE_FORMAT(padv.effectivityDate,'%M %d, %Y') dateOfSigning,
+    DATE_FORMAT(padv.effectivityDate,'%M, %Y') effectivityDate,
     DATE_FORMAT(vpps.schedule, '%M %d, %Y') scheduleDate 
     FROM position_description_form_basic pdfb 
         INNER JOIN posting_applicants_detailed_view padv ON padv.postingApplicantId = pdfb.posting_applicants_id_fk
@@ -461,55 +468,42 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
 
     const signatories = await this.entityRepository.query(
       `
-     ( (SELECT
-      get_employee_fullname(employee_id_fk) fullName,
-      get_employee_position(employee_id_fk) position,
-      get_employee_assignment(employee_id_fk) assignment, 
-      'Appointing Authority' role FROM plantilla_positions 
-    WHERE position_title='General Manager A') UNION (
-      SELECT employeeFullName fullName,
-      oicPosition position,
-      oicOrgName assignment,
-      'Appointing Authority' role FROM officer_in_charge_view 
-      WHERE oicPosition=CAST('OIC-General Manager' as binary) AND oicOrgName=CAST('Office of the General Manager' AS BINARY)
-    )
-      )
-      UNION
-      (
-        SELECT
-          get_employee_fullname(pp.employee_id_fk) fullName,
-          get_employee_position(pp.employee_id_fk) position,
-          get_employee_assignment(pp.employee_id_fk) assignment, 
-          'Chairperson, HRMPSB' role FROM plantilla_positions pp 
-            INNER JOIN vpp_psb vppp ON vppp.employee_id_fk = pp.employee_id_fk 
-        WHERE vppp.psb_no = 1 AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
-      )
-      UNION
-      (
-        (SELECT
-          get_employee_fullname(pp.employee_id_fk) fullName,
-          get_employee_position(pp.employee_id_fk) position,
-          get_employee_assignment(pp.employee_id_fk) assignment, 
-          'PSB# 2' role
-          FROM plantilla_positions pp 
-            INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
-            INNER JOIN divisions d ON d._id = dp.division_id_fk 
-            INNER JOIN vpp_psb vppp ON vppp.employee_id_fk = pp.employee_id_fk
-        WHERE position_title='Division Manager A' AND d.name = 'Recruitment and Personnel Welfare Division' AND vppp.psb_no = 2
-              AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
-        )
-         UNION 
-        (SELECT 
-          oicv.employeeFullName fullName, 
-          oicv.oicPosition position, 
-          oicv.employeeOrg assignment,
-          'PSB# 2' role 
-          FROM officer_in_charge_view oicv 
-            INNER JOIN division_positions dp ON dp._id  = oicv.orgPositionId 
-              INNER JOIN vpp_psb vppp ON vppp.employee_id_fk = oicv.employeeId
-          WHERE binary oicv.employeeOrg = 'Recruitment and Personnel Welfare Division' AND vppp.psb_no = 2)
-      )
-    `,
+      (SELECT fullName,position, assignment, role FROM ((SELECT
+       get_employee_fullname(employee_id_fk) fullName,
+       get_employee_position(employee_id_fk) position,
+       get_employee_assignment(employee_id_fk) assignment, 
+       IF(get_employee_fullname(employee_id_fk) IS NULL, NULL,'Appointing Authority') role FROM plantilla_positions 
+     WHERE position_title='General Manager A') UNION (
+       SELECT employeeFullName fullName,
+       oicPosition position,
+       oicOrgName assignment,
+       'Appointing Authority' role FROM officer_in_charge_view 
+       WHERE oicPosition=CAST('OIC-General Manager' as binary) AND oicOrgName=CAST('Office of the General Manager' AS BINARY)
+     )) generalmanager WHERE fullName IS NOT NULL
+       )
+       UNION
+       (
+         SELECT
+           get_employee_fullname(pp.employee_id_fk) fullName,
+           get_employee_position(pp.employee_id_fk) position,
+           get_employee_assignment(pp.employee_id_fk) assignment, 
+           'Chairperson, HRMPSB' role FROM plantilla_positions pp 
+             INNER JOIN vpp_psb vppp ON vppp.employee_id_fk = pp.employee_id_fk 
+         WHERE vppp.psb_no = 1 AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
+       )
+       UNION
+       (
+         SELECT
+           get_employee_fullname(vppp.employee_id_fk) fullName,
+           get_employee_position(vppp.employee_id_fk) position,
+           get_employee_assignment(vppp.employee_id_fk) assignment, 
+           'PSB# 3' role
+           FROM vpp_psb vppp 
+         WHERE vppp.psb_no = 3 
+         AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
+       )
+ 
+     `,
       [postingApplicantId, postingApplicantId],
     );
 
@@ -566,7 +560,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       SELECT get_employee_fullname(e._id) fullName,
              get_employee_position(e._id) position, 
              get_employee_assignment(e._id) assignment, 
-             get_employee_position(e._id) role
+             'HR Department Manager' role
        FROM plantilla_positions pp
          INNER JOIN department_positions dp ON pp._id = dp.position_id_fk 
          INNER JOIN departments d ON d._id = dp.department_id_fk
@@ -579,7 +573,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
          employeeFullName fullName, 
          oicPosition position,
          oicOrgName assignment,
-         oicPosition role
+         'HR Department Manager' role
      FROM officer_in_charge_view 
      WHERE cast(oicPosition as binary) = 'OIC-Department Manager' AND  cast(oicOrgName as binary) ='Human Resource Department'
   ))

@@ -5,7 +5,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('vpp_schedule')
 export class VppSchedule extends DefaultTable {
-  @ManyToOne(() => VacantPositionPosting, (vpp) => vpp._id,{onDelete: 'CASCADE'})
+  @ManyToOne(() => VacantPositionPosting, (vpp) => vpp._id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'vacant_position_posting_id_fk' })
   vppId: VacantPositionPosting;
 

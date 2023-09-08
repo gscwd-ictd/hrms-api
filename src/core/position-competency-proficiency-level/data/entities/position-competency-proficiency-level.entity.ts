@@ -3,7 +3,6 @@ import { OccupationalGroup } from 'src/core/occupational-group/data/entities/occ
 import { Proficiency } from 'src/core/proficiency/data/entities/proficiency.entity';
 import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-
 @Entity()
 export class PositionCompetencyProficiencyLevel extends DefaultTable {
   @ManyToOne(() => OccupationalGroup, (occupationalgroup) => occupationalgroup._id, { onUpdate: 'CASCADE' })

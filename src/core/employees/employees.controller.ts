@@ -161,9 +161,9 @@ export class EmployeesController {
     return await this.employeesService.getEmployeeDetailByCompanyId(companyId);
   }
 
-  @MessagePattern('get_supervisor_of_employees_with_tags')
-  async getSupervisorEmployees(@Payload() data: { tags: any[] }) {
-    return await this.employeesService.getSupervisorEmployees(data);
+  @MessagePattern('get_all_regular_employee_ids')
+  async getAllRegularEmployeeIds() {
+    return await this.employeesService.getAllRegularEmployeeIds();
   }
 
   @Get(':id/test/test')

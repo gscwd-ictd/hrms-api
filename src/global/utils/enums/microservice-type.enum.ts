@@ -5,5 +5,5 @@ export enum MicroserviceType {
   SMS = 'SMS',
   PDS = 'PDS',
   NOTIFICATIONS = 'Notifications',
-  EMPLOYEE_MONITORING = 'EmpMonitoring'
+  EMPLOYEE_MONITORING = 'EmpMonitoring',
 }

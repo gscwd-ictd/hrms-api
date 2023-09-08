@@ -2,7 +2,8 @@
 /dist
 /node_modules
 /secure
-/ssl
+/src/ssl
+/src/keys
 
 # Logs
 logs

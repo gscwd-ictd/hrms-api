@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { CreateEmployeeTagsDto } from './data/employee-tags.dto';
+import { CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
 import { EmployeeTagsService } from './employee-tags.service';
 
 @Controller()
@@ -12,10 +12,10 @@ export class EmployeeTagsController {
     return await this.employeeTagsService.addEmployeeTags(employeeTagsDto);
   }
 
-  @MessagePattern('get_supervisors_by_employee_tags')
-  async getSupervisorByEmployeeTags(data: { tagIds: [] }) {
-    return await this.employeeTagsService.getSupervisorByEmployeeTags(data);
-  }
+  // @MessagePattern('get_supervisors_by_employee_tags')
+  // async getSupervisorByEmployeeTags(data: { tagIds: [] }) {
+  //   return await this.employeeTagsService.getSupervisorByEmployeeTags(data);
+  //
 
   @MessagePattern('get_tags_by_employee_id')
   async getTagsByEmployeeId(@Payload() employeeId: string) {
@@ -25,9 +25,12 @@ export class EmployeeTagsController {
 
   @MessagePattern('get_employee_by_tag_id')
   async getEmployeeByTagId(@Payload() tagId: string) {
-    return await this.employeeTagsService.getEmployeeByTagId(tagId);
+    return await this.employeeTagsService.getSupervisorByEmployeeTags(tagId);
+    //return await this.employeeTagsService.getEmployeeByTagId(tagId);
   }
 
-  @MessagePattern('update_employee_tags')
-  async updateEmployeeTags() {}
+  @MessagePattern('delete_employee_tags')
+  async deleteEmployeeTag(@Payload() data: DeleteEmployeeTagDto) {
+    return await this.employeeTagsService.deleteEmployeeTag(data);
+  }
 }

@@ -4,7 +4,7 @@ import { UserRolesDTO, UserRolesAddUpdateDTO } from './data/user-roles.dto';
 import { UserRolesService } from './user-roles.service';
 import { Body, Controller, Delete, Param, Post, Put, Get, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 
-@UseGuards(AuthenticatedGuard)
+//@UseGuards(AuthenticatedGuard)
 @Controller('user-roles')
 export class UserRolesController {
   constructor(private readonly userRolesService: UserRolesService) {}
@@ -14,7 +14,7 @@ export class UserRolesController {
     return await this.userRolesService.getUserRoleByUserId(userId);
   }
 
-  @UseInterceptors(UserLogsInterceptor)
+  //@UseInterceptors(UserLogsInterceptor)
   @Post()
   async addUserRoles(@Body() userRolesAddUpdateDTO: UserRolesAddUpdateDTO) {
     return await this.userRolesService.addUserRole(userRolesAddUpdateDTO);
@@ -26,7 +26,7 @@ export class UserRolesController {
     return await this.userRolesService.deleteUserAndRoles(userId);
   }
 
-  @UseInterceptors(UserLogsInterceptor)
+  //@UseInterceptors(UserLogsInterceptor)
   @Patch()
   async updateUserRoles(@Body() userRoleUpdateDTO: UserRolesAddUpdateDTO) {
     return await this.userRolesService.updateUserRoles(userRoleUpdateDTO);

@@ -7,7 +7,7 @@ export class AuthenticatedGuard implements CanActivate {
   constructor(private readonly jwtService: GlobalJwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-  /*
+    /*
     const request = context.switchToHttp().getRequest();
     //console.log(request.headers.cookie.split('; userId=')[1].split(';')[0]);
     let isSuperUser = false;

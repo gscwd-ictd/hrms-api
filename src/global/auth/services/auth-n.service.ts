@@ -41,9 +41,9 @@ export class AuthNService extends MicroserviceHelper {
       } else {
         console.log('standard user');
         //console.log(await this.sendRequest({ msg: 'oauth_login' }, data));
-        const userz = await this.sendRequest({ msg: 'oauth_login' }, data);
-        console.log(userz, 'ACCESS FROM MICROSERVICE LINTIK');
-        return userz;
+        const user = await this.sendRequest({ msg: 'oauth_login' }, data);
+
+        return user;
       }
     } catch (error) {
       console.log(error);
@@ -54,5 +54,8 @@ export class AuthNService extends MicroserviceHelper {
     return await this.sendRequest({ msg: 'user.login' }, data);
   }
 
-  async getSuperUserAccess() {}
+  async getSuperUserAccess() {
+    //
+    console.log();
+  }
 }

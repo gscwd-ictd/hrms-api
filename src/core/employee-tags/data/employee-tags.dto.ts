@@ -11,3 +11,8 @@ export class CreateEmployeeTagsDto {
   employees: Employees[];
   tags: string[];
 }
+
+export class DeleteEmployeeTagDto {
+  employeeId: string;
+  tagId: string;
+}

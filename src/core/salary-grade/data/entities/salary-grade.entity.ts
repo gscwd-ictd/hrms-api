@@ -1,12 +1,6 @@
 import { LogEntity } from 'src/core/base-entity/data/base.entity';
 import { PlantillaPositions } from 'src/core/plantilla-positions/data/entities/plantilla-positions.entity';
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('salary_grade')
 export class SalaryGrade extends LogEntity {

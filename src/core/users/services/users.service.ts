@@ -6,19 +6,26 @@ import { handleRpcError } from 'src/global/utils/helper/error/rpc/rpc-error-hand
 import { Repository } from 'typeorm';
 import { Users } from 'src/core/users/data/entities/users.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
+import { EmployeesService } from 'src/core/employees/employees.service';
 
 @Injectable()
 export class UsersService extends BaseEntityCrudService<Users> {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
+    private readonly employeesService: EmployeesService,
   ) {
     super(userRepository);
   }
 
-  async createUser(user: UserDto) {}
+  async createUser(user: UserDto) {
+    //
+  }
 
-  async superUserLogin(superUser: SuperUserDTO) {}
+  async superUserLogin(superUser: SuperUserDTO) {
+    //
+    console.log();
+  }
 
   async getAssignableHRMSUsers() {
     try {
@@ -109,7 +116,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
 
   async getAuthorizedUserById(_id: string) {
     try {
-      console.log('test here');
       const user = await this.entityRepository.findOneOrFail({ where: { _id } });
       const userDetails = await this.entityRepository
         .createQueryBuilder('u')
@@ -140,9 +146,13 @@ export class UsersService extends BaseEntityCrudService<Users> {
         }),
       );
 
+      const email = await this.employeesService.findEmailAddressById(_id);
+      console.log('EMAIL ADDRESS ', email);
+
       console.log(userAccess);
-      return { ...user, ...userDetails, userAccess, isSuperUser: false };
+      return { ...user, email, ...userDetails, userAccess, isSuperUser: false };
     } catch (error) {
+      console.log(error);
       handleRpcError(error);
     }
   }

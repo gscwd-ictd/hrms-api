@@ -1,6 +1,6 @@
-import { Controller } from "@nestjs/common";
+import { Controller } from '@nestjs/common';
 
 @Controller('pds/voluntary-work')
-export class PDSVoluntaryWorkController{
-    constructor(){}
+export class PDSVoluntaryWorkController {
+  constructor() {}
 }

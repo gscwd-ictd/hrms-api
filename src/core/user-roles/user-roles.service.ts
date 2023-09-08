@@ -73,6 +73,7 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
       `,
         [userId],
       );
+      console.log(userRoles);
       return userRoles;
     } catch (error) {
       console.log(error);

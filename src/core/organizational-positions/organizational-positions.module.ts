@@ -11,12 +11,7 @@ import { OfficePositions } from './office-positions/data/entities/office-positio
 
 @Module({
   imports: [TypeOrmModule.forFeature([OfficePositions, DivisionPositions, DepartmentPositions])],
-  providers: [
-    OrganizationalPositionsService,
-    OfficePositionsService,
-    DepartmentPositionService,
-    DivisionPositionsService,
-  ],
+  providers: [OrganizationalPositionsService, OfficePositionsService, DepartmentPositionService, DivisionPositionsService],
   controllers: [OrganizationalPositionsController],
 })
 export class OrganizationalPositionsModule {}

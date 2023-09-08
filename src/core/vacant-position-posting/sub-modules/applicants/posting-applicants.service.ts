@@ -131,6 +131,4 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
       throw new HttpException(error.message, error.status);
     }
   }
-
-  
 }

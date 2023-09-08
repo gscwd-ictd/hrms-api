@@ -9,13 +9,26 @@ import { SuperUserService } from './services/superuser.service';
 import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 import { SuperUser } from './data/entities/superuser.entity';
 import { AuthModule } from 'src/global/auth/auth.module';
+import { EmployeesModule } from '../employees/employees.module';
+import { EmployeesService } from '../employees/employees.service';
+import { RedisConfigForAuthN, RedisConfigForEmployeeMonitoring } from 'src/global/utils/config-classes/clients.config';
+import { Employees } from '../employees/data/entities/employees.entity';
+import { PlantillaPositionsModule } from '../plantilla-positions/plantilla-positions.module';
+import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
+import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users, SuperUser, PlantillaPositions]),
-    //ClientsModule.registerAsync([{ name: MicroserviceType.AUTHZ, useClass: RedisConfigForAuthZ }]),
+    TypeOrmModule.forFeature([Users, SuperUser, PlantillaPositions, Employees]),
+    ClientsModule.registerAsync([
+      { name: MicroserviceType.AUTHN, useClass: RedisConfigForAuthN },
+      { name: MicroserviceType.EMPLOYEE_MONITORING, useClass: RedisConfigForEmployeeMonitoring },
+    ]),
+    EmployeesModule,
+    PlantillaPositionsModule,
+    OfficerInChargeModule,
   ],
-  providers: [UsersService, SuperUserService],
+  providers: [UsersService, SuperUserService, EmployeesService, PlantillaPositionsService],
   controllers: [UsersController],
   exports: [UsersService],
 })

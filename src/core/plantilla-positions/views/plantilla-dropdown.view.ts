@@ -1,6 +1,5 @@
 import { BaseEntity, ManyToOne, ViewColumn, ViewEntity } from 'typeorm';
 
-
 //#region original view query
 /* */
 //#endregion original view query
