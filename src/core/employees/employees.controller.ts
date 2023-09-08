@@ -117,6 +117,7 @@ export class EmployeesController {
   @Get(':id')
   async getAnEmployeeById(@Param('id') _id: string) {
     try {
+      //test
       return await this.employeesService.getEmployeeDetails(_id);
     } catch {
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
