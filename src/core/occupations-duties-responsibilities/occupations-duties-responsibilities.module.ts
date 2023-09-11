@@ -4,7 +4,6 @@ import { OccupationsDutiesResponsibilitiesController } from './occupations-dutie
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OccupationsDutiesResponsibilities } from './data/entities/occupations-duties-responsibilities.entity';
 
-
 @Module({
   imports: [TypeOrmModule.forFeature([OccupationsDutiesResponsibilities])],
   providers: [OccupationsDutiesResponsibilitiesService],

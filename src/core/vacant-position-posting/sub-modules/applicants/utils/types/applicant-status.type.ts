@@ -1,6 +1,6 @@
-import { ApplicantStatus } from "../enums/applicant-status.enum"
+import { ApplicantStatus } from '../enums/applicant-status.enum';
 
 export type ApplicantStatusType = {
-    applicantStatus: ApplicantStatus;
-    internal : boolean;
-}
+  applicantStatus: ApplicantStatus;
+  internal: boolean;
+};

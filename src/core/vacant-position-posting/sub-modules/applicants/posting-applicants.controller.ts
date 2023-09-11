@@ -9,6 +9,4 @@ export class ApplicantsController {
   async getApplicants(@Param('posting_id') postingId: string) {
     return await this.vacantPositionPostingService.applicantDetails(postingId);
   }
-
-  
 }

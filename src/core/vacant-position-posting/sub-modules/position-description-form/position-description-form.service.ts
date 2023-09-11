@@ -119,13 +119,15 @@ export class PositionDescriptionFormService {
         )
       )[0].applicantName;
 
-      const hrdDepartmentManager = (
-        await this.positionDescriptionFormBasic.entityRepository.query(`
-        SELECT employeeName,positionTitle FROM ((SELECT get_employee_fullname(employee_id_fk) employeeName,pp.position_title positionTitle  FROM plantilla_positions pp
-          INNER JOIN department_positions dp ON dp.position_id_fk = pp._id
-          INNER JOIN departments d ON d._id = dp.department_id_fk 
-        WHERE pp.position_title = 'Department Manager A' 
-        AND d.name = 'Human Resource Department') UNION (SELECT employeeFullName employeeName, oicPosition positionTitle FROM officer_in_charge_view oicv WHERE oicv.oicOrgName=CAST('Human Resource Department' AS BINARY))) AS signatory WHERE employeeName IS NOT NULL;`)
+      const requestingEntity = (
+        await this.positionDescriptionFormBasic.entityRepository.query(
+          `
+        SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_employee_position_or_oic(vppp.employee_id_fk) positionTitle FROM vpp_psb vppp 
+        INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
+        AND pa._id = ? AND vppp.psb_no = 2;
+        `,
+          [postingApplicantId],
+        )
       )[0];
 
       return {
@@ -151,7 +153,7 @@ export class PositionDescriptionFormService {
         },
         signatories: {
           employee,
-          hrdDepartmentManager,
+          requestingEntity,
         },
       };
     } catch (error) {}

@@ -8,5 +8,6 @@ import { PlantillaPositions } from './data/entities/plantilla-positions.entity';
   imports: [TypeOrmModule.forFeature([PlantillaPositions])],
   providers: [PlantillaPositionsService],
   controllers: [PlantillaPositionsController],
+  exports: [PlantillaPositionsService],
 })
 export class PlantillaPositionsModule {}

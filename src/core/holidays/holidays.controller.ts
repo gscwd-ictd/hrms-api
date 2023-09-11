@@ -1,14 +1,12 @@
-import { Controller, Get } from "@nestjs/common";
-import { HolidaysService } from "./holidays.service";
+import { Controller, Get } from '@nestjs/common';
+import { HolidaysService } from './holidays.service';
 
 @Controller('holidays')
-export class HolidaysController{
-    constructor(private readonly holidaysService: HolidaysService){
+export class HolidaysController {
+  constructor(private readonly holidaysService: HolidaysService) {}
 
-    }
-
-    @Get()
-    async getHolidays(){
-        return await this.holidaysService.getHoliday();
-    }
+  @Get()
+  async getHolidays() {
+    return await this.holidaysService.getHoliday();
+  }
 }

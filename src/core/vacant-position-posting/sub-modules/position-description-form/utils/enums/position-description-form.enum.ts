@@ -18,8 +18,9 @@ export enum AppointmentType {
 */
 
 export enum PublicationMode {
-  CASUAL = 'GSCWD Bulletin, Website, Agency facebook page',
-  PERMANENT = 'CSC Website www.csc.gov.ph',
+  MODE1 = 'GSCWD Bulletin, Website, Agency facebook page',
+  MODE2 = 'CSC Website www.csc.gov.ph',
+  MODE3 = 'CSC Bulletin of Vacant Positions',
 }
 
 export enum Supervisor {

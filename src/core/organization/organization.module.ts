@@ -17,18 +17,8 @@ import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Office, OfficePositions, Divisions, DivisionPositions, Departments, DepartmentPositions]),
-  ],
+  imports: [TypeOrmModule.forFeature([Office, OfficePositions, Divisions, DivisionPositions, Departments, DepartmentPositions])],
   controllers: [OrganizationController, OrganizationMsController],
-  providers: [
-    OrganizationService,
-    OfficeService,
-    OfficePositionsService,
-    DivisionService,
-    DivisionPositionsService,
-    DepartmentService,
-    DepartmentPositionService,
-  ],
+  providers: [OrganizationService, OfficeService, OfficePositionsService, DivisionService, DivisionPositionsService, DepartmentService, DepartmentPositionService],
 })
 export class OrganizationModule {}

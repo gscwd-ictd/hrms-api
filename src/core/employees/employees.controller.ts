@@ -24,6 +24,16 @@ export class EmployeesController {
     return await this.employeesService.findEntityAll();
   }
 
+  @MessagePattern('find_all_employees_lnd')
+  async getAllEmployeesForLND() {
+    try {
+      return await this.employeesService.getEmployeesForLND();
+    } catch (error) {
+      console.log(error);
+      throw new RpcException(error);
+    }
+  }
+
   @MessagePattern('find_all_employees_test')
   async getAllEmployeesTest() {
     return await this.employeesService.findEntityAll();
@@ -33,6 +43,15 @@ export class EmployeesController {
   async getEmployeeById(@Payload() _id: string) {
     try {
       return await this.employeesService.getEmployeeDetails(_id);
+    } catch (error) {
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_employee_details')
+  async getEmployeeDetailsByEmployeeId(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId);
     } catch (error) {
       throw new RpcException('Employee not found');
     }
@@ -161,9 +180,9 @@ export class EmployeesController {
     return await this.employeesService.getEmployeeDetailByCompanyId(companyId);
   }
 
-  @MessagePattern('get_supervisor_of_employees_with_tags')
-  async getSupervisorEmployees(@Payload() data: { tags: any[] }) {
-    return await this.employeesService.getSupervisorEmployees(data);
+  @MessagePattern('get_all_regular_employee_ids')
+  async getAllRegularEmployeeIds() {
+    return await this.employeesService.getAllRegularEmployeeIds();
   }
 
   @Get(':id/test/test')

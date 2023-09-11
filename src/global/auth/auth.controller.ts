@@ -40,7 +40,7 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
-    console.log('logoutz');
+    //console.log('logoutz');
     //response.setHeader('Set-Cookie', 'ssid_hrms=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT');
     response.setHeader('Set-Cookie', [
       'ssid_hrms=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',

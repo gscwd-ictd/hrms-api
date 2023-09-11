@@ -7,7 +7,7 @@ export class AuthenticatedGuard implements CanActivate {
   constructor(private readonly jwtService: GlobalJwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-  /*
+    /*
     const request = context.switchToHttp().getRequest();
     //console.log(request);
     console.log('AuthenticatedGuard Activated');
@@ -22,6 +22,9 @@ export class AuthenticatedGuard implements CanActivate {
       }
     }
     */
-    return true;
+    const request = context.switchToHttp().getRequest();
+    const user = request.session.user;
+    if (user) return true;
+    return false;
   }
 }

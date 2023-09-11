@@ -6,9 +6,7 @@ import { OfficePositions } from './data/entities/office-positions.entity';
 
 @Injectable()
 export class OfficePositionsService extends BaseEntityCrudService<OfficePositions> {
-  constructor(
-    @InjectRepository(OfficePositions) private readonly officePositionsRepository: Repository<OfficePositions>,
-  ) {
+  constructor(@InjectRepository(OfficePositions) private readonly officePositionsRepository: Repository<OfficePositions>) {
     super(officePositionsRepository);
   }
 
