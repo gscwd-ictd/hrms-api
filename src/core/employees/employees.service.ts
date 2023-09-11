@@ -90,23 +90,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       divisionId: string;
       divisionName: string;
     };
-    const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
+    const { departmentName, divisionName, officeName } = orgStruct;
     //console.log(employeePortalDetails);
     return {
-      employeeId,
+      id: employeeId,
       companyId,
       fullName: employeeFullName,
       avatar: employeePortalDetails.photoUrl,
-      assignment: {
-        divisionId,
-        divisionName,
-        departmentId,
-        departmentName,
-        officeId,
-        officeName,
-        positionId,
-        positionTitle,
-      },
+      email: employeePortalDetails.emailAddress,
+      division: divisionName,
+      department: departmentName,
+      office: officeName,
+      positionTitle,
     };
   }
 
@@ -138,23 +133,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           divisionId: string;
           divisionName: string;
         };
-        const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
+        const { departmentName, divisionName, officeName } = orgStruct;
         //console.log(employeePortalDetails);
         return {
-          employeeId,
+          id: employeeId,
           companyId,
           fullName: employeeFullName,
           avatar: employeePortalDetails.photoUrl,
-          assignment: {
-            divisionId,
-            divisionName,
-            departmentId,
-            departmentName,
-            officeId,
-            officeName,
-            positionId,
-            positionTitle,
-          },
+          email: employeePortalDetails.emailAddress,
+          division: divisionName,
+          department: departmentName,
+          office: officeName,
+          positionTitle,
         };
       }),
     );
@@ -173,7 +163,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('get_employee_assignment(emp._id)', 'name')
       .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
       .addSelect('get_user_role(emp._id)', 'userRole')
-      //.addSelect('emp.photo_url')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :employeeId', { employeeId })
       .getRawOne();
@@ -186,6 +175,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       companyId,
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
+
       assignment: { id, name, positionId, positionTitle },
       userRole,
     };
