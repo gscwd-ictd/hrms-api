@@ -24,6 +24,16 @@ export class EmployeesController {
     return await this.employeesService.findEntityAll();
   }
 
+  @MessagePattern('find_all_employees_lnd')
+  async getAllEmployeesForLND() {
+    try {
+      return await this.employeesService.getEmployeesForLND();
+    } catch (error) {
+      console.log(error);
+      throw new RpcException(error);
+    }
+  }
+
   @MessagePattern('find_all_employees_test')
   async getAllEmployeesTest() {
     return await this.employeesService.findEntityAll();
@@ -33,6 +43,15 @@ export class EmployeesController {
   async getEmployeeById(@Payload() _id: string) {
     try {
       return await this.employeesService.getEmployeeDetails(_id);
+    } catch (error) {
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_employee_details')
+  async getEmployeeDetailsByEmployeeId(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId);
     } catch (error) {
       throw new RpcException('Employee not found');
     }
@@ -117,7 +136,6 @@ export class EmployeesController {
   @Get(':id')
   async getAnEmployeeById(@Param('id') _id: string) {
     try {
-      //test
       return await this.employeesService.getEmployeeDetails(_id);
     } catch {
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);

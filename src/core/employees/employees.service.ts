@@ -64,6 +64,71 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     };
   }
 
+  async getEmployeesForLND() {
+    const empPositions = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'employeeId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('pp.employee_id_fk IS NOT NULL AND company_id IS NOT NULL')
+      .getRawMany();
+
+    console.log(empPositions);
+
+    const employees = await Promise.all(
+      empPositions.map(async (empPosition) => {
+        const { id, name, employeeId, employeeFullName, companyId, positionId, positionTitle } = empPosition;
+
+        const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+
+        //console.log(employeePortalDetails);
+        return {
+          employeeId,
+          companyId,
+          employeeFullName,
+          photoUrl: employeePortalDetails.photoUrl,
+          assignment: { id, name, positionId, positionTitle },
+        };
+      }),
+    );
+    console.log(employees);
+    return employees;
+  }
+
+  async getEmployeeDetailsByEmployeeId(employeeId: string) {
+    const empPosition = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'userId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .addSelect('get_user_role(emp._id)', 'userRole')
+      //.addSelect('emp.photo_url')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('emp._id = :employeeId', { employeeId })
+      .getRawOne();
+    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+
+    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+
+    return {
+      userId,
+      companyId,
+      employeeFullName,
+      photoUrl: employeePortalDetails.photoUrl,
+      assignment: { id, name, positionId, positionTitle },
+      userRole,
+    };
+  }
+
   async getEmployeeDetailByCompanyId(_companyId: string) {
     const empPosition = await this.employeeRepository
       .createQueryBuilder('emp')
