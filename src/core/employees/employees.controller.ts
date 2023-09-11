@@ -24,6 +24,16 @@ export class EmployeesController {
     return await this.employeesService.findEntityAll();
   }
 
+  @MessagePattern('find_employee_by_id_lnd')
+  async getEmployeeByIdForLND(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getEmployeeByIdForLND(employeeId);
+    } catch (error) {
+      console.log(error);
+      throw new RpcException(error);
+    }
+  }
+
   @MessagePattern('find_all_employees_lnd')
   async getAllEmployeesForLND() {
     try {

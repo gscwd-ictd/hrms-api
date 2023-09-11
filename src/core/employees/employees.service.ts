@@ -64,6 +64,52 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     };
   }
 
+  async getEmployeeByIdForLND(employeeId: string) {
+    const empPosition = await this.employeeRepository
+      .createQueryBuilder('emp')
+      .select('emp._id', 'employeeId')
+      .addSelect('emp.company_id', 'companyId')
+      .addSelect('pp.position_title', 'positionTitle')
+      .addSelect('pp._id', 'positionId')
+      .addSelect('get_employee_assignment_id(emp._id)', 'id')
+      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .where('pp.employee_id_fk IS NOT NULL AND company_id IS NOT NULL AND emp._id=:employeeId', { employeeId })
+      .getRawOne();
+
+    const { id, employeeFullName, companyId, positionId, positionTitle } = empPosition;
+
+    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+
+    const orgStruct = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0] as {
+      officeId: string;
+      officeName: string;
+      departmentId: string;
+      departmentName: string;
+      divisionId: string;
+      divisionName: string;
+    };
+    const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
+    //console.log(employeePortalDetails);
+    return {
+      employeeId,
+      companyId,
+      fullName: employeeFullName,
+      avatar: employeePortalDetails.photoUrl,
+      assignment: {
+        divisionId,
+        divisionName,
+        departmentId,
+        departmentName,
+        officeId,
+        officeName,
+        positionId,
+        positionTitle,
+      },
+    };
+  }
+
   async getEmployeesForLND() {
     const empPositions = await this.employeeRepository
       .createQueryBuilder('emp')
@@ -78,21 +124,37 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .where('pp.employee_id_fk IS NOT NULL AND company_id IS NOT NULL')
       .getRawMany();
 
-    console.log(empPositions);
-
     const employees = await Promise.all(
       empPositions.map(async (empPosition) => {
         const { id, name, employeeId, employeeFullName, companyId, positionId, positionTitle } = empPosition;
 
         const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
 
+        const orgStruct = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0] as {
+          officeId: string;
+          officeName: string;
+          departmentId: string;
+          departmentName: string;
+          divisionId: string;
+          divisionName: string;
+        };
+        const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
         //console.log(employeePortalDetails);
         return {
           employeeId,
           companyId,
-          employeeFullName,
-          photoUrl: employeePortalDetails.photoUrl,
-          assignment: { id, name, positionId, positionTitle },
+          fullName: employeeFullName,
+          avatar: employeePortalDetails.photoUrl,
+          assignment: {
+            divisionId,
+            divisionName,
+            departmentId,
+            departmentName,
+            officeId,
+            officeName,
+            positionId,
+            positionTitle,
+          },
         };
       }),
     );
