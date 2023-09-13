@@ -53,15 +53,22 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
     const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+    const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', _id));
+
     return {
       userId,
       ...employeePortalDetails,
       companyId,
       fullName,
       isHRMPSB,
+      overtimeImmediateSupervisorId,
       assignment: { id, name, positionId, positionTitle },
       userRole,
     };
+  }
+
+  async getEmployeesByOrgId(orgId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
   }
 
   async getEmployeeByIdForLND(employeeId: string) {
@@ -161,24 +168,31 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('pp._id', 'positionId')
       .addSelect('get_employee_assignment_id(emp._id)', 'id')
       .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
       .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
       .addSelect('get_user_role(emp._id)', 'userRole')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :employeeId', { employeeId })
       .getRawOne();
-    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
 
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
-
+    //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
     return {
       userId,
       companyId,
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
-
+      //overtimeImmediateSupervisorId,
+      isHRMPSB,
       assignment: { id, name, positionId, positionTitle },
       userRole,
     };
+  }
+
+  async getEmployeesByOrgIdAlone(orgId: string) {
+    console.log('asd');
+    return (await this.entityRepository.query(`CALL get_employees_by_org(?);`, [orgId]))[0];
   }
 
   async getEmployeeDetailByCompanyId(_companyId: string) {

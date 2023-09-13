@@ -49,6 +49,21 @@ export class EmployeesController {
     return await this.employeesService.findEntityAll();
   }
 
+  @MessagePattern('get_employees_by_org_id')
+  async getEmployeesByOrgId(@Payload() orgId: string) {
+    return await this.employeesService.getEmployeesByOrgId(orgId);
+  }
+
+  @MessagePattern('get_employees_by_org_id_alone')
+  async getEmployeesByOrgIdAloneMS(orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+  }
+
+  @Get('/:organization_id/list/')
+  async getEmployeesByOrgIdAlone(@Param('organization_id') orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+  }
+
   @MessagePattern({ msg: 'find_employee' })
   async getEmployeeById(@Payload() _id: string) {
     try {
