@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { Repository } from 'typeorm';
 import { CompetencyModelView } from './data/entities/views/competency-model-view.entity';
-import { CompetencyDto } from './data/dtos/competency-model.dto';
+import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
 import { CompetencyModel } from './data/entities/competency-model.entity';
 import { ProficiencyDto } from '../proficiency/data/dtos/proficiency.dto';
 import { ProficiencyService } from '../proficiency/proficiency.service';
@@ -43,6 +43,24 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
         domain: competencydto.domainId,
       };
     } catch (error) {}
+  }
+
+  async updateCompetencyAndProficiency(data: UpdateCompetencyDto) {
+    try {
+      const { competencyId, code, name, desc } = data;
+
+      await this.competencyModelRepository.createQueryBuilder().update().set({ code, name, definition: desc }).where({ _id: competencyId }).execute();
+      await Promise.all(
+        data.proficiencyKeyActions.map(async (proficiencyItem) => {
+          const { _id, keyActions } = proficiencyItem;
+          return await this.proficiencyService.entityRepository.createQueryBuilder().update().set({ keyActions }).where({ _id: _id }).execute();
+        }),
+      );
+      return data;
+    } catch (error) {
+      Logger.log(error);
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
   }
 
   //////getters
