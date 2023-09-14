@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards } from '@nestjs/common';
 import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated.guard';
 import { CompetencyModelService } from './competency-model.service';
-import { CompetencyDto } from './data/dtos/competency-model.dto';
+import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
 
-//@UseGuards(AuthenticatedGuard)
+@UseGuards(AuthenticatedGuard)
 @Controller('competency-model')
 export class CompetencyModelController {
   constructor(private readonly competencyModelService: CompetencyModelService) {}
@@ -53,6 +53,12 @@ export class CompetencyModelController {
   @Put(':competency_id')
   updateCompetency(@Body() compdto: CompetencyDto, @Param('competency_id') competencyId: string) {
     return this.competencyModelService.updateCompetency(compdto, competencyId);
+  }
+
+  @Put()
+  async updateCompetencyAndProficiency(@Body() data: UpdateCompetencyDto) {
+    console.log(data);
+    return this.competencyModelService.updateCompetencyAndProficiency(data);
   }
 
   @Delete(':competency_id')

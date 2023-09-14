@@ -5,3 +5,8 @@ export class ProficiencyDto {
   level: string;
   keyActions: string;
 }
+
+export class UpdateProficiencyDto {
+  _id: string;
+  keyActions: string;
+}
