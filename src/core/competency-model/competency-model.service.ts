@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { Repository } from 'typeorm';
@@ -58,7 +58,7 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
       );
       return data;
     } catch (error) {
-      console.log(error);
+      Logger.log(error);
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
     }
   }
