@@ -57,7 +57,6 @@ export class CompetencyModelController {
 
   @Put()
   async updateCompetencyAndProficiency(@Body() data: UpdateCompetencyDto) {
-    console.log(data);
     return this.competencyModelService.updateCompetencyAndProficiency(data);
   }
 
