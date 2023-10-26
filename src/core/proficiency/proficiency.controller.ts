@@ -3,7 +3,7 @@ import { Controller, Get, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { ProficiencyDto } from 'src/core/proficiency/data/dtos/proficiency.dto';
 import { ProficiencyService } from './proficiency.service';
 
-@UseGuards(AuthenticatedGuard)
+//@UseGuards(AuthenticatedGuard)
 @Controller('proficiency')
 export class ProficiencyController {
   constructor(private readonly proficiencyService: ProficiencyService) {}
