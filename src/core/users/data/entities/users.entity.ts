@@ -11,6 +11,6 @@ export class Users extends LogEntity {
   @JoinColumn({ name: 'employee_id_fk' })
   employeeId: string;
 
-  @Column({ name: 'photo_url' })
+  @Column({ name: 'photo_url', nullable: true })
   photoUrl: string;
 }

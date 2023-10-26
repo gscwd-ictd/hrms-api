@@ -9,6 +9,7 @@ export class ModulesUpdateDTO {
   module: string;
   slug: string;
   url: string;
+  app: string;
 }
 
 export type ModulesType = Omit<ModulesUpdateDTO, '_id'>;

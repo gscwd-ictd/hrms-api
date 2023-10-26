@@ -12,4 +12,7 @@ export class Modules extends DefaultTable {
 
   @Column()
   url: string;
+
+  @Column()
+  app: string;
 }
