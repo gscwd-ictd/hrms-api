@@ -95,6 +95,7 @@ export class EmployeesController {
   @MessagePattern({ msg: 'get_employee_name' })
   async getEmployeeNameById(_id: string) {
     try {
+      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
       throw new RpcException('Employee not found');
@@ -113,8 +114,10 @@ export class EmployeesController {
   @MessagePattern('get_employee_name')
   async getEmployeeNameByIdEmpMonitoring(@Payload() _id: string) {
     try {
+      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
+      console.log('asd');
       throw new RpcException('Employee not found');
     }
   }

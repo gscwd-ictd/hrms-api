@@ -141,7 +141,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           divisionName: string;
         };
         const { departmentName, divisionName, officeName } = orgStruct;
-        //console.log(employeePortalDetails);
+
         return {
           id: employeeId,
           companyId,

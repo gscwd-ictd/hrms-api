@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
-import { DefaultTable, LogEntity } from 'src/core/base-entity/data/base.entity';
+import { LogEntity } from 'src/core/base-entity/data/base.entity';
 
 @Entity({ name: 'users' })
 export class Users extends LogEntity {
