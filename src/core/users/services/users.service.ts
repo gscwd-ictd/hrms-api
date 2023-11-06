@@ -27,44 +27,111 @@ export class UsersService extends BaseEntityCrudService<Users> {
     console.log();
   }
 
-  async getAssignableHRMSUsers() {
+  async getAssignableEMSUsers() {
     try {
-      const assignables = await this.entityRepository.query(`
-      SELECT assignable.employeeId employeeId,assignable.fullName fullName, assignable.positionTitle positionTitle FROM ((SELECT 
-        emp._id employeeId, 
-        get_employee_fullname2(emp._id) fullName,
-        pp.position_title positionTitle
-            FROM employees emp 
-       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
-       INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
-       INNER JOIN divisions d ON d._id= dp.division_id_fk 
-       INNER JOIN departments dep ON dep._id = d.department_id_fk 
-     WHERE dep.name='Human Resource Department' AND emp._id NOT IN (SELECT employee_id_fk FROM users INNER JOIN employees ON employees._id = users.employee_id_fk) 
-     ORDER BY get_employee_fullname2(emp._id) ASC)
-     UNION
-     (SELECT 
-        emp._id employeeId, 
-        get_employee_fullname2(emp._id) fullName,
-        pp.position_title positionTitle
-            FROM employees emp 
-       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
-       INNER JOIN department_positions dp ON dp.position_id_fk = pp._id 
-       INNER JOIN departments dep ON dep._id = dp.department_id_fk 
-     WHERE dep.name='Human Resource Department' AND emp._id NOT IN (SELECT employee_id_fk FROM users INNER JOIN employees ON employees._id = users.employee_id_fk) 
-     ORDER BY get_employee_fullname2(emp._id) ASC)
-     UNION 
-     (
-     SELECT 
-        emp._id employeeId, 
-        get_employee_fullname2(emp._id) fullName,
-        pp.position_title positionTitle
-            FROM employees emp 
-       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
-       INNER JOIN office_positions op ON op.position_id_fk = pp._id 
-       INNER JOIN office o ON o._id = op.office_id_fk 
-     WHERE pp.position_title='Assistant General Manager' AND o.name='Office of the Assistant General Manager for Administration' AND emp._id NOT IN (SELECT employee_id_fk FROM users INNER JOIN employees ON employees._id = users.employee_id_fk) 
-     ORDER BY get_employee_fullname2(emp._id) ASC)) as assignable ORDER BY assignable.fullName ASC;
-      `);
+      const assignables = await this.entityRepository.query(
+        `
+         SELECT 
+            emp._id employeeId, 
+            get_employee_fullname2(emp._id) fullName,
+            pp.position_title positionTitle
+                FROM employees emp 
+           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+         AND emp._id 
+         NOT IN (
+        SELECT employee_id_fk FROM users 
+            INNER JOIN employees ON employees._id = users.employee_id_fk
+            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
+            INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE m.app = 'ems'
+         ) 
+         ORDER BY get_employee_fullname2(emp._id) ASC;
+      `,
+      );
+      const result = await Promise.all(
+        assignables.map(async (assignable) => {
+          const { employeeId, fullName, positionTitle } = assignable;
+          return {
+            label: fullName,
+            value: {
+              employeeId,
+              fullName,
+              positionTitle,
+            },
+          };
+        }),
+      );
+      return result;
+    } catch (error) {
+      throw new HttpException(error.response, error.status);
+    }
+  }
+
+  async getAssignableHRMSUsers(app: string) {
+    try {
+      const assignables = await this.entityRepository.query(
+        `
+      SELECT assignable.employeeId employeeId,assignable.fullName fullName, assignable.positionTitle positionTitle
+      FROM 
+      ((SELECT 
+            emp._id employeeId, 
+            get_employee_fullname2(emp._id) fullName,
+            pp.position_title positionTitle
+                FROM employees emp 
+           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+           INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
+           INNER JOIN divisions d ON d._id= dp.division_id_fk 
+           INNER JOIN departments dep ON dep._id = d.department_id_fk 
+         WHERE dep.name='Human Resource Department' 
+         AND emp._id NOT IN 
+         (SELECT employee_id_fk FROM users 
+            INNER JOIN employees ON employees._id = users.employee_id_fk
+            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
+            INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE m.app = ?) 
+         ORDER BY get_employee_fullname2(emp._id) ASC)
+         UNION
+         (SELECT 
+            emp._id employeeId, 
+            get_employee_fullname2(emp._id) fullName,
+            pp.position_title positionTitle
+                FROM employees emp 
+           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+           INNER JOIN department_positions dp ON dp.position_id_fk = pp._id 
+           INNER JOIN departments dep ON dep._id = dp.department_id_fk 
+         WHERE dep.name='Human Resource Department' 
+         AND emp._id 
+         NOT IN (
+         SELECT employee_id_fk FROM users 
+            INNER JOIN employees ON employees._id = users.employee_id_fk
+            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
+            INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE m.app = ?
+       ) 
+         ORDER BY get_employee_fullname2(emp._id) ASC)
+         UNION 
+         (
+         SELECT 
+            emp._id employeeId, 
+            get_employee_fullname2(emp._id) fullName,
+            pp.position_title positionTitle
+                FROM employees emp 
+           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+           INNER JOIN office_positions op ON op.position_id_fk = pp._id 
+           INNER JOIN office o ON o._id = op.office_id_fk 
+         WHERE pp.position_title='Assistant General Manager' AND o.name='Office of the Assistant General Manager for Administration' 
+         AND emp._id 
+         NOT IN (
+        SELECT employee_id_fk FROM users 
+            INNER JOIN employees ON employees._id = users.employee_id_fk
+            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
+            INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE m.app = ?
+         ) 
+         ORDER BY get_employee_fullname2(emp._id) ASC)) as assignable ORDER BY assignable.fullName ASC;
+      `,
+        [app, app, app],
+      );
       const result = await Promise.all(
         assignables.map(async (assignable) => {
           const { employeeId, fullName, positionTitle } = assignable;
@@ -95,6 +162,24 @@ export class UsersService extends BaseEntityCrudService<Users> {
     } catch (error) {
       throw new HttpException(error.response, error.status);
     }
+  }
+
+  async getHRMSUsersByApp(app: string) {
+    //
+    try {
+      return await this.entityRepository.query(
+        `
+        SELECT distinct employee_id_fk employeeId,get_employee_fullname2(employee_id_fk) fullName 
+          FROM users u 
+          INNER JOIN employees emp ON emp._id = u.employee_id_fk 
+          INNER JOIN user_roles ur ON emp._id =  ur.user_id_fk 
+          INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE m.app = ? 
+        ORDER BY get_employee_fullname2(employee_id_fk) ASC
+       ;`,
+        [app],
+      );
+    } catch (error) {}
   }
 
   async asyncGetSuperUserAccess() {

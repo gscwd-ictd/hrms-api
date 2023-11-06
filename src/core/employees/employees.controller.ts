@@ -49,6 +49,21 @@ export class EmployeesController {
     return await this.employeesService.findEntityAll();
   }
 
+  @MessagePattern('get_employees_by_org_id')
+  async getEmployeesByOrgId(@Payload() orgId: string) {
+    return await this.employeesService.getEmployeesByOrgId(orgId);
+  }
+
+  @MessagePattern('get_employees_by_org_id_alone')
+  async getEmployeesByOrgIdAloneMS(orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+  }
+
+  @Get('/:organization_id/list/')
+  async getEmployeesByOrgIdAlone(@Param('organization_id') orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+  }
+
   @MessagePattern({ msg: 'find_employee' })
   async getEmployeeById(@Payload() _id: string) {
     try {
@@ -63,6 +78,7 @@ export class EmployeesController {
     try {
       return await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId);
     } catch (error) {
+      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -79,6 +95,7 @@ export class EmployeesController {
   @MessagePattern({ msg: 'get_employee_name' })
   async getEmployeeNameById(_id: string) {
     try {
+      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
       throw new RpcException('Employee not found');
@@ -97,8 +114,10 @@ export class EmployeesController {
   @MessagePattern('get_employee_name')
   async getEmployeeNameByIdEmpMonitoring(@Payload() _id: string) {
     try {
+      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
+      console.log('asd');
       throw new RpcException('Employee not found');
     }
   }
@@ -133,6 +152,11 @@ export class EmployeesController {
     return await this.employeesService.getAllEmployees();
   }
 
+  @Get('/options/')
+  async getAllPermanentCasualEmployees() {
+    return await this.employeesService.getAllPermanentCasualEmployees();
+  }
+
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisor(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeSupervisor(employeeId);
@@ -152,22 +176,22 @@ export class EmployeesController {
     }
   }
 
-  // @MessagePattern('get_employees_for_population')
-  // async getEmployeeWithCredentials() {
-  //   try {
-  //     return await this.employeesService.entityRepository.query(`
-  //     SELECT employees._id employeeId,company_id companyId,first_name firstName,middle_name middleName,last_name lastName,name_extension nameExt, get_employee_position(employees._id) positionTitle,
-  //     REPLACE(CONCAT(REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(LOWER(REPLACE(last_name,' ','')),'\\'',''),REPLACE(LOWER(name_extension),'.',''),'@gscwd.com'),'-','') email, CONCAT('@',REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(company_id,'-','')) \`password\`
-  //     FROM employees INNER JOIN plantilla_positions pp ON pp.employee_id_fk = employees._id  WHERE employees.company_id IN ('2014-003','2017-002','2017-049') AND employees.company_id IS NOT NULL ORDER BY last_name ASC;
-  //         `);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+  @MessagePattern('get_employees_for_population')
+  async getEmployeeWithCredentials() {
+    try {
+      return await this.employeesService.entityRepository.query(`
+      SELECT employees._id employeeId,company_id companyId,first_name firstName,middle_name middleName,last_name lastName,name_extension nameExt, get_employee_position(employees._id) positionTitle,
+      REPLACE(CONCAT(REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(LOWER(REPLACE(last_name,' ','')),'\\'',''),REPLACE(LOWER(name_extension),'.',''),'@gscwd.com'),'-','') email, CONCAT('@',REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(company_id,'-','')) \`password\`
+      FROM employees INNER JOIN plantilla_positions pp ON pp.employee_id_fk = employees._id WHERE DATE_FORMAT(employees.created_at,'%Y-%m-%d') =  DATE_FORMAT(now(),'%Y-%m-%d')  AND employees.company_id IS NOT NULL ORDER BY last_name ASC;
+          `);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   @MessagePattern('get_employee_details_by_company_id')
   async getEmployeeDetailsByCompanyIdMS(@Payload() companyId: string) {
-    return await this.employeesService.getEmployeeDetailByCompanyId(companyId);
+    return await this.employeesService.getEmployeeDetailByCompanyIdMS(companyId);
   }
 
   @MessagePattern('get_custom_group_assigned_member')

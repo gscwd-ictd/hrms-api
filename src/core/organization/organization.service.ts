@@ -224,6 +224,35 @@ export class OrganizationService {
     } catch (error) {}
   }
 
+  async getAllOrgStructsLabelValue() {
+    try {
+      const offices = await this.officeService.entityRepository
+        .createQueryBuilder('off')
+        .select('off._id', 'value')
+        .addSelect(`concat(off.code,' - ',off.name)`, 'label')
+        .orderBy(`concat(off.code,' - ',off.name)`, 'ASC')
+        .getRawMany();
+      const departments = await this.departmentService.entityRepository
+        .createQueryBuilder('dept')
+        .select('dept._id', 'value')
+        .addSelect(`CONCAT(dept.code,' - ',dept.name)`, 'label')
+        //.addSelect('dept.office_id_fk', 'officeId')
+        .innerJoin('office', 'off', 'off._id = dept.office_id_fk')
+        .orderBy(`CONCAT(dept.code,' - ',dept.name)`, 'ASC')
+        .getRawMany();
+      const divisions = await this.divisionService.entityRepository
+        .createQueryBuilder('div')
+        .select('div._id', 'value')
+        .addSelect(`concat(div.code,' - ',div.name)`, `label`)
+        //.addSelect('div.department_id_fk','departmentId')
+        .innerJoin('departments', 'dept', 'dept._id = div.department_id_fk')
+        .orderBy(`concat(div.code,' - ',div.name)`, 'ASC')
+        .getRawMany();
+
+      return [...offices, ...departments, ...divisions];
+    } catch (error) {}
+  }
+
   async getAllOrgStructsMixed() {
     return await this.officeService.entityRepository.query(`SELECT _id, name FROM org_struct_view ORDER BY name ASC`);
   }

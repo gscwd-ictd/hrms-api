@@ -33,7 +33,7 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
     try {
       const { employeeId, userRoles } = userRolesAddUpdateDTO;
 
-      const user = await this.usersService.saveEntity({ _id: employeeId, employeeId, photoUrl: 'http://192.168.99.124/images/tony.jpg' });
+      const user = await this.usersService.saveEntity({ _id: employeeId, employeeId, photoUrl: null });
       console.log(user);
       const result = await Promise.all(
         userRoles.map(async (userRole) => {
@@ -47,18 +47,8 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
     }
   }
 
-  async getUserRoleByUserId(userId: string) {
+  async getUserRoleByUserId(userId: string, app: string) {
     try {
-      // const userInfo = (
-      //   await this.entityRepository.query(
-      //     `
-      // SELECT get_employee_fullname2(?) fullName,
-      // get_employee_assignment(?) assignment,
-      // get_employee_position(?) position FROM users`,
-      //     [userId, userId, userId],
-      //   )
-      // )[0];
-
       const userRoles = await this.entityRepository.query(
         `
       SELECT 
@@ -69,9 +59,9 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
         m.slug
           FROM user_roles ur 
           INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE ur.user_id_fk = ?;
+        WHERE ur.user_id_fk = ? AND m.app = ?;
       `,
-        [userId],
+        [userId, app],
       );
       console.log(userRoles);
       return userRoles;

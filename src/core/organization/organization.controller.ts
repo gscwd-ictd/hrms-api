@@ -11,6 +11,11 @@ export class OrganizationController {
     return await this.organizationService.getAllOrgStructs();
   }
 
+  @Get('/dropdown/')
+  async getAllOrgStructsLabelValue() {
+    return await this.organizationService.getAllOrgStructsLabelValue();
+  }
+
   @Get('mixed')
   async getAllOrgStructsMixed() {
     return await this.organizationService.getAllOrgStructsMixed();
@@ -42,7 +47,6 @@ export class OrganizationController {
   async getPositionByOfficeIdandPositionId(@Param('id') officeId: string, @Param('position_id') positionId: string) {
     return await this.organizationService.getPositionsPerOffice(officeId, positionId);
   }
-
   //#endregion office
 
   //#region Department

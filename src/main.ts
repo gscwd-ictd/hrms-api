@@ -1,4 +1,4 @@
-import { ParseUUIDPipe, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -29,27 +29,20 @@ const whitelist = [
   'http://172.20.10.60:3002',
   'http://172.20.110.45:5286',
   'http://172.20.10.56:3000',
+  'http://172.20.10.63:3001',
   'http://localhost:3000',
 ];
 
-let redisClient = redis.createClient({
+const redisClient = redis.createClient({
   url: `redis://${process.env.MS_HOST_LOCAL}:6479`,
 });
+console.log('-----------', redisClient);
 //redisClient.get
 // let RedisStore = require('connect-redis')(session);
 const Redis = connectRedis(session);
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-  const ms = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.REDIS,
-    options: {
-      url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
-    },
-  });
-
-  app.startAllMicroservices();
 
   app.use(
     '/',
@@ -72,6 +65,14 @@ async function bootstrap() {
     }),
   );
 
+  const ms = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.REDIS,
+    options: {
+      url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
+    },
+  });
+
+  app.startAllMicroservices();
   app.set('trust proxy', 1);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   //app.useGlobalPipes(new ParseUUIDPipe());

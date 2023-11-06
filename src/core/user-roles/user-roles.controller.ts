@@ -3,6 +3,7 @@ import { UserLogsInterceptor } from './../../global/user-logs/interceptors/user-
 import { UserRolesDTO, UserRolesAddUpdateDTO } from './data/user-roles.dto';
 import { UserRolesService } from './user-roles.service';
 import { Body, Controller, Delete, Param, Post, Put, Get, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 //@UseGuards(AuthenticatedGuard)
 @Controller('user-roles')
@@ -11,7 +12,7 @@ export class UserRolesController {
 
   @Get(':user_id')
   async getUserRolesByUserId(@Param('user_id') userId: string) {
-    return await this.userRolesService.getUserRoleByUserId(userId);
+    return await this.userRolesService.getUserRoleByUserId(userId, 'rsp');
   }
 
   //@UseInterceptors(UserLogsInterceptor)
@@ -30,5 +31,27 @@ export class UserRolesController {
   @Patch()
   async updateUserRoles(@Body() userRoleUpdateDTO: UserRolesAddUpdateDTO) {
     return await this.userRolesService.updateUserRoles(userRoleUpdateDTO);
+  }
+
+  @MessagePattern('add_user_roles')
+  async addUserRolesMS(@Payload() userRolesAddUpdateDTO: UserRolesAddUpdateDTO) {
+    //assumed module dropdown are filtered by app;
+    return await this.userRolesService.addUserRole(userRolesAddUpdateDTO);
+  }
+
+  @MessagePattern('get_user_roles_by_id_and_app')
+  async getUserRolesByIdMs(@Payload() data: { userId: string; app: string }) {
+    const { app, userId } = data;
+    return await this.userRolesService.getUserRoleByUserId(userId, app);
+  }
+
+  @MessagePattern('update_user_roles')
+  async updateUserRolesMS(@Payload() userRoleUpdateDTO: UserRolesAddUpdateDTO) {
+    return await this.userRolesService.updateUserRoles(userRoleUpdateDTO);
+  }
+
+  @MessagePattern('delete_user_role_id')
+  async deleteUserRolesMs(@Payload() userId: string) {
+    return await this.userRolesService.deleteUserAndRoles(userId);
   }
 }

@@ -13,7 +13,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       entities: typeormEntities,
-      logging: true,
+      logging: false,
       synchronize: true,
       charset: 'utf8mb4_0900_ai_ci',
     };

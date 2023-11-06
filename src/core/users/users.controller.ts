@@ -5,6 +5,7 @@ import { UsersService } from './services/users.service';
 import { SuperUser } from './utils/decorators/super-user.decorator';
 import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated.guard';
 import { User } from './utils/decorators/user.decorator';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('users')
 export class UsersController {
@@ -31,6 +32,22 @@ export class UsersController {
 
   @Get('/assignable')
   async getAssignableHRMSUsers() {
-    return await this.userService.getAssignableHRMSUsers();
+    return await this.userService.getAssignableHRMSUsers('rsp');
+  }
+
+  @MessagePattern('get_assignable_hrms_users')
+  async getAssignableHRMSUsersMs(@Payload() app: string) {
+    return await this.userService.getAssignableHRMSUsers(app);
+  }
+
+  @MessagePattern('get_hrms_users_by_app')
+  async getHRMSUsersByApp(@Payload() app: string) {
+    const result = await this.userService.getHRMSUsersByApp(app);
+    return result;
+  }
+
+  @MessagePattern('get_assignable_ems_users')
+  async getAssignableEmsUsers() {
+    return await this.userService.getAssignableEMSUsers();
   }
 }

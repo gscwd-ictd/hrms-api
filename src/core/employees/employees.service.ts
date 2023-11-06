@@ -53,15 +53,22 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
     const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+    const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', _id));
+
     return {
       userId,
       ...employeePortalDetails,
       companyId,
       fullName,
       isHRMPSB,
+      overtimeImmediateSupervisorId,
       assignment: { id, name, positionId, positionTitle },
       userRole,
     };
+  }
+
+  async getEmployeesByOrgId(orgId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
   }
 
   async getEmployeeByIdForLND(employeeId: string) {
@@ -90,23 +97,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       divisionId: string;
       divisionName: string;
     };
-    const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
+    const { departmentName, divisionName, officeName } = orgStruct;
     //console.log(employeePortalDetails);
     return {
-      employeeId,
+      id: employeeId,
       companyId,
       fullName: employeeFullName,
       avatar: employeePortalDetails.photoUrl,
-      assignment: {
-        divisionId,
-        divisionName,
-        departmentId,
-        departmentName,
-        officeId,
-        officeName,
-        positionId,
-        positionTitle,
-      },
+      email: employeePortalDetails.emailAddress,
+      division: divisionName,
+      department: departmentName,
+      office: officeName,
+      positionTitle,
     };
   }
 
@@ -138,23 +140,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           divisionId: string;
           divisionName: string;
         };
-        const { departmentId, departmentName, divisionId, divisionName, officeId, officeName } = orgStruct;
-        //console.log(employeePortalDetails);
+        const { departmentName, divisionName, officeName } = orgStruct;
+
         return {
-          employeeId,
+          id: employeeId,
           companyId,
           fullName: employeeFullName,
           avatar: employeePortalDetails.photoUrl,
-          assignment: {
-            divisionId,
-            divisionName,
-            departmentId,
-            departmentName,
-            officeId,
-            officeName,
-            positionId,
-            positionTitle,
-          },
+          email: employeePortalDetails.emailAddress,
+          division: divisionName,
+          department: departmentName,
+          office: officeName,
+          positionTitle,
         };
       }),
     );
@@ -167,57 +164,100 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .createQueryBuilder('emp')
       .select('emp._id', 'userId')
       .addSelect('emp.company_id', 'companyId')
-      .addSelect('pp.position_title', 'positionTitle')
-      .addSelect('pp._id', 'positionId')
-      .addSelect('get_employee_assignment_id(emp._id)', 'id')
-      .addSelect('get_employee_assignment(emp._id)', 'name')
+      .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+      .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+      .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+      .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+      .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
       .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
       .addSelect('get_user_role(emp._id)', 'userRole')
-      //.addSelect('emp.photo_url')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :employeeId', { employeeId })
       .getRawOne();
-    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
 
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
-
+    //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
     return {
       userId,
       companyId,
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
+      //overtimeImmediateSupervisorId,
+      isHRMPSB,
       assignment: { id, name, positionId, positionTitle },
       userRole,
     };
   }
 
+  async getEmployeesByOrgIdAlone(orgId: string) {
+    return (await this.entityRepository.query(`CALL get_employees_by_org(?);`, [orgId]))[0];
+  }
+
   async getEmployeeDetailByCompanyId(_companyId: string) {
-    const empPosition = await this.employeeRepository
-      .createQueryBuilder('emp')
-      .select('emp._id', 'userId')
-      .addSelect('emp.company_id', 'companyId')
-      .addSelect('pp.position_title', 'positionTitle')
-      .addSelect('pp._id', 'positionId')
-      .addSelect('get_employee_assignment_id(emp._id)', 'id')
-      .addSelect('get_employee_assignment(emp._id)', 'name')
-      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
-      .addSelect('get_user_role(emp._id)', 'userRole')
-      //.addSelect('emp.photo_url')
-      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
-      .where('emp.company_id = :_companyId', { _companyId })
-      .getRawOne();
-    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        //.addSelect('emp.photo_url')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp.company_id = :_companyId', { _companyId })
+        .getRawOne();
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
 
-    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+      const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
 
-    return {
-      userId,
-      companyId,
-      employeeFullName,
-      photoUrl: employeePortalDetails.photoUrl,
-      assignment: { id, name, positionId, positionTitle },
-      userRole,
-    };
+      return {
+        userId,
+        companyId,
+        employeeFullName,
+        photoUrl: employeePortalDetails.photoUrl,
+        assignment: { id, name, positionId, positionTitle },
+        userRole,
+      };
+    } catch (error) {
+      console.log(error);
+      //throw new RpcException(error);
+    }
+  }
+
+  async getEmployeeDetailByCompanyIdMS(_companyId: string) {
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp.company_id = :_companyId', { _companyId })
+        .getRawOne();
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
+
+      const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+
+      return {
+        userId,
+        companyId,
+        employeeFullName,
+        photoUrl: employeePortalDetails.photoUrl,
+        assignment: { id, name, positionId, positionTitle },
+        userRole,
+      };
+    } catch (error) {
+      throw new RpcException('Employee not found. but not sure. ');
+    }
   }
 
   async getCustomGroupsUnassignedMember(employeeIds: string[]) {
@@ -366,6 +406,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       }),
     );
     return _empPositions;
+  }
+
+  async getAllPermanentCasualEmployees() {
+    return await this.entityRepository.query(
+      `SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname(emp._id) ASC;`,
+    );
   }
 
   async findEmailAddress(email: string) {
