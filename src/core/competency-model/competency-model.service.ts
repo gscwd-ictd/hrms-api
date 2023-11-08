@@ -47,9 +47,9 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
 
   async updateCompetencyAndProficiency(data: UpdateCompetencyDto) {
     try {
-      const { competencyId, code, name, desc } = data;
+      const { competencyId, code, name, definition } = data;
 
-      await this.competencyModelRepository.createQueryBuilder().update().set({ code, name, definition: desc }).where({ _id: competencyId }).execute();
+      await this.competencyModelRepository.createQueryBuilder().update().set({ code, name, definition }).where({ _id: competencyId }).execute();
       await Promise.all(
         data.proficiencyKeyActions.map(async (proficiencyItem) => {
           const { _id, keyActions } = proficiencyItem;

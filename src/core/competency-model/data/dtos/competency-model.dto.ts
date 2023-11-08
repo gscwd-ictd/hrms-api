@@ -6,12 +6,13 @@ export class CompetencyDto {
   code: string;
   name: string;
   definition: string;
+  proficiencyKeyActions: UpdateProficiencyDto[];
 }
 
 export class UpdateCompetencyDto {
   competencyId: string;
   code: string;
   name: string;
-  desc: string;
+  definition: string;
   proficiencyKeyActions: UpdateProficiencyDto[];
 }
