@@ -3,7 +3,7 @@ import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated.guard';
 import { CompetencyModelService } from './competency-model.service';
 import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
 
-@UseGuards(AuthenticatedGuard)
+//@UseGuards(AuthenticatedGuard)
 @Controller('competency-model')
 export class CompetencyModelController {
   constructor(private readonly competencyModelService: CompetencyModelService) {}
