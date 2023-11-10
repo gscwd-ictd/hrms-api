@@ -1,8 +1,9 @@
 import { CompetencyModel } from 'src/core/competency-model/data/entities/competency-model.entity';
+import { ProficiencyLevel } from '../../utils/enum/proficiency.enum';
 
 export class ProficiencyDto {
   competencyId: CompetencyModel;
-  level: string;
+  level: ProficiencyLevel;
   keyActions: string;
 }
 
