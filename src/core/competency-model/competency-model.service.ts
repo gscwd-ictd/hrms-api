@@ -1,12 +1,12 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
-import { Repository } from 'typeorm';
+import { Repository, getManager } from 'typeorm';
 import { CompetencyModelView } from './data/entities/views/competency-model-view.entity';
 import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
 import { CompetencyModel } from './data/entities/competency-model.entity';
-import { ProficiencyDto } from '../proficiency/data/dtos/proficiency.dto';
 import { ProficiencyService } from '../proficiency/proficiency.service';
+import { Proficiency } from '../proficiency/data/entities/proficiency.entity';
 
 @Injectable()
 export class CompetencyModelService extends BaseEntityCrudService<CompetencyModel> {
@@ -22,14 +22,20 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
 
   async createCompetency(competencyObj: CompetencyDto) {
     try {
-      const { _id } = await this.saveEntity(competencyObj);
+      const { proficiencyKeyActions, ...rest } = competencyObj;
+      const result = await getManager().transaction(async (transactionEntityManager) => {
+        const competencyId = await transactionEntityManager.getRepository(CompetencyModel).save(rest);
 
-      const proficiency = new ProficiencyDto();
+        await Promise.all(
+          proficiencyKeyActions.map(async (proficiencyKeyActionsItem) => {
+            return await transactionEntityManager.getRepository(Proficiency).save({ competencyId, ...proficiencyKeyActionsItem });
+          }),
+        );
 
-      await this.proficiencyService.saveEntity({ ...proficiency, _id, level: 'BASIC' });
-      await this.proficiencyService.saveEntity({ ...proficiency, _id, level: 'INTERMEDIATE' });
-      await this.proficiencyService.saveEntity({ ...proficiency, _id, level: 'ADVANCED' });
-      await this.proficiencyService.saveEntity({ ...proficiency, _id, level: 'SUPERIOR' });
+        return competencyObj;
+      });
+
+      return result;
     } catch (error) {}
   }
 
