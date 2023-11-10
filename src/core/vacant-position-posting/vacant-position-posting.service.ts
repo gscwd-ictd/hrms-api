@@ -293,8 +293,8 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
           }),
         );
 
-        let nullPsbs = [];
-        for (var i = 0; i < nullValuedPSBMembers; i++) {
+        const nullPsbs = [];
+        for (let i = 0; i < nullValuedPSBMembers; i++) {
           //1. query vacant psbNos on the posting
           const psbNo = (await this.entityRepository.query('SELECT generate_available_psb_no(?,?) psbNo;', [_id, totalRequiredPSBMembers]))[0].psbNo;
           nullPsbs.push(

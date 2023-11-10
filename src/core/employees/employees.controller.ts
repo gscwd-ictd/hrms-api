@@ -223,4 +223,14 @@ export class EmployeesController {
   async getEmployeeDetails(@Param('id') _id: string) {
     return await this.employeesService.getEmployeeDetails(_id);
   }
+
+  @MessagePattern('get_monthly_hourly_rate_by_employee_id')
+  async getMonthHourlyRateByEmployeeId(@Payload() employeeId: string) {
+    return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
+  }
+
+  @MessagePattern('get_employee_nature_of_appointment')
+  async getEmployeeNatureOfAppointment(@Payload() employeeId: string) {
+    return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
+  }
 }

@@ -399,8 +399,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     const _empPositions = await Promise.all(
       empPositions.map(async (empPosition) => {
         const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+        let avatarUrl = null;
+        try {
+          const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+          const { photoUrl } = employeePortalDetails;
+          avatarUrl = photoUrl;
+        } catch {
+          avatarUrl = null;
+        }
         return {
-          employmentDetails: { employeeId, userId, companyId, positionTitle, assignment: { id, name }, positionId, natureOfAppointment },
+          employmentDetails: { employeeId, userId, companyId, positionTitle, assignment: { id, name }, positionId, natureOfAppointment, avatarUrl },
           personalDetails: { fullName, firstName, middleName, lastName, nameExt },
         };
       }),
@@ -534,6 +542,40 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       return employeeIds;
     } catch (error) {
       throw new RpcException(error);
+    }
+  }
+
+  async getMonthHourlyRateByEmployeeId(employeeId: string) {
+    try {
+      const monthlyRate = await this.entityRepository.query(
+        `
+        SELECT amount 
+        FROM salary_grade sg 
+          INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
+          INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
+        [employeeId],
+      );
+      const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
+      return { monthlyRate: monthlyRate[0].amount, hourlyRate };
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+  }
+
+  async getEmployeeNatureOfAppointment(employeeId: string) {
+    try {
+      console.log('asd asd asd');
+      return (
+        await this.entityRepository.query(
+          `
+      SELECT DISTINCT pp.nature_of_appointment natureOfAppointment 
+        FROM plantilla_positions pp 
+      WHERE pp.employee_id_fk = ?;`,
+          [employeeId],
+        )
+      )[0].natureOfAppointment;
+    } catch (error) {
+      throw new RpcException(error.message);
     }
   }
 
