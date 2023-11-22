@@ -54,6 +54,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
     const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', _id));
+    const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+    const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', _id));
 
     return {
       userId,
@@ -61,14 +63,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       companyId,
       fullName,
       isHRMPSB,
+      scheduleBase: employeeSchedule.schedule.scheduleBase,
       overtimeImmediateSupervisorId,
-      assignment: { id, name, positionId, positionTitle },
+      assignment: { id, name, officeName, divisionName, departmentName, positionId, positionTitle },
       userRole,
     };
   }
 
   async getEmployeesByOrgId(orgId: string) {
-    return (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
+    const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
+    console.log(employees);
+    return employees;
   }
 
   async getEmployeeByIdForLND(employeeId: string) {
@@ -400,6 +405,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       empPositions.map(async (empPosition) => {
         const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
         let avatarUrl = null;
+        const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+        const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+
         try {
           const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
           const { photoUrl } = employeePortalDetails;
@@ -408,7 +417,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           avatarUrl = null;
         }
         return {
-          employmentDetails: { employeeId, userId, companyId, positionTitle, assignment: { id, name }, positionId, natureOfAppointment, avatarUrl },
+          employmentDetails: {
+            employeeId,
+            userId,
+            companyId,
+            positionTitle,
+            assignment: { id, name, divisionName, departmentName, officeName },
+            positionId,
+            scheduleBase: employeeSchedule.schedule.scheduleBase,
+            natureOfAppointment,
+            avatarUrl,
+          },
           personalDetails: { fullName, firstName, middleName, lastName, nameExt },
         };
       }),

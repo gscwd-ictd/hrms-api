@@ -29,6 +29,11 @@ export class EmployeeTagsController {
     //return await this.employeeTagsService.getEmployeeByTagId(tagId);
   }
 
+  @MessagePattern('get_employees_by_tag_ids')
+  async getEmployeesByTagIds(@Payload() tagIds: string[]) {
+    return await this.employeeTagsService.getSupervisorByEmployeeTagsV2(tagIds);
+  }
+
   @MessagePattern('delete_employee_tags')
   async deleteEmployeeTag(@Payload() data: DeleteEmployeeTagDto) {
     return await this.employeeTagsService.deleteEmployeeTag(data);

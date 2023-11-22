@@ -157,6 +157,11 @@ export class EmployeesController {
     return await this.employeesService.getAllPermanentCasualEmployees();
   }
 
+  @MessagePattern('get_all_permanent_casual_employees')
+  async getAllPermanentCasualEmployeesMS() {
+    return await this.employeesService.getAllPermanentCasualEmployees();
+  }
+
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisor(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeSupervisor(employeeId);
@@ -164,6 +169,11 @@ export class EmployeesController {
 
   @Get('/:employee_id/company-id')
   async getCompanyIdByEmployeeId(@Param('employee_id') employeeId: string) {
+    return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
+  }
+
+  @MessagePattern('get_company_id_by_employee_id')
+  async getCompanyIdByEmployeeIdMs(@Payload() employeeId: string) {
     return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
   }
 
