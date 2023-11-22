@@ -157,6 +157,11 @@ export class EmployeesController {
     return await this.employeesService.getAllPermanentCasualEmployees();
   }
 
+  @MessagePattern('get_all_permanent_casual_employees')
+  async getAllPermanentCasualEmployeesMS() {
+    return await this.employeesService.getAllPermanentCasualEmployees();
+  }
+
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisor(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeSupervisor(employeeId);
@@ -164,6 +169,11 @@ export class EmployeesController {
 
   @Get('/:employee_id/company-id')
   async getCompanyIdByEmployeeId(@Param('employee_id') employeeId: string) {
+    return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
+  }
+
+  @MessagePattern('get_company_id_by_employee_id')
+  async getCompanyIdByEmployeeIdMs(@Payload() employeeId: string) {
     return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
   }
 
@@ -222,5 +232,15 @@ export class EmployeesController {
   @Get(':id/test/test')
   async getEmployeeDetails(@Param('id') _id: string) {
     return await this.employeesService.getEmployeeDetails(_id);
+  }
+
+  @MessagePattern('get_monthly_hourly_rate_by_employee_id')
+  async getMonthHourlyRateByEmployeeId(@Payload() employeeId: string) {
+    return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
+  }
+
+  @MessagePattern('get_employee_nature_of_appointment')
+  async getEmployeeNatureOfAppointment(@Payload() employeeId: string) {
+    return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
   }
 }

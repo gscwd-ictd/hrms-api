@@ -54,6 +54,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
     const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', _id));
+    const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+    const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', _id));
 
     return {
       userId,
@@ -61,14 +63,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       companyId,
       fullName,
       isHRMPSB,
+      scheduleBase: employeeSchedule.schedule.scheduleBase,
       overtimeImmediateSupervisorId,
-      assignment: { id, name, positionId, positionTitle },
+      assignment: { id, name, officeName, divisionName, departmentName, positionId, positionTitle },
       userRole,
     };
   }
 
   async getEmployeesByOrgId(orgId: string) {
-    return (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
+    const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
+    console.log(employees);
+    return employees;
   }
 
   async getEmployeeByIdForLND(employeeId: string) {
@@ -399,8 +404,30 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     const _empPositions = await Promise.all(
       empPositions.map(async (empPosition) => {
         const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+        let avatarUrl = null;
+        const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+        const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+
+        try {
+          const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+          const { photoUrl } = employeePortalDetails;
+          avatarUrl = photoUrl;
+        } catch {
+          avatarUrl = null;
+        }
         return {
-          employmentDetails: { employeeId, userId, companyId, positionTitle, assignment: { id, name }, positionId, natureOfAppointment },
+          employmentDetails: {
+            employeeId,
+            userId,
+            companyId,
+            positionTitle,
+            assignment: { id, name, divisionName, departmentName, officeName },
+            positionId,
+            scheduleBase: employeeSchedule.schedule.scheduleBase,
+            natureOfAppointment,
+            avatarUrl,
+          },
           personalDetails: { fullName, firstName, middleName, lastName, nameExt },
         };
       }),
@@ -534,6 +561,40 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       return employeeIds;
     } catch (error) {
       throw new RpcException(error);
+    }
+  }
+
+  async getMonthHourlyRateByEmployeeId(employeeId: string) {
+    try {
+      const monthlyRate = await this.entityRepository.query(
+        `
+        SELECT amount 
+        FROM salary_grade sg 
+          INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
+          INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
+        [employeeId],
+      );
+      const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
+      return { monthlyRate: monthlyRate[0].amount, hourlyRate };
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+  }
+
+  async getEmployeeNatureOfAppointment(employeeId: string) {
+    try {
+      console.log('asd asd asd');
+      return (
+        await this.entityRepository.query(
+          `
+      SELECT DISTINCT pp.nature_of_appointment natureOfAppointment 
+        FROM plantilla_positions pp 
+      WHERE pp.employee_id_fk = ?;`,
+          [employeeId],
+        )
+      )[0].natureOfAppointment;
+    } catch (error) {
+      throw new RpcException(error.message);
     }
   }
 

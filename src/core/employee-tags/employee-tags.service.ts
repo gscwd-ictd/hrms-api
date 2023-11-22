@@ -35,6 +35,51 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
     }
   }
 
+  async getSupervisorByEmployeeTagsV2(tagIds: string[]) {
+    try {
+      //1. GET EMPLOYEE NAMES WITH TAGS
+      const supervisors = await this.entityRepository.query(
+        ` SELECT DISTINCT supervisorId,supervisorName FROM (SELECT distinct 
+          get_employee_assignment_or_oic(emp._id) assignmentName,
+          get_employee_position_or_oic(emp._id) positionTitle,
+          emp._id employeeId,
+          get_employee_fullname2(emp._id) employeeFullName, 
+          get_employee_supervisor(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+         INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo;
+        `,
+        [tagIds],
+      );
+      //console.log(employeesWithTags);
+      const employees = await Promise.all(
+        supervisors.map(async (supervisor) => {
+          const { supervisorId, supervisorName } = supervisor;
+          const employees = await this.entityRepository.query(
+            `
+         SELECT DISTINCT employeeId id,employeeFullName name,positionTitle FROM (SELECT distinct 
+          get_employee_assignment_or_oic(emp._id) assignmentName,
+          get_employee_position_or_oic(emp._id) positionTitle,
+          emp._id employeeId,
+          get_employee_fullname2(emp._id) employeeFullName, 
+          get_employee_supervisor(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+         INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo WHERE supervisorInfo.supervisorId = ?;
+         `,
+            [tagIds, supervisorId],
+          );
+
+          return { supervisor: { id: supervisorId, name: supervisorName }, employees };
+        }),
+      );
+      console.log(employees);
+      return employees;
+
+      //return employeesWithTags;
+    } catch (error) {
+      throw new RpcException(error);
+    }
+  }
+
   async getSupervisorByEmployeeTags(tagId: string) {
     try {
       //1. GET EMPLOYEE NAMES WITH TAGS
