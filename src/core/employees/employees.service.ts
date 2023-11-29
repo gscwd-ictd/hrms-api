@@ -441,6 +441,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllPermanentCasualEmployees2() {
+    return await this.entityRepository.query(
+      `SELECT get_employee_fullname2(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
+    );
+  }
+
   async findEmailAddress(email: string) {
     try {
       return await lastValueFrom(this.clientAuthn.send({ msg: 'find_user_email' }, email));

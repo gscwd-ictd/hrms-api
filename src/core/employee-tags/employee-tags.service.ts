@@ -56,7 +56,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
           const { supervisorId, supervisorName } = supervisor;
           const employees = await this.entityRepository.query(
             `
-         SELECT DISTINCT employeeId id,employeeFullName name,positionTitle FROM (SELECT distinct 
+         SELECT DISTINCT employeeId,employeeFullName name,positionTitle FROM (SELECT distinct 
           get_employee_assignment_or_oic(emp._id) assignmentName,
           get_employee_position_or_oic(emp._id) positionTitle,
           emp._id employeeId,
@@ -68,7 +68,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
             [tagIds, supervisorId],
           );
 
-          return { supervisor: { id: supervisorId, name: supervisorName }, employees };
+          return { supervisor: { supervisorId: supervisorId, name: supervisorName }, employees };
         }),
       );
       console.log(employees);
@@ -101,7 +101,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
           const { supervisorId, supervisorName } = supervisor;
           const employees = await this.entityRepository.query(
             `
-         SELECT DISTINCT employeeId,employeeFullName,positionTitle FROM (SELECT distinct 
+         SELECT DISTINCT employeeId,employeeFullName name,positionTitle FROM (SELECT distinct 
           get_employee_assignment_or_oic(emp._id) assignmentName,
           get_employee_position_or_oic(emp._id) positionTitle,
           emp._id employeeId,
@@ -112,7 +112,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
          `,
             [tagId, supervisorId],
           );
-          return { supervisor, employees };
+          return { supervisor: { supervisorId, name: supervisorName }, employees };
         }),
       );
       console.log(employees);

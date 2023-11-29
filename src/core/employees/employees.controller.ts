@@ -162,6 +162,11 @@ export class EmployeesController {
     return await this.employeesService.getAllPermanentCasualEmployees();
   }
 
+  @MessagePattern('get_all_permanent_casual_employees2')
+  async getAllPermanentCasualEmployees2MS() {
+    return await this.employeesService.getAllPermanentCasualEmployees2();
+  }
+
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisor(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeSupervisor(employeeId);
