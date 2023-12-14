@@ -231,11 +231,13 @@ export class UsersService extends BaseEntityCrudService<Users> {
         }),
       );
 
+      const photoUrl = await this.employeesService.getEmployeePhotoUrl(_id);
+
       const email = await this.employeesService.findEmailAddressById(_id);
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, email, ...userDetails, userAccess, isSuperUser: false };
+      return { ...user, photoUrl, email, ...userDetails, userAccess, isSuperUser: false };
     } catch (error) {
       console.log(error);
       handleRpcError(error);

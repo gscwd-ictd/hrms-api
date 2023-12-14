@@ -383,6 +383,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     `);
   }
 
+  async getEmployeePhotoUrl(employeeId: string) {
+    try {
+      const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+      const { photoUrl } = employeePortalDetails;
+      return photoUrl;
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
   async getAllEmployees() {
     const empPositions = await this.employeeRepository
       .createQueryBuilder('emp')
