@@ -181,6 +181,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .getRawOne();
     const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
 
+    const salaryGradeAmount = (await this.getMonthHourlyRateByEmployeeId(employeeId)).monthlyRate;
+
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
     //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
     return {
@@ -188,6 +190,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       companyId,
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
+      salaryGradeAmount,
       //overtimeImmediateSupervisorId,
       isHRMPSB,
       assignment: { id, name, positionId, positionTitle },
