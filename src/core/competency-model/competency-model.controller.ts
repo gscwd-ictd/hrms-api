@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated.guard';
 import { CompetencyModelService } from './competency-model.service';
 import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
@@ -62,7 +62,12 @@ export class CompetencyModelController {
 
   @Delete(':competency_id')
   deleteCompetency(@Param('competency_id') _id: string) {
-    return this.competencyModelService.removeEntity(_id);
+    try {
+      return this.competencyModelService.removeEntity(_id);
+    } catch (error) {
+      if ((error.code = 'ER_ROW_IS_REFERENCED_2')) throw new HttpException("Competency's Model already set.", HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException('Error', 500);
+    }
   }
 
   @Get('functions/d/:domain_id/:og_id')
