@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { lastValueFrom } from 'rxjs';
+import { isEmpty, lastValueFrom } from 'rxjs';
 import { EmailService } from 'src/global/auth/services/email.service';
 import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
@@ -180,8 +180,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .where('emp._id = :employeeId', { employeeId })
       .getRawOne();
     const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
-
-    const salaryGradeAmount = (await this.getMonthHourlyRateByEmployeeId(employeeId)).monthlyRate;
+    const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
+    const salaryGradeAmount = salaryGradeDetails.monthlyRate;
+    const salaryGrade = salaryGradeDetails.salaryGrade;
+    //console.log(salaryGradeAmount);
 
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
     //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
@@ -191,6 +193,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
       salaryGradeAmount,
+      salaryGrade,
       //overtimeImmediateSupervisorId,
       isHRMPSB,
       assignment: { id, name, positionId, positionTitle },
@@ -587,16 +590,19 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       const monthlyRate = await this.entityRepository.query(
         `
-        SELECT amount 
+        SELECT amount,concat(sg.salary_grade,'-',sg.step_increment) salaryGrade
         FROM salary_grade sg 
           INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
-      const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
-      return { monthlyRate: monthlyRate[0].amount, hourlyRate };
+      console.log('salary z: ', monthlyRate[0]);
+      if (typeof monthlyRate[0] !== 'undefined') {
+        const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
+        return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };
+      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
     } catch (error) {
-      throw new RpcException(error.message);
+      return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
     }
   }
 
