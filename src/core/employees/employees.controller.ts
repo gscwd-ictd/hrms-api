@@ -214,9 +214,14 @@ export class EmployeesController {
     return await this.employeesService.getCustomGroupsAssignedMember(employeeIds);
   }
 
-  @MessagePattern('get_custom_group_unassigned_member')
-  async getCustomGroupUnassignedMember(@Payload() employeeIds: string[]) {
-    return await this.employeesService.getCustomGroupsUnassignedMember(employeeIds);
+  @MessagePattern('get_custom_group_unassigned_rank_file_member')
+  async getCustomGroupUnassignedRankFileMember(@Payload() employeeIds: string[]) {
+    return await this.employeesService.getCustomGroupsUnassignedRankFileMember(employeeIds);
+  }
+
+  @MessagePattern('get_custom_group_unassigned_job_order_cos_member')
+  async getCustomGroupUnassignedJobOrderCOSMember(@Payload() employeeIds: string[]) {
+    return await this.employeesService.getCustomGroupsUnassignedJobOrderCOSMember(employeeIds);
   }
 
   @MessagePattern('get_all_managers')

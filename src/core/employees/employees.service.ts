@@ -271,7 +271,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
-  async getCustomGroupsUnassignedMember(employeeIds: string[]) {
+  async getCustomGroupsUnassignedJobOrderCOSMember(employeeIds: string[]) {
     let unassignedEmployees;
     if (employeeIds.length === 0) {
       unassignedEmployees = await this.entityRepository.query(
@@ -283,7 +283,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           pp.position_title positionTitle,
           get_employee_assignment(emp._id) assignment 
         FROM employees emp INNER JOIN plantilla_positions pp ON 
-        emp._id = pp.employee_id_fk  
+        emp._id = pp.employee_id_fk WHERE nature_of_appointment = 'contract of service' OR nature_of_appointment = 'job order' 
         ORDER BY get_employee_fullname2(emp._id) ASC
       `,
       );
@@ -297,7 +297,42 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         pp.position_title positionTitle,
         get_employee_assignment(emp._id) assignment 
       FROM employees emp INNER JOIN plantilla_positions pp ON 
-      emp._id = pp.employee_id_fk WHERE emp._id NOT IN (?) 
+      emp._id = pp.employee_id_fk WHERE emp._id NOT IN (?) AND (nature_of_appointment = 'contract of service' OR nature_of_appointment = 'job order') 
+      ORDER BY get_employee_fullname2(emp._id) ASC
+    `,
+        [employeeIds],
+      );
+
+    return unassignedEmployees;
+  }
+
+  async getCustomGroupsUnassignedRankFileMember(employeeIds: string[]) {
+    let unassignedEmployees;
+    if (employeeIds.length === 0) {
+      unassignedEmployees = await this.entityRepository.query(
+        `
+        SELECT 
+          emp._id employeeId,
+          emp.company_id companyId,
+          get_employee_fullname2(emp._id) fullName,
+          pp.position_title positionTitle,
+          get_employee_assignment(emp._id) assignment 
+        FROM employees emp INNER JOIN plantilla_positions pp ON 
+        emp._id = pp.employee_id_fk WHERE nature_of_appointment = 'casual' OR nature_of_appointment = 'permanent' 
+        ORDER BY get_employee_fullname2(emp._id) ASC
+      `,
+      );
+    } else
+      unassignedEmployees = await this.entityRepository.query(
+        `
+      SELECT 
+        emp._id employeeId,
+        emp.company_id companyId,
+        get_employee_fullname2(emp._id) fullName,
+        pp.position_title positionTitle,
+        get_employee_assignment(emp._id) assignment 
+      FROM employees emp INNER JOIN plantilla_positions pp ON 
+      emp._id = pp.employee_id_fk WHERE emp._id NOT IN (?) AND (nature_of_appointment = 'casual' OR nature_of_appointment = 'permanent') 
       ORDER BY get_employee_fullname2(emp._id) ASC
     `,
         [employeeIds],
@@ -599,10 +634,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       console.log('salary z: ', monthlyRate[0]);
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
-        return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };
-      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
+        return { monthlyRate: monthlyRate[0].amount, hourlyRate };
+      } else return { monthlyRate: null, hourlyRate: null };
     } catch (error) {
-      return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
+      return { monthlyRate: null, hourlyRate: null };
     }
   }
 

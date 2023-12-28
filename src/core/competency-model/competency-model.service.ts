@@ -104,7 +104,7 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
   }
 
   async getAllFunctionalCompetencyPerOccupation(occupationId: string) {
-    const occupationName = (await this.competencyModelRepository.query(`SELECT occupation_name AS occupationName FROM occupations WHERE  _ID = ?`, [occupationId]))[0]
+    const occupationName = (await this.competencyModelRepository.query(`SELECT occupation_name AS occupationName FROM occupations WHERE _ID = ?`, [occupationId]))[0]
       .occupationName;
 
     const competencies = await this.competencyModelRepository
