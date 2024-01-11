@@ -6,6 +6,10 @@ export class SalaryGradeDto {
   amount: number;
 }
 
+export class CreateSalaryGradeDto {
+  salaryGradeList: Array<SalaryGradeDto>;
+}
+
 export class SalaryGradeUpdateDTO {
   salaryGradeList: SalaryGradeType[];
 }

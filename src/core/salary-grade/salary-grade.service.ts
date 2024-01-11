@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SalaryGrade } from 'src/core/salary-grade/data/entities/salary-grade.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
+import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 
@@ -14,6 +14,18 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
     public readonly salaryGradeRepository: Repository<SalaryGrade>,
   ) {
     super(salaryGradeRepository);
+  }
+
+  async createSalaryGrade(dto: CreateSalaryGradeDto) {
+    const effectivityYear = new Date().getFullYear();
+    console.log(dto);
+    // return await Promise.all(
+    //   dto.salaryGradeList.map(async (salaryGradeItem) => {
+    //     const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
+    //     return await salaryGradeItem;
+    //     //return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
+    //   }),
+    // );
   }
 
   async updateSalaryGrade(salaryGradeUpdateDTO: SalaryGradeUpdateDTO) {

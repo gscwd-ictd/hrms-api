@@ -1,19 +1,19 @@
 import { UserLogsInterceptor } from './../../global/user-logs/interceptors/user-logs.interceptor';
 import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated2.guard';
 import { Body, Controller, Get, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
-import { SalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
+import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
 import { SalaryGradeService } from './salary-grade.service';
 import { GetSalaryGradeInterceptor } from './interceptors/get-salary-grade.interceptor';
 
-@UseGuards(AuthenticatedGuard)
-@UseInterceptors(UserLogsInterceptor)
+//@UseGuards(AuthenticatedGuard)
+//@UseInterceptors(UserLogsInterceptor)
 @Controller('salary-grade')
 export class SalaryGradeController {
   constructor(private readonly salaryGradeService: SalaryGradeService) {}
 
   @Post()
-  async createSalaryGrade(@Body() salaryGrade: SalaryGradeDto) {
-    return await this.salaryGradeService.saveEntity(salaryGrade);
+  async createSalaryGrade(@Body() salaryGrade: CreateSalaryGradeDto) {
+    return await this.salaryGradeService.createSalaryGrade(salaryGrade);
   }
 
   @Get('/step-increment/:step_increment')
