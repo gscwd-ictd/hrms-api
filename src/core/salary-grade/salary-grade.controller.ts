@@ -5,8 +5,8 @@ import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './da
 import { SalaryGradeService } from './salary-grade.service';
 import { GetSalaryGradeInterceptor } from './interceptors/get-salary-grade.interceptor';
 
-//@UseGuards(AuthenticatedGuard)
-//@UseInterceptors(UserLogsInterceptor)
+@UseGuards(AuthenticatedGuard)
+@UseInterceptors(UserLogsInterceptor)
 @Controller('salary-grade')
 export class SalaryGradeController {
   constructor(private readonly salaryGradeService: SalaryGradeService) {}

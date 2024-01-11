@@ -18,14 +18,12 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
 
   async createSalaryGrade(dto: CreateSalaryGradeDto) {
     const effectivityYear = new Date().getFullYear();
-    console.log(dto);
-    // return await Promise.all(
-    //   dto.salaryGradeList.map(async (salaryGradeItem) => {
-    //     const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
-    //     return await salaryGradeItem;
-    //     //return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
-    //   }),
-    // );
+    return await Promise.all(
+      dto.salaryGradeList.map(async (salaryGradeItem) => {
+        const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
+        return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
+      }),
+    );
   }
 
   async updateSalaryGrade(salaryGradeUpdateDTO: SalaryGradeUpdateDTO) {
