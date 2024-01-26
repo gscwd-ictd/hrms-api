@@ -5,8 +5,8 @@ import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './da
 import { SalaryGradeService } from './salary-grade.service';
 import { GetSalaryGradeInterceptor } from './interceptors/get-salary-grade.interceptor';
 
-@UseGuards(AuthenticatedGuard)
-@UseInterceptors(UserLogsInterceptor)
+//@UseGuards(AuthenticatedGuard)
+//@UseInterceptors(UserLogsInterceptor)
 @Controller('salary-grade')
 export class SalaryGradeController {
   constructor(private readonly salaryGradeService: SalaryGradeService) {}
@@ -34,6 +34,16 @@ export class SalaryGradeController {
   @Get()
   async findAllSalaryGrade() {
     return await this.salaryGradeService.getSalaryGradeTable();
+  }
+
+  @Get('current')
+  async getCurrentSalaryGradeTable() {
+    return await this.salaryGradeService.getCurrentSalaryGradeTable();
+  }
+
+  @Get('previous')
+  async getPreviousSalaryGradeTable() {
+    return await this.salaryGradeService.getPreviousSalaryGradeTable();
   }
 
   @Get('/:id')

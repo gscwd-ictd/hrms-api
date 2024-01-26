@@ -30,16 +30,22 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
     super(plantillaViewRepository);
   }
 
+  async findAllPermanentPlantillaPositions() {
+    return await this.plantillaViewRepository.find({
+      order: { itemNumber: 'ASC' },
+    });
+  }
+
   async getJD(_id: string) {
-    var department: Departments;
-    var office: Office;
-    var description: string;
-    var reportsTo: any;
+    let department: Departments;
+    let office: Office;
+    let description: string;
+    let reportsTo: any;
 
     const result = await this.plantillaViewRepository.findOne({ where: { positionId: _id } });
 
     //#region JD
-    var division = await this.divisionService.divisionRepository.findOne({
+    let division = await this.divisionService.divisionRepository.findOne({
       where: {
         code: result.assignedTo,
       },
@@ -96,7 +102,6 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
       }
     } else {
       //check kung department pos siya
-      console.log('adeasda');
       department = await this.deptService.departmentRepository.findOne({
         where: { code: result.assignedTo },
         loadRelationIds: true,

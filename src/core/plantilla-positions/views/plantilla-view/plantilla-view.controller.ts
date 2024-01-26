@@ -9,7 +9,7 @@ export class PlantillaViewController {
   @Get('/')
   async findAllPermanentPlantillaPositions(@Headers('Authorization') auth: string) {
     //console.log(auth);
-    return await this.plantillaViewService.findEntityAll();
+    return await this.plantillaViewService.findAllPermanentPlantillaPositions();
   }
 
   @Get('/casual/')

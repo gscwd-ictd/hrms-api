@@ -1,4 +1,4 @@
-import { Inject, Injectable, UploadedFiles } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger, UploadedFiles } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SalaryGrade } from 'src/core/salary-grade/data/entities/salary-grade.entity';
@@ -17,13 +17,19 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
   }
 
   async createSalaryGrade(dto: CreateSalaryGradeDto) {
-    const effectivityYear = new Date().getFullYear();
-    return await Promise.all(
-      dto.salaryGradeList.map(async (salaryGradeItem) => {
-        const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
-        return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
-      }),
-    );
+    try {
+      const effectivityYear = new Date().getFullYear();
+      return await Promise.all(
+        dto.salaryGradeList.map(async (salaryGradeItem) => {
+          const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
+          return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
+        }),
+      );
+    } catch (error) {
+      Logger.log(error);
+      if (error.errno === 1062) throw new HttpException('Duplicate Entry', HttpStatus.CONFLICT);
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async updateSalaryGrade(salaryGradeUpdateDTO: SalaryGradeUpdateDTO) {
@@ -53,6 +59,68 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
     );
 
     return [...sgStepsArray];
+  }
+
+  async getCurrentSalaryGradeTable() {
+    try {
+      const effectivityYear = await this.entityRepository.query('SELECT DISTINCT effectivity_year FROM salary_grade ORDER BY effectivity_year DESC LIMIT 1');
+
+      const salaryGrades = await this.entityRepository.query('SELECT DISTINCT salary_grade FROM salary_grade WHERE effectivity_year = ? ORDER BY salary_grade ASC', [
+        effectivityYear[0].effectivity_year,
+      ]);
+
+      const sgStepsArray = await Promise.all(
+        salaryGrades.map(async (sg) => {
+          const sgStep = await this.salaryGradeRepository.find({
+            select: ['salaryGrade', 'stepIncrement', 'amount'],
+            where: { salaryGrade: sg.salary_grade, effectivityYear: effectivityYear[0].effectivity_year },
+          });
+          const sgStepArrayToObject = await Promise.all(
+            sgStep.map(async (sgStepArrayToObjectItem) => {
+              return sgStepArrayToObjectItem.amount;
+            }),
+          );
+          return [sg.salary_grade, ...sgStepArrayToObject];
+        }),
+      );
+
+      return [...sgStepsArray];
+    } catch (error) {
+      Logger.log(error);
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getPreviousSalaryGradeTable() {
+    try {
+      const effectivityYear = await this.entityRepository.query('SELECT DISTINCT effectivity_year FROM salary_grade ORDER BY effectivity_year DESC LIMIT 1 OFFSET 1');
+
+      if (effectivityYear.length === 0) {
+        return [];
+      } else {
+        const salaryGrades = await this.entityRepository.query('SELECT DISTINCT salary_grade FROM salary_grade WHERE effectivity_year = ? ORDER BY salary_grade ASC', [
+          effectivityYear[0].effectivity_year,
+        ]);
+        const sgStepsArray = await Promise.all(
+          salaryGrades.map(async (sg) => {
+            const sgStep = await this.salaryGradeRepository.find({
+              select: ['salaryGrade', 'stepIncrement', 'amount'],
+              where: { salaryGrade: sg.salary_grade, effectivityYear: effectivityYear[0].effectivity_year },
+            });
+            const sgStepArrayToObject = await Promise.all(
+              sgStep.map(async (sgStepArrayToObjectItem) => {
+                return sgStepArrayToObjectItem.amount;
+              }),
+            );
+            return [sg.salary_grade, ...sgStepArrayToObject];
+          }),
+        );
+        return [...sgStepsArray];
+      }
+    } catch (error) {
+      Logger.log(error);
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async getSalaryGradeByStepIncrement(stepIncrement: number) {
