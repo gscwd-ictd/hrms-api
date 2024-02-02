@@ -14,6 +14,6 @@ export class DivisionPositions extends DefaultTable {
   @ManyToOne(() => Divisions, (div) => div._id, { onUpdate: 'CASCADE' })
   divisionId: Divisions;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true, default: null })
   summary: string;
 }

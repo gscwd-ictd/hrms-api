@@ -240,7 +240,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, email, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
+      return { ...user, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
     } catch (error) {
       console.log(error);
       handleRpcError(error);

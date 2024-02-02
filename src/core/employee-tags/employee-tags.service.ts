@@ -140,6 +140,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
 
   async deleteEmployeeTag(deleteEmployeeTagsDto: DeleteEmployeeTagDto) {
     try {
+      console.log('delete here');
       console.log(deleteEmployeeTagsDto);
       const { employeeId, tagId } = deleteEmployeeTagsDto;
       const deleteResult = await this.entityRepository.query(`DELETE FROM employee_tags WHERE tag_id_fk =?  AND employee_id_fk=?`, [tagId, employeeId]);

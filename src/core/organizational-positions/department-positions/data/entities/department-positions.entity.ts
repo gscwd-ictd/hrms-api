@@ -13,6 +13,6 @@ export class DepartmentPositions extends DefaultTable {
   @ManyToOne(() => PlantillaPositions, (position) => position._id, { onUpdate: 'CASCADE' })
   positionId: PlantillaPositions;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', default: null, nullable: true })
   summary: string;
 }
