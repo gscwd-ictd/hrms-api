@@ -47,7 +47,8 @@ export class BaseEntityCrudService<Ent> {
       const theEntity = await this.findEntityById(id);
       return await this.entityRepository.remove(theEntity);
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      //hrow error;
+      throw new HttpException(error, 500);
     }
   }
 }

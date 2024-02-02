@@ -13,6 +13,6 @@ export class OfficePositions extends DefaultTable {
   @ManyToOne(() => Office, (office) => office._id, { onUpdate: 'CASCADE' })
   officeId: Office;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', default: null, nullable: true })
   summary: string;
 }

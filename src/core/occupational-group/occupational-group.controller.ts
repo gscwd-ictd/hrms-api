@@ -1,5 +1,4 @@
 import { Controller, Post, Body, Put, Param, Delete, Get } from '@nestjs/common';
-import { timeStamp } from 'console';
 import { OccupationalGroupDto, OccupationalGroupDtoForMultiplePositions } from './data/dtos/occupational-group.dto';
 import { OccupationalGroupService } from './occupational-group.service';
 

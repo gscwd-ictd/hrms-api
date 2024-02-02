@@ -219,9 +219,9 @@ export class UsersService extends BaseEntityCrudService<Users> {
         `SELECT 
           CONCAT(UPPER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),1,1)),LOWER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),2))) userAccess 
                    FROM user_roles ur 
-                 INNER JOIN users u ON u._id = ur.user_id_fk 
-                 INNER JOIN modules m ON m._id = ur.module_id_fk 
-                 WHERE u._id = ? and has_access=1;`,
+          INNER JOIN users u ON u._id = ur.user_id_fk 
+          INNER JOIN modules m ON m._id = ur.module_id_fk 
+          WHERE u._id = ? and has_access=1;`,
         [_id],
       );
 
@@ -231,13 +231,16 @@ export class UsersService extends BaseEntityCrudService<Users> {
         }),
       );
 
+      const photoUrl = await this.employeesService.getEmployeePhotoUrl(_id);
+
       const email = await this.employeesService.findEmailAddressById(_id);
 
       const salaryGrade = await this.employeesService.getMonthHourlyRateByEmployeeId(_id);
+
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, email, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
+      return { ...user, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
     } catch (error) {
       console.log(error);
       handleRpcError(error);

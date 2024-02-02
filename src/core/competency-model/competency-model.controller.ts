@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards, HttpException, HttpStatus, Logger, InternalServerErrorException } from '@nestjs/common';
 import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated.guard';
 import { CompetencyModelService } from './competency-model.service';
 import { CompetencyDto, UpdateCompetencyDto } from './data/dtos/competency-model.dto';
@@ -9,34 +9,34 @@ export class CompetencyModelController {
   constructor(private readonly competencyModelService: CompetencyModelService) {}
 
   @Post()
-  createCompetency(@Body() competencydto: CompetencyDto) {
-    return this.competencyModelService.createCompetency(competencydto);
+  async createCompetency(@Body() competencydto: CompetencyDto) {
+    return await this.competencyModelService.createCompetency(competencydto);
   }
 
   //#region revised get competencies
   @Get('/core')
-  getAllCoreFunctions() {
-    return this.competencyModelService.getAllCoreFunctions();
+  async getAllCoreFunctions() {
+    return await this.competencyModelService.getAllCoreFunctions();
   }
 
   @Get('/cross-cutting')
-  getAllCrossCutting() {
-    return this.competencyModelService.getAllCrossCutting();
+  async getAllCrossCutting() {
+    return await this.competencyModelService.getAllCrossCutting();
   }
 
   @Get('/managerial')
-  getAllManagerial() {
-    return this.competencyModelService.getAllManagerial();
+  async getAllManagerial() {
+    return await this.competencyModelService.getAllManagerial();
   }
 
   @Get('/functions')
-  getAllFunctions() {
-    return this.competencyModelService.getAllFunctionsForOccupationalGroup();
+  async getAllFunctions() {
+    return await this.competencyModelService.getAllFunctionsForOccupationalGroup();
   }
 
   @Get('functions/:occ_id')
-  getFunctions(@Param('occ_id') occId: string) {
-    return this.competencyModelService.getFunctionsForOccupationalGroup(occId);
+  async getFunctions(@Param('occ_id') occId: string) {
+    return await this.competencyModelService.getFunctionsForOccupationalGroup(occId);
   }
 
   //#endregion
@@ -51,8 +51,8 @@ export class CompetencyModelController {
   }
 
   @Put(':competency_id')
-  updateCompetency(@Body() compdto: CompetencyDto, @Param('competency_id') competencyId: string) {
-    return this.competencyModelService.updateCompetency(compdto, competencyId);
+  async updateCompetency(@Body() compdto: CompetencyDto, @Param('competency_id') competencyId: string) {
+    return await this.competencyModelService.updateCompetency(compdto, competencyId);
   }
 
   @Put()
@@ -61,22 +61,21 @@ export class CompetencyModelController {
   }
 
   @Delete(':competency_id')
-  deleteCompetency(@Param('competency_id') _id: string) {
+  async deleteCompetency(@Param('competency_id') _id: string) {
     try {
-      return this.competencyModelService.removeEntity(_id);
+      return await this.competencyModelService.removeEntity(_id);
     } catch (error) {
       if ((error.code = 'ER_ROW_IS_REFERENCED_2')) throw new HttpException("Competency's Model already set.", HttpStatus.NOT_ACCEPTABLE);
-      throw new HttpException('Error', 500);
     }
   }
 
   @Get('functions/d/:domain_id/:og_id')
-  getAllCompetenciesByDomainAndOG(@Param('domain_id') domainId: string, @Param('og_id') ogId: string) {
-    return this.competencyModelService.getAllCompetenciesByDomainAndOG(domainId, ogId);
+  async getAllCompetenciesByDomainAndOG(@Param('domain_id') domainId: string, @Param('og_id') ogId: string) {
+    return await this.competencyModelService.getAllCompetenciesByDomainAndOG(domainId, ogId);
   }
 
   @Get('functions/d/:id')
-  getFunctionsByDomain(@Param('id') domainId: string) {
-    return this.competencyModelService.getEveryCompetencies(domainId);
+  async getFunctionsByDomain(@Param('id') domainId: string) {
+    return await this.competencyModelService.getEveryCompetencies(domainId);
   }
 }
