@@ -50,4 +50,9 @@ export class UsersController {
   async getAssignableEmsUsers() {
     return await this.userService.getAssignableEMSUsers();
   }
+
+  @MessagePattern('get_assignable_lnd_users')
+  async getAssignableLndUsers() {
+    return await this.userService.getAssignableLndUsers();
+  }
 }

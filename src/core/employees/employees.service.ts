@@ -76,6 +76,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return employees;
   }
 
+  async getEmployeesUnderSupervisor(employeeId: string) {
+    const orgId = (await this.entityRepository.query('SELECT get_employee_assignment_id(?) orgId;', [employeeId]))[0];
+    return await this.getEmployeesByOrgId(employeeId);
+  }
+
   async getEmployeeByIdForLND(employeeId: string) {
     const empPosition = await this.employeeRepository
       .createQueryBuilder('emp')
@@ -678,6 +683,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     } catch (error) {
       throw new RpcException(error.message);
     }
+  }
+
+  async getSubordinates(employeeId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_employees_under_manager(?);`, [employeeId]))[0];
   }
 
   private getUserRole(salaryGrade: number) {

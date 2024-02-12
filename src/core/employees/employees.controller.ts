@@ -13,6 +13,11 @@ export class EmployeesController {
     return await this.employeesService.getEmployeesByNameMatch(name);
   }
 
+  @Get('')
+  async getEmployeesUnderSupervisor(employeeId: string) {
+    return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
+  }
+
   @MessagePattern('get_employees_by_name_match')
   async getEmployeesByNameMatchMS(@Payload() name: string) {
     if (name === null || name === undefined) return await this.employeesService.getAllEmployeeNames();
@@ -252,5 +257,10 @@ export class EmployeesController {
   @MessagePattern('get_employee_nature_of_appointment')
   async getEmployeeNatureOfAppointment(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
+  }
+
+  @Get('supervisors/:employee_id/subordinates')
+  async getSubordinates(@Param('employee_id') employeeId: string) {
+    return await this.employeesService.getSubordinates(employeeId);
   }
 }
