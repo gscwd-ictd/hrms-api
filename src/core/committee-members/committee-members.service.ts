@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { CommitteeMembersDTO } from './data/dtos/committee-members.dto';
 import { CommitteeMembers } from './data/entities/committee-members.entity';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class CommitteeMembersService extends BaseEntityCrudService<CommitteeMembers> {
@@ -55,6 +56,48 @@ export class CommitteeMembersService extends BaseEntityCrudService<CommitteeMemb
     );
 
     return [{ options: optionItems }];
+  }
+
+  async isPdcChairman(employeeId: string) {
+    try {
+      const { isPdcChairman } = (
+        await this.entityRepository.query(
+          `
+      SELECT IF(COUNT(cm._id) > 0, true,false) isPdcChairman 
+      FROM committee_members cm 
+        INNER JOIN committees c ON cm.committee_id_fk = c._id
+      WHERE c.name = 'Personnel Development Committee' AND cm.committee_role = 'Chairman'
+      AND cm.employee_id_fk = ?;`,
+          [employeeId],
+        )
+      )[0];
+
+      if (isPdcChairman === '1') return true;
+      return false;
+    } catch {
+      throw new RpcException('500');
+    }
+  }
+
+  async isPdcSecretariat(employeeId: string) {
+    try {
+      const { isPdcSecretariat } = (
+        await this.entityRepository.query(
+          `
+      SELECT IF(COUNT(cm._id) > 0, true,false) isPdcSecretariat
+      FROM committee_members cm 
+        INNER JOIN committees c ON cm.committee_id_fk = c._id
+      WHERE c.name = 'Personnel Development Committee' AND cm.committee_role = 'Secretariat'
+      AND cm.employee_id_fk = ?;`,
+          [employeeId],
+        )
+      )[0];
+
+      if (isPdcSecretariat === '1') return true;
+      return false;
+    } catch {
+      throw new RpcException('500');
+    }
   }
 
   async getSingleCommitteeMember(_id: string) {

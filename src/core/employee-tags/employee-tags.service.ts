@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getManager, Repository } from 'typeorm';
@@ -167,5 +167,13 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
     );
     console.log(employeeDetails);
     return employeeDetails;
+  }
+
+  async countEmployeeTags(tagId: string) {
+    try {
+      return (await this.entityRepository.query(`SELECT distinct count(employee_id_fk) employeeCount FROM employee_tags WHERE tag_id_fk=?`, [tagId]))[0].employeeCount;
+    } catch {
+      throw new RpcException('RPC Error');
+    }
   }
 }

@@ -1,7 +1,8 @@
-import { Controller } from '@nestjs/common';
+import { Controller, HttpStatus } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
 import { EmployeeTagsService } from './employee-tags.service';
+import { MESSAGES } from '@nestjs/core/constants';
 
 @Controller()
 export class EmployeeTagsController {
@@ -37,5 +38,10 @@ export class EmployeeTagsController {
   @MessagePattern('delete_employee_tags')
   async deleteEmployeeTag(@Payload() data: DeleteEmployeeTagDto) {
     return await this.employeeTagsService.deleteEmployeeTag(data);
+  }
+
+  @MessagePattern('count_employee_tags')
+  async countEmployeeTags(@Payload() tagId: string) {
+    return await this.employeeTagsService.countEmployeeTags(tagId);
   }
 }

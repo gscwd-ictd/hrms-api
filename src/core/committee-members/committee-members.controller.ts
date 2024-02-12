@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Param, Put, Delete, UseGuards, ParseUUIDPi
 import { CommitteeMembersDTO } from 'src/core/committee-members/data/dtos/committee-members.dto';
 import { CommitteeMembersType } from 'src/core/committee-members/utils/types/committee-members.type';
 import { CommitteeMembersService } from './committee-members.service';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('committee-members')
 export class CommitteeMembersController {
@@ -35,5 +36,15 @@ export class CommitteeMembersController {
   @Delete()
   async removeCommitteeMembers(@Body() committeeMembers: CommitteeMembersType) {
     return await this.committeeMembersService.removeCommitteeMembers(committeeMembers);
+  }
+
+  @MessagePattern('is_pdc_chairman')
+  async isPdcChairman(@Payload() employeeId: string) {
+    return await this.committeeMembersService.isPdcChairman(employeeId);
+  }
+
+  @MessagePattern('is_pdc_secretariat')
+  async isPdcSecretary(@Payload() employeeId: string) {
+    return await this.committeeMembersService.isPdcSecretariat(employeeId);
   }
 }
