@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Users } from 'src/core/users/data/entities/users.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { EmployeesService } from 'src/core/employees/employees.service';
+import { RestDays } from 'src/core/employees/utils/employee.type';
 
 @Injectable()
 export class UsersService extends BaseEntityCrudService<Users> {
@@ -71,33 +72,33 @@ export class UsersService extends BaseEntityCrudService<Users> {
     try {
       const assignables = await this.entityRepository.query(
         `
-         SELECT 
-            emp._id employeeId, 
-            get_employee_fullname2(emp._id) fullName,
-            pp.position_title positionTitle
-                FROM employees emp 
-           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
-         AND emp._id 
-         NOT IN (
-        SELECT employee_id_fk FROM users 
-            INNER JOIN employees ON employees._id = users.employee_id_fk
-            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
-            INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE m.app = 'lnd'
-         ) 
-         ORDER BY get_employee_fullname2(emp._id) ASC;
+        SELECT 
+        emp._id employeeId, 
+        get_employee_fullname2(emp._id) fullName,
+        pp.position_title positionTitle
+            FROM employees emp 
+       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+       INNER JOIN division_positions dp ON pp._id = dp.position_id_fk 
+       INNER JOIN divisions d ON d._id = dp.division_id_fk 
+     WHERE emp._id 
+     NOT IN (
+    SELECT employee_id_fk FROM users 
+        INNER JOIN employees ON employees._id = users.employee_id_fk
+        INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
+        INNER JOIN modules m ON m._id = ur.module_id_fk 
+    WHERE m.app = 'lnd'
+     ) 
+     AND d.name = 'Training and Development Division'
+     ORDER BY get_employee_fullname2(emp._id) ASC;
       `,
       );
       const result = await Promise.all(
         assignables.map(async (assignable) => {
           const { employeeId, fullName, positionTitle } = assignable;
           return {
-            label: fullName,
-            value: {
-              employeeId,
-              fullName,
-              positionTitle,
-            },
+            employeeId,
+            fullName,
+            positionTitle,
           };
         }),
       );
@@ -204,8 +205,36 @@ export class UsersService extends BaseEntityCrudService<Users> {
     }
   }
 
+  async getLndUsers(pagination: { page: number; limit: number }) {
+    try {
+      const { page, limit } = pagination;
+      const _items = (await this.entityRepository.query(`CALL sp_get_hrms_users(?,?,?);`, [page, limit, 'lnd']))[0];
+      console.log(_items);
+      let totalItems = 0;
+      let items = [];
+      if (_items.length > 0) {
+        items = await Promise.all(
+          _items.map(async (item) => {
+            const { totalCount, ...rest } = item;
+            return rest;
+          }),
+        );
+        totalItems = _items[0].totalCount;
+      }
+      const meta = {
+        totalItems,
+        itemCount: _items.length,
+        itemsPerPage: limit,
+        totalPages: totalItems / limit > 1 ? totalItems / limit : 1,
+        currentPage: page,
+      };
+      return { items, meta };
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getHRMSUsersByApp(app: string) {
-    //
     try {
       return await this.entityRepository.query(
         `

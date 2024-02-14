@@ -19,4 +19,8 @@ export class UserRolesAddUpdateDTO {
   userRoles: UserRoleAddUpdate[];
 }
 
+export class AddLndUseDto {
+  employeeId: Users | Employees;
+}
+
 //export class

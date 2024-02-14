@@ -23,7 +23,6 @@ export class UserRolesController {
 
   @Delete(':user_id')
   async deleteUserRoles(@Param('user_id') userId: string) {
-    //return await this.userRolesService.removeEntity(_id);
     return await this.userRolesService.deleteUserAndRoles(userId);
   }
 
@@ -35,7 +34,6 @@ export class UserRolesController {
 
   @MessagePattern('add_user_roles')
   async addUserRolesMS(@Payload() userRolesAddUpdateDTO: UserRolesAddUpdateDTO) {
-    //assumed module dropdown are filtered by app;
     return await this.userRolesService.addUserRole(userRolesAddUpdateDTO);
   }
 
@@ -53,5 +51,20 @@ export class UserRolesController {
   @MessagePattern('delete_user_role_id')
   async deleteUserRolesMs(@Payload() userId: string) {
     return await this.userRolesService.deleteUserAndRoles(userId);
+  }
+
+  @MessagePattern('delete_lnd_user_roles')
+  async deleteLndUserRolesMs(@Payload() userId: string) {
+    return await this.userRolesService.deleteUserAndRolesByApp(userId, 'lnd');
+  }
+
+  @MessagePattern('add_lnd_user')
+  async addLndUserMs(@Payload() employeeId: string) {
+    return await this.userRolesService.addLndUser(employeeId);
+  }
+
+  @Post('lnd/:employee_id')
+  async addLndUser(@Param('employee_id') employeeId: string) {
+    return await this.userRolesService.addLndUser(employeeId);
   }
 }

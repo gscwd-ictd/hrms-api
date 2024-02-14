@@ -76,6 +76,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return employees;
   }
 
+  async testEmail() {
+    return await this.emailService.sendEmail('johnhenryalfeche@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
+  }
+
   async getEmployeesUnderSupervisor(employeeId: string) {
     const orgId = (await this.entityRepository.query('SELECT get_employee_assignment_id(?) orgId;', [employeeId]))[0];
     return await this.getEmployeesByOrgId(employeeId);
