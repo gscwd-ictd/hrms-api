@@ -12,16 +12,27 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
     super(userRoles);
   }
 
-  // async addUserRole(userRolesDTO: UserRolesDTO) {
-  //   return await this.saveEntity(userRolesDTO);
-  // }
-
   async deleteUserAndRoles(userId: string) {
     try {
       const deleteResult = await this.entityRepository.query(`DELETE FROM user_roles WHERE user_id_fk = ?`, [userId]);
       //console.log(deleteResult);
 
       const deletedUser = await this.usersService.removeEntity(userId);
+      const deletedUserName = (await this.entityRepository.query(`SELECT get_employee_fullname(_id) fullName FROM users WHERE _id=?;`, [userId]))[0];
+      return { userId, ...deletedUserName };
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async deleteUserAndRolesByApp(userId: string, app: string) {
+    try {
+      const deleteResult = await this.entityRepository.query(`DELETE FROM user_roles WHERE user_id_fk = ? AND module_id_fk IN (SELECT _id FROM modules WHERE app = ?);`, [
+        userId,
+        app,
+      ]);
+      //console.log(deleteResult);
+      //const deletedUser = await this.usersService.removeEntity(userId);
       const deletedUserName = (await this.entityRepository.query(`SELECT get_employee_fullname(_id) fullName FROM users WHERE _id=?;`, [userId]))[0];
       return { userId, ...deletedUserName };
     } catch (error) {
@@ -80,5 +91,11 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
       }),
     );
     return userRoles;
+  }
+
+  async addLndUser(employeeId: string) {
+    const moduleId = (await this.entityRepository.query(`SELECT _id moduleId FROM modules WHERE app = 'lnd';`))[0].moduleId;
+    const user = await this.usersService.saveEntity({ _id: employeeId, employeeId, photoUrl: null });
+    return await this.saveEntity({ userId: user._id, moduleId, hasAccess: 1 });
   }
 }
