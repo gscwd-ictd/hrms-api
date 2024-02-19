@@ -67,37 +67,24 @@ export class UsersService extends BaseEntityCrudService<Users> {
     }
   }
 
-  async getAssignableLndUsers() {
+  async getAssignableLndUsers(pagination: { page: number; limit: number }) {
     try {
-      const assignables = await this.entityRepository.query(
-        `
-         SELECT 
-            emp._id employeeId, 
-            get_employee_fullname2(emp._id) fullName,
-            pp.position_title positionTitle
-                FROM employees emp 
-           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
-         AND emp._id 
-         NOT IN (
-        SELECT employee_id_fk FROM users 
-            INNER JOIN employees ON employees._id = users.employee_id_fk
-            INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
-            INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE m.app = 'lnd'
-         ) 
-         ORDER BY get_employee_fullname2(emp._id) ASC;
+      const { page, limit } = pagination;
+      const assignables = (
+        await this.entityRepository.query(
+          `
+        CALL sp_get_assignable_lnd_users(?,?)
       `,
-      );
+          [page, limit],
+        )
+      )[0];
       const result = await Promise.all(
         assignables.map(async (assignable) => {
           const { employeeId, fullName, positionTitle } = assignable;
           return {
-            label: fullName,
-            value: {
-              employeeId,
-              fullName,
-              positionTitle,
-            },
+            employeeId,
+            fullName,
+            positionTitle,
           };
         }),
       );

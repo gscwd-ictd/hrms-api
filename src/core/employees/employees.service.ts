@@ -11,6 +11,7 @@ import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
+import { CommitteeMembersService } from '../committee-members/committee-members.service';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -21,6 +22,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     private readonly plantillaPositionsService: PlantillaPositionsService,
     private readonly emailService: EmailService,
     private readonly officerInChargeViewService: OfficerInChargeViewService,
+    private readonly committeeMembersService: CommitteeMembersService,
   ) {
     super(employeeRepository);
   }
@@ -184,6 +186,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :employeeId', { employeeId })
       .getRawOne();
+
+    const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
+    const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
     const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
     const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
     console.log(salaryGradeDetails);
@@ -209,6 +214,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return {
       userId,
       companyId,
+      isPdcChairman,
+      isPdcSecretariat,
       employeeFullName,
       photoUrl: employeePortalDetails.photoUrl,
       salaryGradeAmount,

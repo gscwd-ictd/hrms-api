@@ -8,5 +8,6 @@ import { CommitteeMembers } from './data/entities/committee-members.entity';
   imports: [TypeOrmModule.forFeature([CommitteeMembers])],
   controllers: [CommitteeMembersController],
   providers: [CommitteeMembersService],
+  exports: [CommitteeMembersService],
 })
 export class CommitteeMembersModule {}
