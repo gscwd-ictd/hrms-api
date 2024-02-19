@@ -17,7 +17,7 @@ export class EmployeesController {
   async getAllEmployeesList() {
     return await this.employeesService.getAllEmployees();
   }
-
+  
   @Get('/sub')
   async getEmployeesUnderSupervisor(employeeId: string) {
     return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
