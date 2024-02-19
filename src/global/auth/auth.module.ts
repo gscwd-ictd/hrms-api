@@ -28,6 +28,7 @@ import { OfficerInChargeService } from 'src/core/officer-in-charge/officer-in-ch
 import { OfficerInChargeViewService } from 'src/core/officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { OfficerInCharge } from 'src/core/officer-in-charge/data/officer-in-charge.entity';
 import { OfficerInChargeView } from 'src/core/officer-in-charge/data/officer-in-charge-view/officer-incharge.view';
+import { CommitteeMembersModule } from 'src/core/committee-members/committee-members.module';
 
 @Global()
 @Module({
@@ -49,6 +50,7 @@ import { OfficerInChargeView } from 'src/core/officer-in-charge/data/officer-in-
       { name: MicroserviceType.EMPLOYEE_MONITORING, useClass: RedisConfigForEmployeeMonitoring },
     ]),
     OfficerInChargeModule,
+    CommitteeMembersModule,
   ],
   controllers: [AuthController],
   providers: [

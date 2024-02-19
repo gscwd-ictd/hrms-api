@@ -16,6 +16,7 @@ import { Employees } from '../employees/data/entities/employees.entity';
 import { PlantillaPositionsModule } from '../plantilla-positions/plantilla-positions.module';
 import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.module';
+import { CommitteeMembersModule } from '../committee-members/committee-members.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.mo
     EmployeesModule,
     PlantillaPositionsModule,
     OfficerInChargeModule,
+    CommitteeMembersModule,
   ],
   providers: [UsersService, SuperUserService, EmployeesService, PlantillaPositionsService],
   controllers: [UsersController],

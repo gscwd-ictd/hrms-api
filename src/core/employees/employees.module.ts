@@ -10,6 +10,7 @@ import { PlantillaPositionsService } from '../plantilla-positions/plantilla-posi
 import { EmployeesController } from './employees.controller';
 import { EmployeesService } from './employees.service';
 import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.module';
+import { CommitteeMembersModule } from '../committee-members/committee-members.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.mo
       { name: MicroserviceType.EMPLOYEE_MONITORING, useClass: RedisConfigForEmployeeMonitoring },
     ]),
     OfficerInChargeModule,
+    CommitteeMembersModule,
   ],
   providers: [EmployeesService, PlantillaPositionsService, EmailService],
   controllers: [EmployeesController],
