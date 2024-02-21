@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Users } from 'src/core/users/data/entities/users.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { EmployeesService } from 'src/core/employees/employees.service';
+import { RestDays } from 'src/core/employees/utils/employee.type';
 
 @Injectable()
 export class UsersService extends BaseEntityCrudService<Users> {
@@ -191,8 +192,36 @@ export class UsersService extends BaseEntityCrudService<Users> {
     }
   }
 
+  async getLndUsers(pagination: { page: number; limit: number }) {
+    try {
+      const { page, limit } = pagination;
+      const _items = (await this.entityRepository.query(`CALL sp_get_hrms_users(?,?,?);`, [page, limit, 'lnd']))[0];
+      console.log(_items);
+      let totalItems = 0;
+      let items = [];
+      if (_items.length > 0) {
+        items = await Promise.all(
+          _items.map(async (item) => {
+            const { totalCount, ...rest } = item;
+            return rest;
+          }),
+        );
+        totalItems = _items[0].totalCount;
+      }
+      const meta = {
+        totalItems,
+        itemCount: _items.length,
+        itemsPerPage: limit,
+        totalPages: totalItems / limit > 1 ? totalItems / limit : 1,
+        currentPage: page,
+      };
+      return { items, meta };
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getHRMSUsersByApp(app: string) {
-    //
     try {
       return await this.entityRepository.query(
         `
