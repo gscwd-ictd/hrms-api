@@ -1,5 +1,4 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { OrganizationService } from './organization.service';
 
 @Controller('organization')
