@@ -536,6 +536,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllAssignablePermanentCasualEmployees(employeeIds: string[]) {
+    if (employeeIds.length > 0)
+      return await this.entityRepository.query(
+        `SELECT get_employee_fullname2(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' AND emp._id NOT IN (?) ORDER BY get_employee_fullname2(emp._id) ASC;`,
+        [employeeIds],
+      );
+    return await this.getAllPermanentCasualEmployees2();
+  }
+
   async findEmailAddress(email: string) {
     try {
       return await lastValueFrom(this.clientAuthn.send({ msg: 'find_user_email' }, email));
@@ -698,6 +707,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getSubordinates(employeeId: string) {
     return (await this.entityRepository.query(`CALL sp_get_employees_under_manager(?);`, [employeeId]))[0];
+  }
+
+  async isGeneralManager(employeeId: string) {
+    try {
+      const { isGeneralManager } = (await this.entityRepository.query(`SELECT is_general_manager(?) isGeneralManager;`, [employeeId]))[0];
+      console.log(isGeneralManager);
+      if (isGeneralManager === 1) return true;
+      return false;
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   private getUserRole(salaryGrade: number) {
