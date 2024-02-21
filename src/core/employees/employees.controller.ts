@@ -17,7 +17,7 @@ export class EmployeesController {
   async getAllEmployeesList() {
     return await this.employeesService.getAllEmployees();
   }
-  
+
   @Get('/sub')
   async getEmployeesUnderSupervisor(employeeId: string) {
     return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
@@ -167,6 +167,16 @@ export class EmployeesController {
     return await this.employeesService.getAllPermanentCasualEmployees();
   }
 
+  @Get('/options/v2/')
+  async getAllPermanentCasualEmployees2() {
+    return await this.employeesService.getAllPermanentCasualEmployees2();
+  }
+
+  @MessagePattern('get_all_assignable_permanent_casual_employees')
+  async getAllAssignablePermanentCasualEmployees(@Payload() employeeIds: string[]) {
+    return await this.employeesService.getAllAssignablePermanentCasualEmployees(employeeIds);
+  }
+
   @MessagePattern('get_all_permanent_casual_employees')
   async getAllPermanentCasualEmployeesMS() {
     return await this.employeesService.getAllPermanentCasualEmployees();
@@ -267,5 +277,10 @@ export class EmployeesController {
   @Get('supervisors/:employee_id/subordinates')
   async getSubordinates(@Param('employee_id') employeeId: string) {
     return await this.employeesService.getSubordinates(employeeId);
+  }
+
+  @MessagePattern('is_general_manager_or_oic')
+  async isGeneralManager(@Payload() employeeId: string) {
+    return await this.employeesService.isGeneralManager(employeeId);
   }
 }
