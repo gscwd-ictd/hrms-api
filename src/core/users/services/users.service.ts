@@ -182,9 +182,12 @@ export class UsersService extends BaseEntityCrudService<Users> {
   async getHRMSUsers() {
     try {
       return await this.entityRepository.query(`
-      SELECT employee_id_fk employeeId,get_employee_fullname2(employee_id_fk) fullName 
-          FROM users u 
-       INNER JOIN employees emp ON emp._id = u.employee_id_fk
+      SELECT DISTINCT employee_id_fk employeeId,get_employee_fullname2(employee_id_fk) fullName 
+          FROM users u  
+        INNER JOIN employees emp ON emp._id = u.employee_id_fk
+        INNER JOIN user_roles ur ON u._id = ur.user_id_fk 
+        INNER JOIN modules m  ON m._id = ur.module_id_fk 
+       WHERE m.app = 'rsp' AND ur.has_access = 1
        ORDER BY get_employee_fullname2(employee_id_fk) ASC
        ;`);
     } catch (error) {

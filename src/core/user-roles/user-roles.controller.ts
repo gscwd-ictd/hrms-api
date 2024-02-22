@@ -2,7 +2,7 @@ import { AuthenticatedGuard } from './../../global/auth/guards/authenticated2.gu
 import { UserLogsInterceptor } from './../../global/user-logs/interceptors/user-logs.interceptor';
 import { UserRolesDTO, UserRolesAddUpdateDTO } from './data/user-roles.dto';
 import { UserRolesService } from './user-roles.service';
-import { Body, Controller, Delete, Param, Post, Put, Get, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Post, Put, Get, Patch, UseGuards, UseInterceptors, ConsoleLogger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
 //@UseGuards(AuthenticatedGuard)
@@ -12,6 +12,7 @@ export class UserRolesController {
 
   @Get(':user_id')
   async getUserRolesByUserId(@Param('user_id') userId: string) {
+    console.log('user', userId);
     return await this.userRolesService.getUserRoleByUserId(userId, 'rsp');
   }
 
