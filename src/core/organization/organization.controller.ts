@@ -1,5 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('organization')
 export class OrganizationController {

@@ -20,4 +20,13 @@ export class OrganizationMsController {
   async getAllOrganizationByGroup() {
     return await this.organizationService.getAllOrganizationByGroup();
   }
+  @MessagePattern('get_available_org_structs')
+  async getAllAvailableOrgStructs(@Payload() orgIds: string[]) {
+    return await this.organizationService.getAvailableOrgStructsMixed(orgIds);
+  }
+
+  @MessagePattern('get_org_name_by_org_id')
+  async getOrgNameByOrgId(@Payload() orgId: string) {
+    return await this.organizationService.getOrgNameByOrgId(orgId);
+  }
 }
