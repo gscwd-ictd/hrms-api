@@ -225,6 +225,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
   }
 
   async getHRMSUsersByApp(app: string) {
+    //
     try {
       return await this.entityRepository.query(
         `
@@ -233,7 +234,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
           INNER JOIN employees emp ON emp._id = u.employee_id_fk 
           INNER JOIN user_roles ur ON emp._id =  ur.user_id_fk 
           INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE m.app = ? 
+        WHERE m.app = ? AND ur.has_access = 1
         ORDER BY get_employee_fullname2(employee_id_fk) ASC
        ;`,
         [app],
