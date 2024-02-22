@@ -256,4 +256,19 @@ export class OrganizationService {
   async getAllOrgStructsMixed() {
     return await this.officeService.entityRepository.query(`SELECT _id, name FROM org_struct_view ORDER BY name ASC`);
   }
+
+  async getAllAvailableOrgStructsMixed() {
+    return await this.officeService.entityRepository.query(`SELECT _id value, name label FROM org_struct_view ORDER BY name ASC`);
+  }
+
+  async getAvailableOrgStructsMixed(orgIds: string[]) {
+    if (orgIds.length > 0)
+      return await this.officeService.entityRepository.query(`SELECT _id value,  name label FROM org_struct_view WHERE _id IN (?) ORDER BY name ASC`, [orgIds]);
+    return await this.getAllAvailableOrgStructsMixed();
+  }
+
+  //SELECT get_org_name_by_org_id('8f821209-f048-11ec-8d31-c4bde5a04065');
+  async getOrgNameByOrgId(orgId: string) {
+    return (await this.officeService.entityRepository.query(`SELECT get_org_name_by_org_id(?) orgName;`, [orgId]))[0].orgName;
+  }
 }
