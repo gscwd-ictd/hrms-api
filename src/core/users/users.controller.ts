@@ -57,7 +57,7 @@ export class UsersController {
   }
 
   @MessagePattern('get_assignable_lnd_users')
-  async getAssignableLndUsers(@Payload() pagination: { page: number; limit: number }) {
-    return await this.userService.getAssignableLndUsers(pagination);
+  async getAssignableLndUsers() {
+    return await this.userService.getAssignableLndUsers();
   }
 }
