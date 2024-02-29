@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SuperUserDTO } from 'src/core/users/data/dtos/superuser.dto';
 import { UserDto } from 'src/core/users/data/dtos/users.dto';
@@ -257,6 +257,33 @@ export class UsersService extends BaseEntityCrudService<Users> {
     return userAccess;
   }
 
+  async isAppUser(userId: string, app: string) {
+    /*
+    SELECT IF(COUNT(u._id)=0,false,true) isLndUser FROM users u 
+      INNER JOIN user_roles ur ON ur.user_id_fk = u._id 
+      INNER JOIN modules m ON m._id = ur.module_id_fk 
+    WHERE user_id_fk = 'af5dd57a-b26e-11ed-a79b-000c29f95a80' AND m.app = 'lnd';
+    */
+    try {
+      const isAppUser = (
+        await this.entityRepository.query(
+          `
+      SELECT IF(COUNT(u._id)=0,false,true) isAppUser FROM users u 
+        INNER JOIN user_roles ur ON ur.user_id_fk = u._id 
+        INNER JOIN modules m ON m._id = ur.module_id_fk 
+      WHERE user_id_fk = ? AND m.app = ?;`,
+          [userId, app],
+        )
+      )[0].isAppUser;
+      console.log('lnd ', isAppUser);
+      return isAppUser > 0 ? true : false;
+    } catch (error) {
+      console.log('here');
+      Logger.log(error);
+      return null;
+    }
+  }
+
   async getAuthorizedUserById(_id: string) {
     try {
       const user = await this.entityRepository.findOneOrFail({ where: { _id } });
@@ -272,6 +299,9 @@ export class UsersService extends BaseEntityCrudService<Users> {
         .where('emp._id=:employeeId', { employeeId: _id })
         .getRawOne();
       //let userAccessItems;
+
+      const isLndUser = await this.isAppUser(_id, 'lnd');
+      console.log('asdasdasdsa', isLndUser);
 
       const userAccessResult = await this.entityRepository.query(
         `SELECT 
@@ -298,7 +328,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
+      return { ...user, isLndUser, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
     } catch (error) {
       console.log(error);
       handleRpcError(error);
