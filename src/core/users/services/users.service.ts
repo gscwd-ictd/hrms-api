@@ -68,15 +68,13 @@ export class UsersService extends BaseEntityCrudService<Users> {
     }
   }
 
-  async getAssignableLndUsers(pagination: { page: number; limit: number }) {
+  async getAssignableLndUsers() {
     try {
-      const { page, limit } = pagination;
       const assignables = (
         await this.entityRepository.query(
           `
-        CALL sp_get_assignable_lnd_users(?,?)
+        CALL sp_get_assignable_lnd_users()
       `,
-          [page, limit],
         )
       )[0];
       const result = await Promise.all(
