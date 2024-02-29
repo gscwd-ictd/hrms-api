@@ -30,7 +30,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getEmployeeNameById(_id: string) {
     const empName = await this.employeeRepository
       .createQueryBuilder('emp')
-      .select('get_employee_fullname(emp._id)', 'fullName')
+      .select('get_employee_fullname2(emp._id)', 'fullName')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('emp._id = :_id', { _id })
       .getRawOne();
