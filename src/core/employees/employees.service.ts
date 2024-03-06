@@ -78,6 +78,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return employees;
   }
 
+  async getEmployeesByOrgId2(orgId: string) {
+    const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id2(?);`, [orgId]))[0];
+    console.log(employees);
+    return employees;
+  }
+
   async testEmail() {
     return await this.emailService.sendEmail('johnhenryalfeche@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
   }
@@ -707,6 +713,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getSubordinates(employeeId: string) {
     return (await this.entityRepository.query(`CALL sp_get_employees_under_manager(?);`, [employeeId]))[0];
+  }
+
+  async getSubordinatesWithCompanyId(employeeId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_employees_with_company_id_under_manager(?);`, [employeeId]))[0];
   }
 
   async isGeneralManager(employeeId: string) {

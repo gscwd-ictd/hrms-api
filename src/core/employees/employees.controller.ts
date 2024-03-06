@@ -23,6 +23,11 @@ export class EmployeesController {
     return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
   }
 
+  @MessagePattern('get_employee_under_supervisor')
+  async getEmployeesUnderSupervisorMS(employeeId: string) {
+    return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
+  }
+
   @MessagePattern('get_employees_by_name_match')
   async getEmployeesByNameMatchMS(@Payload() name: string) {
     if (name === null || name === undefined) return await this.employeesService.getAllEmployeeNames();
@@ -277,6 +282,11 @@ export class EmployeesController {
   @Get('supervisors/:employee_id/subordinates')
   async getSubordinates(@Param('employee_id') employeeId: string) {
     return await this.employeesService.getSubordinates(employeeId);
+  }
+
+  @MessagePattern('get_subordinates_with_company_id')
+  async getSubordinatesWithCompanyId(@Payload() employeeId: string) {
+    return await this.employeesService.getSubordinatesWithCompanyId(employeeId);
   }
 
   @MessagePattern('is_general_manager_or_oic')
