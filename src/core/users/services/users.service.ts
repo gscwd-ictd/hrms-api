@@ -305,12 +305,12 @@ export class UsersService extends BaseEntityCrudService<Users> {
 
       const userAccessResult = await this.entityRepository.query(
         `SELECT 
-          CONCAT(UPPER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),1,1)),LOWER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),2))) userAccess 
-                   FROM user_roles ur 
-          INNER JOIN users u ON u._id = ur.user_id_fk 
-          INNER JOIN modules m ON m._id = ur.module_id_fk 
-          WHERE u._id = ? and has_access=1  AND 
-          CONCAT(UPPER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),1,1)),LOWER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),2))) <> '';`,
+        CONCAT(UPPER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),1,1)),LOWER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),2))) userAccess 
+                 FROM user_roles ur 
+        INNER JOIN users u ON u._id = ur.user_id_fk 
+        INNER JOIN modules m ON m._id = ur.module_id_fk 
+        WHERE u._id = ? and has_access=1  AND 
+        CONCAT(UPPER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),1,1)),LOWER(SUBSTRING((REPLACE(REPLACE(m.url,'/',''),'-','_')),2))) <> '';`,
         [_id],
       );
 
