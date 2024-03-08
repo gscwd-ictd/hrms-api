@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, lastValueFrom } from 'rxjs';

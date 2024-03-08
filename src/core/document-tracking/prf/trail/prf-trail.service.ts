@@ -1,12 +1,12 @@
 import { getDateTimeNow } from 'src/global/utils/helper/date.helper';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { PrfPositionsViewService } from 'src/core/prf-details/prf-positions/views/prf-positions-view/prf-positions-view.service';
 import { VppPositionsService } from 'src/core/vacant-position-posting/sub-modules/vpp-positions/vpp-positions.service';
 import { PostingStatus } from 'src/core/vacant-position-posting/utils/enums/posting-status.enum';
 import { VacantPositionPostingService } from 'src/core/vacant-position-posting/vacant-position-posting.service';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import { PrfTrailDTO } from './data/dtos/prf-trail.dto';
 import { PrfTrail } from './data/entities/prf-trail.entity';
 import { PrfTrailStatus } from './utils/enums/prf-trail-status.enum';
@@ -16,8 +16,8 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
   constructor(
     @InjectRepository(PrfTrail) private readonly prfTrailRepository: Repository<PrfTrail>,
     private readonly prfPositionsViewService: PrfPositionsViewService,
-    private readonly VppService: VacantPositionPostingService,
-    private readonly VppPositionsService: VppPositionsService,
+    private readonly vppService: VacantPositionPostingService,
+    private readonly vppPositionsService: VppPositionsService,
   ) {
     super(prfTrailRepository);
   }
@@ -264,7 +264,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         }
       }
       if (prfTrail.agmStatus === 'For approval' && prfTrail.adminStatus === 'Pending') {
-        let agmStatus = prfTrailDto.status;
+        const agmStatus = prfTrailDto.status;
         if (agmStatus === 'Approved') {
           if (
             (
@@ -333,12 +333,12 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
             const vppData = await Promise.all(
               prfPositions.map(async (vppPosition) => {
                 //2. SAVE TO vpp set vppstatus to For csc approval
-                const vpp = await this.VppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
+                const vpp = await this.vppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
                 //3. save grouped positions to vpp_positions;
                 const splittedPositions = vppPosition.positionId.split(',');
                 const vppPositions = await Promise.all(
                   splittedPositions.map(async (prfPositionsId) => {
-                    return await this.VppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
+                    return await this.vppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
                   }),
                 );
                 return { vppId: vpp._id, status: vpp.postingStatus, positions: vppPositions };
@@ -367,6 +367,19 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
             return { prfDetailsId, ...prfTrailDto };
         }
       }
+    }
+  }
+
+  async countApprovedPrf() {
+    try {
+      const currentYear = new Date().getFullYear();
+      const count = await this.prfTrailRepository.count({
+        where: { gmStatus: PrfTrailStatus.APPROVED, gmStatusUpdatedAt: Raw((alias) => `year(${alias}) = :year`, { year: currentYear }) },
+      });
+      return count;
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

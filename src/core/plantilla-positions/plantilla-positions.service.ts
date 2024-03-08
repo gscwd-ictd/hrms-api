@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
@@ -34,7 +34,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
   }
 
   async getPositionsPerDivision(divisionId: string, withIds: number) {
-    var positions = this.entityRepository
+    let positions = await this.entityRepository
       .createQueryBuilder('plantilla_positions')
       .select('distinct plantilla_positions._id', 'positionId')
       .addSelect('position_title', 'positionTitle')
@@ -43,7 +43,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
       .getRawMany();
 
     if (withIds == 0) {
-      var positions = this.entityRepository
+      positions = await this.entityRepository
         .createQueryBuilder('plantilla_positions')
         .select('position_title', 'positionTitle')
         .distinct(true)
@@ -61,7 +61,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
    */
   async getPositionsPerOrgStruct() {
     // let positionDropDown = [];
-    let posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
+    const posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
       plantilla_dropdown_view ppq, salary_grade sg
   WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk AND pp.employee_id_fk IS NULL AND nature_of_appointment='permanent' AND code=?;
       `;
@@ -70,8 +70,8 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
 
     const positionDropDown = await Promise.all(
       orgCode.map(async (orgcode: any) => {
-        var _code = orgcode.code;
-        var positionTitles = await this.plantillaPositionsRepository.query(posquery, [_code]);
+        const _code = orgcode.code;
+        const positionTitles = await this.plantillaPositionsRepository.query(posquery, [_code]);
 
         const options = await Promise.all(
           positionTitles.map(async (positionTitle: any) => {
@@ -92,7 +92,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
   }
 
   async getPositionsPerOrgStructWithOutOccupation() {
-    let posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
+    const posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
       plantilla_dropdown_view ppq, salary_grade sg
   WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk  AND pp.nature_of_appointment = 'permanent' AND pp._id NOT IN (SELECT position_id_fk FROM occupational_group) AND code=?;
       `;
@@ -101,8 +101,8 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
 
     const positionDropDown = await Promise.all(
       orgCode.map(async (orgcode: any) => {
-        var _code = orgcode.code;
-        var positionTitles = await this.plantillaPositionsRepository.query(posquery, [_code]);
+        const _code = orgcode.code;
+        const positionTitles = await this.plantillaPositionsRepository.query(posquery, [_code]);
 
         const options = await Promise.all(
           positionTitles.map(async (positionTitle: any) => {
@@ -120,5 +120,14 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
       }),
     );
     return positionDropDown;
+  }
+
+  async countEmployees() {
+    try {
+      return await this.plantillaPositionsRepository.count();
+    } catch (error) {
+      Logger.log(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
