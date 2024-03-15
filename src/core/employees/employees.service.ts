@@ -657,7 +657,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeesByNameMatch(name: string) {
     return await this.entityRepository.query(
-      `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle  FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
+      `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
       [name],
     );
   }

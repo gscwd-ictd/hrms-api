@@ -301,6 +301,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
       //let userAccessItems;
 
       const isLndUser = await this.isAppUser(_id, 'lnd');
+      const isEmsUser = await this.isAppUser(_id, 'ems');
       console.log('asdasdasdsa', isLndUser);
 
       const userAccessResult = await this.entityRepository.query(
@@ -329,7 +330,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, isLndUser, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
+      return { ...user, isLndUser, isEmsUser, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
     } catch (error) {
       console.log(error);
       handleRpcError(error);
