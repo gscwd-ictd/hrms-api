@@ -263,12 +263,26 @@ export class OrganizationService {
 
   async getAvailableOrgStructsMixed(orgIds: string[]) {
     if (orgIds.length > 0)
-      return await this.officeService.entityRepository.query(`SELECT _id value,  name label FROM org_struct_view WHERE _id IN (?) ORDER BY name ASC`, [orgIds]);
+      return await this.officeService.entityRepository.query(`SELECT _id value,  name label FROM org_struct_view WHERE _id NOT IN (?) ORDER BY name ASC`, [orgIds]);
     return await this.getAllAvailableOrgStructsMixed();
   }
 
   //SELECT get_org_name_by_org_id('8f821209-f048-11ec-8d31-c4bde5a04065');
   async getOrgNameByOrgId(orgId: string) {
     return (await this.officeService.entityRepository.query(`SELECT get_org_name_by_org_id(?) orgName;`, [orgId]))[0].orgName;
+  }
+
+  async getAllDepartmentsAndOgm() {
+    try {
+      return await this.divisionService.entityRepository.query(
+        `
+      SELECT _id, name, orgStruct,code  
+      FROM hris_dev1.org_struct_view 
+      WHERE orgStruct = 'department' OR 
+      name = 'Office of the General Manager';`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
