@@ -263,7 +263,7 @@ export class OrganizationService {
 
   async getAvailableOrgStructsMixed(orgIds: string[]) {
     if (orgIds.length > 0)
-      return await this.officeService.entityRepository.query(`SELECT _id value,  name label FROM org_struct_view WHERE _id IN (?) ORDER BY name ASC`, [orgIds]);
+      return await this.officeService.entityRepository.query(`SELECT _id value,  name label FROM org_struct_view WHERE _id NOT IN (?) ORDER BY name ASC`, [orgIds]);
     return await this.getAllAvailableOrgStructsMixed();
   }
 

@@ -15,7 +15,7 @@ export class ModulesController {
     return await this.modulesService.getModulesByApp('rsp');
   }
 
-  @UseInterceptors(UserLogsInterceptor)
+  //@UseInterceptors(UserLogsInterceptor)
   @Post()
   async saveModules(@Body() modulesDTO: ModulesType) {
     return await this.modulesService.saveModule(modulesDTO);

@@ -84,6 +84,6 @@ export const modules = [
   UserRolesModule,
   UserLogsModule,
   EmployeeTagsModule,
-  //HolidaysModule
-  //ModulesModule,
+  HolidaysModule,
+  ModulesModule,
 ];
