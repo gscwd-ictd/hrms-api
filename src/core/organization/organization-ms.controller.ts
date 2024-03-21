@@ -29,4 +29,9 @@ export class OrganizationMsController {
   async getOrgNameByOrgId(@Payload() orgId: string) {
     return await this.organizationService.getOrgNameByOrgId(orgId);
   }
+
+  @MessagePattern('get_all_departments_and_ogm')
+  async getAllDepartmentsAndOgm() {
+    return await this.organizationService.getAllDepartmentsAndOgm();
+  }
 }

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, lastValueFrom } from 'rxjs';
@@ -657,7 +657,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeesByNameMatch(name: string) {
     return await this.entityRepository.query(
-      `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle  FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
+      `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
       [name],
     );
   }

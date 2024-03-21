@@ -41,6 +41,7 @@ import { VacantPositionPostingViewModule } from 'src/core/vacant-position-postin
 import { UserRolesModule } from 'src/core/user-roles/user-roles.module';
 import { HolidaysModule } from 'src/core/holidays/holidays.module';
 import { EmployeeTagsModule } from 'src/core/employee-tags/employee-tags.module';
+import { StatsModule } from 'src/core/stats/stats.module';
 
 export const modules = [
   AuthModule,

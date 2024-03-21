@@ -271,4 +271,18 @@ export class OrganizationService {
   async getOrgNameByOrgId(orgId: string) {
     return (await this.officeService.entityRepository.query(`SELECT get_org_name_by_org_id(?) orgName;`, [orgId]))[0].orgName;
   }
+
+  async getAllDepartmentsAndOgm() {
+    try {
+      return await this.divisionService.entityRepository.query(
+        `
+      SELECT _id, name, orgStruct,code  
+      FROM hris_dev1.org_struct_view 
+      WHERE orgStruct = 'department' OR 
+      name = 'Office of the General Manager';`,
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
