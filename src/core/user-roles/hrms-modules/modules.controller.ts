@@ -5,7 +5,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards, UseI
 import { ModulesDTO, ModulesType, ModulesUpdateDTO } from './data/modules.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
-@UseGuards(AuthenticatedGuard)
+//@UseGuards(AuthenticatedGuard)
 @Controller('modules')
 export class ModulesController {
   constructor(private readonly modulesService: ModulesService) {}
@@ -15,7 +15,7 @@ export class ModulesController {
     return await this.modulesService.getModulesByApp('rsp');
   }
 
-  @UseInterceptors(UserLogsInterceptor)
+  //@UseInterceptors(UserLogsInterceptor)
   @Post()
   async saveModules(@Body() modulesDTO: ModulesType) {
     return await this.modulesService.saveModule(modulesDTO);

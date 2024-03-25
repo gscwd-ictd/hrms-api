@@ -27,6 +27,7 @@ export class UsersController {
   @UseGuards(AuthenticatedGuard)
   @Get('/details')
   async getUserDetails(@User() user: any) {
+    console.log(user);
     return user;
   }
 
