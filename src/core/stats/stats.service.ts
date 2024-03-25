@@ -37,10 +37,15 @@ export class StatsService {
   async countApplicants() {
     try {
       const currentYear = new Date().getFullYear();
-      return await getManager().query(
-        'select count(applicantId) as applicantCount from posting_applicants_view left join vacant_position_posting on posting_applicants_view.vppId  = vacant_position_posting._id where year(posting_date) = ?',
-        [currentYear],
-      );
+      const count = (
+        await getManager().query(
+          'select count(applicantId) as applicantCount from posting_applicants_view left join vacant_position_posting on posting_applicants_view.vppId  = vacant_position_posting._id where year(posting_date) = ?',
+          [currentYear],
+        )
+      )[0];
+      return {
+        count: parseInt(count.applicantCount),
+      };
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);

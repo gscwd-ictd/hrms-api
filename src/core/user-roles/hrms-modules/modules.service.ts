@@ -16,6 +16,7 @@ export class ModulesService extends BaseEntityCrudService<Modules> {
     try {
       const module = await this.saveEntity(modulesDTO);
       const users = await this.entityRepository.query(`SELECT _id FROM users;`);
+      console.log(users);
       const updateResult = await getManager().transaction(async (transactionEntityManager) => {
         const userRoles = await Promise.all(
           users.map(async (user) => {

@@ -6,6 +6,7 @@ import * as session from 'express-session';
 import * as redis from 'redis';
 import * as connectRedis from 'connect-redis';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import * as helmet from 'helmet';
 
 const whitelist = [
   'http://172.20.10.57:3109',
@@ -31,6 +32,7 @@ const whitelist = [
   'http://172.20.10.56:3000',
   'http://172.20.10.63:3001',
   'http://172.20.10.63:3005',
+  'http://172.20.110.45:3007',
   'http://localhost:3000',
 ];
 
@@ -44,6 +46,8 @@ const Redis = connectRedis(session);
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.use(helmet());
 
   app.use(
     '/',
