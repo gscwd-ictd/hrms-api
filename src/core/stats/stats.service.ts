@@ -16,8 +16,8 @@ export class StatsService {
 
   async countEmployees() {
     try {
-      const count = await this.plantillaPositionsService.countEmployees();
-      return { employeesTotal: count };
+      const count = await getManager().query('select count(employee_id_fk) as total from plantilla_positions');
+      return { employeesTotal: parseInt(count[0].total) };
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -53,6 +53,15 @@ export class StatsService {
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async countEmployeesByNatureOfAppointment() {
+    try {
+      return await getManager().query('select count(employee_id_fk) as total from plantilla_positions');
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
 }

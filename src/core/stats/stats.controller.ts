@@ -24,4 +24,9 @@ export class StatsController {
   async findCurrentBirthdays() {
     return await this.statsService.findCurrentBirthdays();
   }
+
+  @Get('count/appointment')
+  async countEmployeesByNatureOfAppointment() {
+    return await this.statsService.countEmployeesByNatureOfAppointment();
+  }
 }

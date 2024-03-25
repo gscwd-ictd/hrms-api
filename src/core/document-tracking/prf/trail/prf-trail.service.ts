@@ -374,7 +374,10 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
     try {
       const currentYear = new Date().getFullYear();
       const count = await this.prfTrailRepository.count({
-        where: { gmStatus: PrfTrailStatus.APPROVED, gmStatusUpdatedAt: Raw((alias) => `year(${alias}) = :year`, { year: currentYear }) },
+        where: {
+          gmStatus: PrfTrailStatus.APPROVED,
+          gmStatusUpdatedAt: Raw((alias) => `year(${alias}) = :year`, { year: currentYear }),
+        },
       });
       return count;
     } catch (error) {
