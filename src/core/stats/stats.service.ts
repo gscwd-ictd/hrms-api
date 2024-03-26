@@ -16,8 +16,8 @@ export class StatsService {
 
   async countEmployees() {
     try {
-      const count = await getManager().query('select count(employee_id_fk) as total from plantilla_positions');
-      return { employeesTotal: parseInt(count[0].total) };
+      const count = (await getManager().query('select count(employee_id_fk) as employeesTotal from plantilla_positions'))[0];
+      return { employeesTotal: parseInt(count.employeesTotal) };
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -63,7 +63,22 @@ export class StatsService {
 
   async countEmployeesByNatureOfAppointment() {
     try {
-      return await getManager().query('select count(employee_id_fk) as total from plantilla_positions');
+      const count = await getManager().query(
+        'select nature_of_appointment as appointment, count (employee_id_fk) AS employeesTotal from plantilla_positions group by nature_of_appointment',
+      );
+
+      const labels = count.map((items) => items.appointment);
+      const employeesTotal = count.map((items) => parseInt(items.employeesTotal));
+
+      return {
+        labels: labels,
+        datasets: [
+          {
+            label: '# of Employees',
+            data: employeesTotal,
+          },
+        ],
+      };
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
