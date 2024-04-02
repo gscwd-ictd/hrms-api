@@ -44,7 +44,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
             INNER JOIN employees ON employees._id = users.employee_id_fk
             INNER JOIN user_roles ur ON ur.user_id_fk = employees._id
             INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE m.app = 'ems'
+        WHERE m.app = 'ems' AND has_access = 1
          ) 
          ORDER BY get_employee_fullname2(emp._id) ASC;
       `,

@@ -342,6 +342,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return unassignedEmployees;
   }
 
+  async getCompanyIdsByOrgId(orgId: string) {
+    try {
+      return (await this.entityRepository.query(`CALL sp_get_employees_company_id_under_org_id(?);`, [orgId]))[0];
+    } catch (error) {
+      throw new RpcException(error);
+    }
+  }
+
   async getCustomGroupsUnassignedRankFileMember(employeeIds: string[]) {
     let unassignedEmployees;
     if (employeeIds.length === 0) {
@@ -538,14 +546,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getAllPermanentCasualEmployees2() {
     return await this.entityRepository.query(
-      `SELECT get_employee_fullname2(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
+      `SELECT get_employee_fullname2(emp._id) label,emp._id value 
+       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
     );
   }
 
   async getAllAssignablePermanentCasualEmployees(employeeIds: string[]) {
     if (employeeIds.length > 0)
       return await this.entityRepository.query(
-        `SELECT get_employee_fullname2(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' AND emp._id NOT IN (?) ORDER BY get_employee_fullname2(emp._id) ASC;`,
+        `SELECT get_employee_fullname2(emp._id) label,emp._id value FROM employees emp 
+                INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id 
+        WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' AND 
+        emp._id NOT IN (?) ORDER BY get_employee_fullname2(emp._id) ASC;`,
         [employeeIds],
       );
     return await this.getAllPermanentCasualEmployees2();
