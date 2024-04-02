@@ -293,4 +293,9 @@ export class EmployeesController {
   async isGeneralManager(@Payload() employeeId: string) {
     return await this.employeesService.isGeneralManager(employeeId);
   }
+  //sp_get_employees_company_id_under_org_id
+  @MessagePattern('get_company_ids_by_org_id')
+  async getCompanyIdsByOrgId(@Payload() orgId: string) {
+    return await this.employeesService.getCompanyIdsByOrgId(orgId);
+  }
 }

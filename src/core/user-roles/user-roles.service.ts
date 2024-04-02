@@ -31,8 +31,6 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
         userId,
         app,
       ]);
-      //console.log(deleteResult);
-      //const deletedUser = await this.usersService.removeEntity(userId);
       const deletedUserName = (await this.entityRepository.query(`SELECT get_employee_fullname(_id) fullName FROM users WHERE _id=?;`, [userId]))[0];
       return { userId, ...deletedUserName };
     } catch (error) {
@@ -71,7 +69,7 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
         m.slug
           FROM user_roles ur 
           INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE ur.user_id_fk = ? AND m.app = ?;
+        WHERE ur.user_id_fk = ? AND m.app = ? ORDER BY m.module ASC;
       `,
         [userId, app],
       );
