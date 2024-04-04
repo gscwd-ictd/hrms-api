@@ -29,4 +29,14 @@ export class StatsController {
   async countEmployeesByNatureOfAppointment() {
     return await this.statsService.countEmployeesByNatureOfAppointment();
   }
+
+  @Get('count/department')
+  async countPersonnelPerDepartment() {
+    return await this.statsService.countPersonnelPerDepartment();
+  }
+
+  @Get('count/age')
+  async countPersoneelByAgeBracket() {
+    return await this.statsService.countPersoneelByAgeBracket();
+  }
 }

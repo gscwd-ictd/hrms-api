@@ -2,17 +2,12 @@ import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/c
 import { lastValueFrom } from 'rxjs';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
 import { ClientProxy } from '@nestjs/microservices';
-import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { PrfTrailService } from '../document-tracking/prf/trail/prf-trail.service';
 import { getManager } from 'typeorm';
 
 @Injectable()
 export class StatsService {
-  constructor(
-    @Inject(MicroserviceType.AUTHN) private readonly clientAuthn: ClientProxy,
-    private readonly plantillaPositionsService: PlantillaPositionsService,
-    private readonly prfTrailService: PrfTrailService,
-  ) {}
+  constructor(@Inject(MicroserviceType.AUTHN) private readonly clientAuthn: ClientProxy, private readonly prfTrailService: PrfTrailService) {}
 
   async countEmployees() {
     try {
@@ -82,6 +77,24 @@ export class StatsService {
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async countPersonnelPerDepartment() {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_birthdays_for_the_current_month' }, ''));
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async countPersoneelByAgeBracket() {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_birthdays_for_the_current_month' }, ''));
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
