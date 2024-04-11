@@ -8,11 +8,12 @@ import { VacantPositionPostingService } from 'src/core/vacant-position-posting/v
 import { PrfTrail } from './data/entities/prf-trail.entity';
 import { PrfTrailController } from './prf-trail.controller';
 import { PrfTrailService } from './prf-trail.service';
+import { PrfTrailMsController } from './prf-trail-ms.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([PrfTrail]), PrfPositionsViewModule, VppPositionsModule, VacantPositionPostingModule],
   providers: [PrfTrailService],
-  controllers: [PrfTrailController],
+  controllers: [PrfTrailController, PrfTrailMsController],
   exports: [TypeOrmModule.forFeature([PrfTrail]), PrfTrailService],
 })
 export class PrfTrailModule {}
