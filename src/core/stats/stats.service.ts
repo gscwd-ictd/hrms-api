@@ -59,7 +59,8 @@ export class StatsService {
   async countEmployeesByNatureOfAppointment() {
     try {
       const count = await getManager().query(
-        'select nature_of_appointment as appointment, count (employee_id_fk) AS employeesTotal from plantilla_positions group by nature_of_appointment',
+        'select nature_of_appointment as appointment, count (employee_id_fk) AS employeesTotal from plantilla_positions where nature_of_appointment != ? group by nature_of_appointment ',
+        ['board of directors'],
       );
 
       const labels = count.map((items) => items.appointment);
@@ -67,12 +68,7 @@ export class StatsService {
 
       return {
         labels: labels,
-        datasets: [
-          {
-            label: '# of Employees',
-            data: employeesTotal,
-          },
-        ],
+        data: employeesTotal,
       };
     } catch (error) {
       Logger.error(error);
