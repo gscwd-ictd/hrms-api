@@ -220,10 +220,17 @@ export class EmployeesController {
   @Get(':id')
   async getAnEmployeeById(@Param('id') _id: string) {
     try {
+      //console.log(await this.employeesService.getEmployeeDetailsByEmployeeId(_id));
       return await this.employeesService.getEmployeeDetails(_id);
-    } catch {
+    } catch (error) {
+      console.log(error);
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Get('employee-portal/details/:id')
+  async getEmployeePortalDetails(@Param('id') _id: string) {
+    return await this.employeesService.getEmployeePortalDetails(_id);
   }
 
   @MessagePattern('get_employees_for_population')
