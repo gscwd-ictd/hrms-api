@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApplicantEndorsementController } from './applicant-endorsement.controller';
 import { ApplicantEndorsementService } from './applicant-endorsement.service';
 import { ApplicantEndorsement } from './data/applicant-endorsement.entity';
+import { ApplicantEndorsementMsController } from './applicant-endorsement-ms.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ApplicantEndorsement, PostingApplicantsDetailedView]), PostingApplicantsDetailedViewModule, HiringProcessResultsModule],
@@ -17,6 +18,6 @@ import { ApplicantEndorsement } from './data/applicant-endorsement.entity';
     HiringProcessResultsModule,
     ApplicantEndorsementService,
   ],
-  controllers: [ApplicantEndorsementController],
+  controllers: [ApplicantEndorsementController, ApplicantEndorsementMsController],
 })
 export class ApplicantEndorsementModule {}

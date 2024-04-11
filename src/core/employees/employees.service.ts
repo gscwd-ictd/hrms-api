@@ -93,6 +93,34 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return await this.getEmployeesByOrgId(employeeId);
   }
 
+  async getAllEmployeesWithSupervisor() {
+    const employees = await Promise.all(
+      (
+        await this.getAllPermanentCasualEmployees()
+      ).map(async (emp) => {
+        const { label, value } = emp;
+        const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+        const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value));
+        return {
+          employee: {
+            _id: employeeDetails.userId,
+            name: employeeDetails.employeeFullName,
+            positionTitle: employeeDetails.assignment.positionTitle,
+            assignment: employeeDetails.assignment.name,
+          },
+          supervisor: {
+            _id: supervisorDetails.userId,
+            name: supervisorDetails.employeeFullName,
+            positionTitle: supervisorDetails.assignment.positionTitle,
+            assignment: supervisorDetails.assignment.name,
+          },
+        };
+      }),
+    );
+
+    return employees;
+  }
+
   async getEmployeeByIdForLND(employeeId: string) {
     const empPosition = await this.employeeRepository
       .createQueryBuilder('emp')
@@ -545,10 +573,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllPermanentCasualEmployees2() {
-    return await this.entityRepository.query(
+    return (await this.entityRepository.query(
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 
        FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
-    );
+    )) as { label: string; value: string }[];
   }
 
   async getAllAssignablePermanentCasualEmployees(employeeIds: string[]) {
