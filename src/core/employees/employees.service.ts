@@ -106,6 +106,30 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return await this.getEmployeesByOrgId(employeeId);
   }
 
+  async getEmployeeWithSupervisor(employeeId: string) {
+    try {
+      const employeeDetails = await this.getEmployeeDetailsByEmployeeId(employeeId);
+      const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(employeeId, false));
+      console.log(supervisorDetails);
+      return {
+        employee: {
+          _id: employeeDetails.userId,
+          name: employeeDetails.employeeFullName,
+          positionTitle: employeeDetails.assignment.positionTitle,
+          assignment: employeeDetails.assignment.name,
+        },
+        supervisor: {
+          _id: supervisorDetails.userId,
+          name: supervisorDetails.employeeFullName,
+          positionTitle: supervisorDetails.assignment.positionTitle,
+          assignment: supervisorDetails.assignment.name,
+        },
+      };
+    } catch (error) {
+      throw new error(error);
+    }
+  }
+
   async getAllEmployeesWithSupervisor() {
     try {
       const employeeList = await this.getAllPermanentCasualEmployees();

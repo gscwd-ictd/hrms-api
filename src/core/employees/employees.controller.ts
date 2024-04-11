@@ -193,13 +193,23 @@ export class EmployeesController {
   }
 
   @MessagePattern('get_employee_supervisor_id')
-  async getEmployeeSupervisor(@Payload() employeeId: string) {
+  async getEmployeeSupervisorMs(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeSupervisor(employeeId);
   }
 
   @MessagePattern('get_all_employees_with_supervisor')
   async getAllEmployeesWithSupervisorMs() {
     return await this.employeesService.getAllEmployeesWithSupervisor();
+  }
+
+  @MessagePattern('get_all_employee_with_supervisor')
+  async getEmployeeWithSupervisorMs(@Payload() employeeId: string) {
+    return await this.employeesService.getEmployeeWithSupervisor(employeeId);
+  }
+
+  @Get('asd/asd/asd/asd/asd/:employee_id')
+  async getEmployeeWithSupervisor(@Param('employee_id') employeeId: string) {
+    return await this.employeesService.getEmployeeWithSupervisor(employeeId);
   }
 
   @Get('asd/asd/asd/asd')
