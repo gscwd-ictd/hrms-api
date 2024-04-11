@@ -88,4 +88,5 @@ export const modules = [
   StatsModule,
   HolidaysModule,
   ModulesModule,
+  StatsModule,
 ];
