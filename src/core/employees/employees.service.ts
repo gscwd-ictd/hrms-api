@@ -12,6 +12,7 @@ import { PlantillaPositionsService } from '../plantilla-positions/plantilla-posi
 import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
+import { cp } from 'fs';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -35,6 +36,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .where('emp._id = :_id', { _id })
       .getRawOne();
     return empName;
+  }
+
+  async getEmployeePortalDetails(_id: string) {
+    try {
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, _id));
+    } catch (error) {
+      console.log(error, error);
+      return {
+        email: null,
+        photoUrl: null,
+      };
+    }
   }
 
   async getEmployeeDetails(_id: string) {
@@ -62,7 +75,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return {
       userId,
       ...employeePortalDetails,
-      companyId,
+      companyId: companyId === null ? companyId : 'BOD001',
       fullName,
       isHRMPSB,
       scheduleBase: employeeSchedule.schedule.scheduleBase,
@@ -94,31 +107,37 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllEmployeesWithSupervisor() {
-    const employees = await Promise.all(
-      (
-        await this.getAllPermanentCasualEmployees()
-      ).map(async (emp) => {
-        const { label, value } = emp;
-        const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
-        const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value));
-        return {
-          employee: {
-            _id: employeeDetails.userId,
-            name: employeeDetails.employeeFullName,
-            positionTitle: employeeDetails.assignment.positionTitle,
-            assignment: employeeDetails.assignment.name,
-          },
-          supervisor: {
-            _id: supervisorDetails.userId,
-            name: supervisorDetails.employeeFullName,
-            positionTitle: supervisorDetails.assignment.positionTitle,
-            assignment: supervisorDetails.assignment.name,
-          },
-        };
-      }),
-    );
+    try {
+      const employeeList = await this.getAllPermanentCasualEmployees();
+      const employees = await Promise.all(
+        employeeList.map(async (emp) => {
+          const { value } = emp;
+          const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+          //console.log('employee details', employeeDetails);
+          const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
+          //console.log('supervisor supervisor', supervisorDetails);
+          return {
+            employee: {
+              _id: employeeDetails.userId,
+              name: employeeDetails.employeeFullName,
+              positionTitle: employeeDetails.assignment.positionTitle,
+              assignment: employeeDetails.assignment.name,
+            },
+            supervisor: {
+              _id: supervisorDetails.userId,
+              name: supervisorDetails.employeeFullName,
+              positionTitle: supervisorDetails.assignment.positionTitle,
+              assignment: supervisorDetails.assignment.name,
+            },
+          };
+        }),
+      );
 
-    return employees;
+      return employees;
+    } catch (error) {
+      console.log('asd zxc', error);
+      throw new error(error);
+    }
   }
 
   async getEmployeeByIdForLND(employeeId: string) {
@@ -210,59 +229,63 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getEmployeeDetailsByEmployeeId(employeeId: string) {
-    const empPosition = await this.employeeRepository
-      .createQueryBuilder('emp')
-      .select('emp._id', 'userId')
-      .addSelect('emp.company_id', 'companyId')
-      .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
-      .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
-      .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
-      .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
-      .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
-      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
-      .addSelect('get_user_role(emp._id)', 'userRole')
-      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
-      .where('emp._id = :employeeId', { employeeId })
-      .getRawOne();
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp._id = :employeeId', { employeeId })
+        .getRawOne();
 
-    const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
-    const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
-    const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
-    const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
-    console.log(salaryGradeDetails);
-    const salaryGradeAmount = salaryGradeDetails.monthlyRate;
-    const salaryGrade = salaryGradeDetails.salaryGrade;
-    //console.log(salaryGradeAmount);
+      const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
+      const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
+      const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
+      ///console.log(salaryGradeDetails);
+      const salaryGradeAmount = salaryGradeDetails.monthlyRate;
+      const salaryGrade = salaryGradeDetails.salaryGrade;
+      //console.log(salaryGradeAmount);
 
-    const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
-    //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
-    console.log(employeePortalDetails);
-    console.log({
-      userId,
-      companyId,
-      employeeFullName,
-      photoUrl: employeePortalDetails.photoUrl,
-      salaryGradeAmount,
-      salaryGrade,
-      //overtimeImmediateSupervisorId,
-      isHRMPSB,
-      assignment: { id, name, positionId, positionTitle },
-      userRole,
-    });
-    return {
-      userId,
-      companyId,
-      isPdcChairman,
-      isPdcSecretariat,
-      employeeFullName,
-      photoUrl: employeePortalDetails.photoUrl,
-      salaryGradeAmount,
-      salaryGrade,
-      //overtimeImmediateSupervisorId,
-      isHRMPSB,
-      assignment: { id, name, positionId, positionTitle },
-      userRole,
-    };
+      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+      //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
+      //console.log('EMPLOYEE DETAILS', employeePortalDetails);
+      // console.log({
+      //   userId,
+      //   companyId,
+      //   employeeFullName,
+      //   photoUrl: employeePortalDetails.photoUrl,
+      //   salaryGradeAmount,
+      //   salaryGrade,
+      //   //overtimeImmediateSupervisorId,
+      //   isHRMPSB,
+      //   assignment: { id, name, positionId, positionTitle },
+      //   userRole,
+      // });
+      return {
+        userId,
+        companyId,
+        isPdcChairman,
+        isPdcSecretariat,
+        employeeFullName,
+        photoUrl: employeePortalDetails.photoUrl,
+        salaryGradeAmount,
+        salaryGrade,
+        //overtimeImmediateSupervisorId,
+        isHRMPSB,
+        assignment: { id, name, positionId, positionTitle },
+        userRole,
+      };
+    } catch (error) {
+      throw new HttpException(error.status, error.message);
+    }
   }
 
   async getEmployeesByOrgIdAlone(orgId: string) {
@@ -568,7 +591,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getAllPermanentCasualEmployees() {
     return await this.entityRepository.query(
-      `SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname(emp._id) ASC;`,
+      `SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp 
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+        INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
+       WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
+       AND sg.salary_grade <= 27
+       ORDER BY get_employee_fullname(emp._id) ASC;`,
     );
   }
 
@@ -686,6 +714,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         ])
       )[0].supervisorId;
     } catch (error) {
+      console.log('asdasdasd', error);
       if (isRpc) throw new RpcException(error);
       throw new HttpException(error.message, error.status);
     }
@@ -724,12 +753,13 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
-      console.log('salary z: ', monthlyRate[0]);
+      //console.log('salary z: ', monthlyRate[0]);
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
         return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };
       } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
     } catch (error) {
+      console.log(error);
       return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
     }
   }
