@@ -202,7 +202,7 @@ export class EmployeesController {
     return await this.employeesService.getAllEmployeesWithSupervisor();
   }
 
-  @MessagePattern('get_all_employee_with_supervisor')
+  @MessagePattern('get_employee_with_supervisor')
   async getEmployeeWithSupervisorMs(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeeWithSupervisor(employeeId);
   }
@@ -320,7 +320,7 @@ export class EmployeesController {
   async isGeneralManager(@Payload() employeeId: string) {
     return await this.employeesService.isGeneralManager(employeeId);
   }
-  //sp_get_employees_company_id_under_org_id
+
   @MessagePattern('get_company_ids_by_org_id')
   async getCompanyIdsByOrgId(@Payload() orgId: string) {
     return await this.employeesService.getCompanyIdsByOrgId(orgId);
