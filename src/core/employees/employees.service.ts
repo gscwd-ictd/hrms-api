@@ -75,7 +75,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return {
       userId,
       ...employeePortalDetails,
-      companyId: companyId === null ? companyId : 'BOD001',
+      companyId: companyId !== null ? companyId : 'BOD001',
       fullName,
       isHRMPSB,
       scheduleBase: employeeSchedule.schedule.scheduleBase,
@@ -328,7 +328,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .addSelect('get_employee_assignment(emp._id)', 'name')
         .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
         .addSelect('get_user_role(emp._id)', 'userRole')
-        //.addSelect('emp.photo_url')
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .where('emp.company_id = :_companyId', { _companyId })
         .getRawOne();
