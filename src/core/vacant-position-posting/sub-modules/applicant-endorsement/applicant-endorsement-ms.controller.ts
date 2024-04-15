@@ -18,4 +18,9 @@ export class ApplicantEndorsementMsController {
       )
     ).length;
   }
+
+  @MessagePattern('get_appointing_authority_selection_count')
+  async getAppointingAuthoritySelectionCount() {
+    return await this.applicantEndorsementService.getAppointingAuthoritySelectionCount();
+  }
 }
