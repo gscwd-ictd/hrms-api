@@ -269,11 +269,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where('emp._id = :employeeId', { employeeId })
         .getRawOne();
 
-      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [employeeId]))[0][0];
       const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
       const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
 
       const salaryGradeAmount = salaryGradeDetails.monthlyRate;
