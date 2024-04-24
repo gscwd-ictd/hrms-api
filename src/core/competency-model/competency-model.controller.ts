@@ -63,6 +63,8 @@ export class CompetencyModelController {
   @Delete(':competency_id')
   async deleteCompetency(@Param('competency_id') _id: string) {
     try {
+      //
+
       return await this.competencyModelService.removeEntity(_id);
     } catch (error) {
       if ((error.code = 'ER_ROW_IS_REFERENCED_2')) throw new HttpException("Competency's Model already set.", HttpStatus.NOT_ACCEPTABLE);

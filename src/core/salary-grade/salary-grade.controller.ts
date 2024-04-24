@@ -1,12 +1,8 @@
-import { UserLogsInterceptor } from './../../global/user-logs/interceptors/user-logs.interceptor';
-import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated2.guard';
-import { Body, Controller, Get, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
-import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { CreateSalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
 import { SalaryGradeService } from './salary-grade.service';
-import { GetSalaryGradeInterceptor } from './interceptors/get-salary-grade.interceptor';
 
 //@UseGuards(AuthenticatedGuard)
-//@UseInterceptors(UserLogsInterceptor)
 @Controller('salary-grade')
 export class SalaryGradeController {
   constructor(private readonly salaryGradeService: SalaryGradeService) {}

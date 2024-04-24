@@ -1,12 +1,9 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger, UploadedFiles } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SalaryGrade } from 'src/core/salary-grade/data/entities/salary-grade.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { CreateSalaryGradeDto, SalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
-import { ClientProxy } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
-
+import { CreateSalaryGradeDto, SalaryGradeUpdateDTO } from './data/dtos/salary-grade.dto';
 @Injectable()
 export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
   constructor(
@@ -124,15 +121,20 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
   }
 
   async getSalaryGradeByStepIncrement(stepIncrement: number) {
+    const effectivityYear = await this.entityRepository.query('SELECT DISTINCT effectivity_year FROM salary_grade ORDER BY effectivity_year DESC LIMIT 1');
+
     return await this.entityRepository.query(
-      'SELECT _id, salary_grade salaryGrade, step_increment stepIncrement, amount FROM salary_grade WHERE step_increment = ? ORDER BY salary_grade',
-      [stepIncrement],
+      'SELECT _id, salary_grade salaryGrade, step_increment stepIncrement, amount FROM salary_grade WHERE step_increment = ? AND effectivity_year = ? ORDER BY salary_grade',
+      [stepIncrement, effectivityYear[0].effectivity_year],
     );
   }
 
   async getAllSalaryGradeStepIncrement() {
+    const effectivityYear = await this.entityRepository.query('SELECT DISTINCT effectivity_year FROM salary_grade ORDER BY effectivity_year DESC LIMIT 1');
+
     return await this.entityRepository.query(
-      'SELECT _id, salary_grade salaryGrade, step_increment stepIncrement, amount FROM salary_grade ORDER BY salary_grade ASC,step_increment ASC',
+      'SELECT _id, salary_grade salaryGrade, step_increment stepIncrement, amount FROM salary_grade WHERE effectivity_year = ? ORDER BY salary_grade ASC,step_increment ASC',
+      [effectivityYear[0].effectivity_year],
     );
   }
 }
