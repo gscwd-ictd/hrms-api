@@ -269,30 +269,19 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where('emp._id = :employeeId', { employeeId })
         .getRawOne();
 
+      const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
       const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
-      ///console.log(salaryGradeDetails);
+
       const salaryGradeAmount = salaryGradeDetails.monthlyRate;
+
       const salaryGrade = salaryGradeDetails.salaryGrade;
-      //console.log(salaryGradeAmount);
 
       const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
-      //const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', userId));
-      //console.log('EMPLOYEE DETAILS', employeePortalDetails);
-      // console.log({
-      //   userId,
-      //   companyId,
-      //   employeeFullName,
-      //   photoUrl: employeePortalDetails.photoUrl,
-      //   salaryGradeAmount,
-      //   salaryGrade,
-      //   //overtimeImmediateSupervisorId,
-      //   isHRMPSB,
-      //   assignment: { id, name, positionId, positionTitle },
-      //   userRole,
-      // });
+
       return {
         userId,
         companyId,
@@ -302,9 +291,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         photoUrl: employeePortalDetails.photoUrl,
         salaryGradeAmount,
         salaryGrade,
-        //overtimeImmediateSupervisorId,
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
+        orgStruct: { officeName, divisionName, departmentName },
+        scheduleBase: employeeSchedule.schedule.scheduleBase,
         userRole,
       };
     } catch (error) {

@@ -261,20 +261,18 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
 
   async getAppointingAuthoritySelectionCount() {
     try {
-      try {
-        const result = (
-          await this.entityRepository.query(`
-        SELECT COUNT(DISTINCT vppId) appointingAuthoritySelectionCount 
-            FROM vacant_position_posting_view vpppv 
-          INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpppv.vppId
-          INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = pa._id 
-          INNER JOIN prf_details prfd ON vpppv.prfId = prfd._id
-        WHERE vpppv.postingStatus = 'Appointing authority selection';
-        `)
-        )[0].appointingAuthoritySelectionCount;
-        console.log(result);
-        return parseInt(result);
-      } catch (error) {}
+      const result = (
+        await this.entityRepository.query(`
+      SELECT COUNT(DISTINCT vppId) appointingAuthoritySelectionCount 
+          FROM vacant_position_posting_view vpppv 
+        INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpppv.vppId
+        INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = pa._id 
+        INNER JOIN prf_details prfd ON vpppv.prfId = prfd._id
+      WHERE vpppv.postingStatus = 'Appointing authority selection';
+      `)
+      )[0].appointingAuthoritySelectionCount;
+      console.log(result);
+      return parseInt(result);
     } catch (error) {}
   }
 
