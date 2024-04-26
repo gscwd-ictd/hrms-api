@@ -126,6 +126,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
   }
 
   async updatePrf(prfDetailsId: string, prfTrailDto: PrfTrailDTO) {
+    console.log('test test test');
     const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
 
     if (prfTrail.departmentStatus && prfTrail.departmentStatus === 'For approval') {
