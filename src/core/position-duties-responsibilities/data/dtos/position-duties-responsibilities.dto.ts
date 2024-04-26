@@ -1,10 +1,11 @@
+import { PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ArrayNotEmpty, IsArray, IsDecimal, IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
 
 export class DutiesReponsibilitiesDto {
   @IsNotEmpty()
   @IsUUID()
-  proficiencyId: string;
+  pcplId: string;
 
   @IsNotEmpty()
   @IsString()
@@ -15,7 +16,7 @@ export class DutiesReponsibilitiesDto {
   percentage: number;
 }
 
-export class PositionDutiesResponsibilitiesDto {
+export class CreatePositionDutiesResponsibilitiesDto {
   @IsNotEmpty()
   @IsUUID()
   plantillaPositionId: string;
@@ -31,4 +32,18 @@ export class PositionDutiesResponsibilitiesDto {
   @ValidateNested({ each: true })
   @Type(() => DutiesReponsibilitiesDto)
   support: Array<DutiesReponsibilitiesDto>;
+}
+
+export class PositionDutiesResponsibilitiesDto {
+  @IsNotEmpty()
+  @IsUUID()
+  pdrId: string;
+}
+
+export class UpdatePositionDutiesResponsibilitiesDto extends PartialType(CreatePositionDutiesResponsibilitiesDto) {
+  @ArrayNotEmpty()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PositionDutiesResponsibilitiesDto)
+  positionDuties: Array<PositionDutiesResponsibilitiesDto>;
 }

@@ -1,7 +1,7 @@
 import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
 import { PlantillaPositions } from 'src/core/plantilla-positions/data/entities/plantilla-positions.entity';
-import { Proficiency } from 'src/core/proficiency/data/entities/proficiency.entity';
+import { PositionCompetencyProficiencyLevel } from 'src/core/position-competency-proficiency-level/data/entities/position-competency-proficiency-level.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'position_duties_responsibilities' })
@@ -10,9 +10,9 @@ export class PositionDutiesResponsibilities extends DefaultTable {
   @JoinColumn({ name: 'plantilla_positions_id_fk' })
   plantillaPositionId: PlantillaPositions;
 
-  @ManyToOne(() => Proficiency, (proficiency) => proficiency._id)
-  @JoinColumn({ name: 'proficiency_id_fk' })
-  proficiencyId: Proficiency;
+  @ManyToOne(() => PositionCompetencyProficiencyLevel, (positionCompetencyProficiencyLevel) => positionCompetencyProficiencyLevel._id)
+  @JoinColumn({ name: 'position_competency_proficiency_level_id_fk' })
+  pcplId: PositionCompetencyProficiencyLevel;
 
   @Column({ name: 'duty', type: 'text', nullable: false })
   duty: string;
