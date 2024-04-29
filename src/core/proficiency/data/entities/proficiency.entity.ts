@@ -6,10 +6,7 @@ import { ProficiencyLevel } from '../../utils/enum/proficiency.enum';
 
 @Entity({ name: 'proficiency' })
 export class Proficiency extends DefaultTable {
-  @ManyToOne(() => CompetencyModel, (competencymodel) => competencymodel._id, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-  })
+  @ManyToOne(() => CompetencyModel, (competencymodel) => competencymodel._id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'competency_id_fk' })
   competencyId: CompetencyModel;
 
