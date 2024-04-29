@@ -733,6 +733,21 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
+  async getEmployeeSupervisorEms(employeeId: string, isRpc?: boolean) {
+    try {
+      return (
+        await this.entityRepository.query(`SELECT get_employee_supervisor(?) supervisorId, get_employee_fullname(get_employee_supervisor_ems(?)) employeeName`, [
+          employeeId,
+          employeeId,
+        ])
+      )[0].supervisorId;
+    } catch (error) {
+      console.log('asdasdasd', error);
+      if (isRpc) throw new RpcException(error);
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
   async getAllEmployeeNames() {
     return await this.entityRepository.query(`SELECT _id employeeId, get_employee_fullname(_id) fullName, get_employee_position_or_oic(_id) positionTitle FROM employees;`);
   }
