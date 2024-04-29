@@ -1,7 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
 import { OgdrDto, UpdateOgdrDto } from './data/dtos/occupational-group-duties-responsibilities.dto';
-import { AssignDutiesResponsibilitiesGuard } from './guards/assign-duties-responsibilities.guard';
-import { AssignDutiesResponsibilitiesInterceptor } from './interceptors/assign-duties-responsibilities.interceptor';
 import { OccupationalGroupDutiesResponsibilitiesService } from './occupational-group-duties-responsibilities.service';
 
 @Controller('occupational-group-duties-responsibilities')

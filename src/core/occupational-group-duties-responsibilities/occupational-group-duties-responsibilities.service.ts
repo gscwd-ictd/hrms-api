@@ -33,6 +33,18 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     return positions;
   }
 
+  async getPermanentPositionsUnderManager(positionId: string) {
+    const employeeId = (await this.entityRepository.query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [positionId]))[0].employeeId;
+    const oicPositionId = await this.entityRepository.query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
+      employeeId,
+    ]);
+
+    let positions;
+    if (oicPositionId.length > 0) positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
+    else positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_positions_under_manager(?);`, [positionId]))[0];
+    return positions;
+  }
+
   /**
    * @audience Employee Portal
    *
@@ -62,7 +74,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       employeeId,
     ]);
 
-    const positions = await this.getPositionsUnderManager(positionId);
+    const positions = await this.getPermanentPositionsUnderManager(positionId);
     const positionIds = await Promise.all(
       positions.map((position) => {
         return position.positionId;
@@ -106,7 +118,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
   }
 
   async getFinishedDutiesAndResponsibilities(positionId: string) {
-    const positions = await this.getPositionsUnderManager(positionId);
+    const positions = await this.getPermanentPositionsUnderManager(positionId);
     const positionIds = await Promise.all(
       positions.map((position) => {
         return position.positionId;
