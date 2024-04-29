@@ -10,6 +10,7 @@ import { Raw, Repository } from 'typeorm';
 import { PrfTrailDTO } from './data/dtos/prf-trail.dto';
 import { PrfTrail } from './data/entities/prf-trail.entity';
 import { PrfTrailStatus } from './utils/enums/prf-trail-status.enum';
+import { EmployeesService } from 'src/core/employees/employees.service';
 
 @Injectable()
 export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
@@ -18,6 +19,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
     private readonly prfPositionsViewService: PrfPositionsViewService,
     private readonly vppService: VacantPositionPostingService,
     private readonly vppPositionsService: VppPositionsService,
+    private readonly employeesService: EmployeesService,
   ) {
     super(prfTrailRepository);
   }
@@ -26,6 +28,15 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
     try {
       if (employeeId === 'N/A' || employeeId === null) return 'N/A';
       return (await this.entityRepository.query(`SELECT signature_url signatureUrl FROM employees WHERE _id=?`, [employeeId]))[0].signatureUrl;
+    } catch (error) {
+      throw new HttpException('Error', error.status);
+    }
+  }
+
+  async getPrfPhotoUrl(employeeId: string) {
+    try {
+      const photoUrl = employeeId === 'N/A' || employeeId === null ? 'N/A' : (await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId)).photoUrl;
+      return photoUrl;
     } catch (error) {
       throw new HttpException('Error', error.status);
     }
@@ -82,6 +93,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           designation: divisionDesignation,
           updatedAt: divisionStatusUpdatedAt,
           signatureUrl: await this.getPrfSignatures(divisionHeadId),
+          photoUrl: await this.getPrfPhotoUrl(divisionHeadId),
         },
         department: {
           status: departmentStatus,
@@ -91,6 +103,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           designation: departmentDesignation,
           updatedAt: departmentStatusUpdatedAt,
           signatureUrl: await this.getPrfSignatures(departmentHeadId),
+          photoUrl: await this.getPrfPhotoUrl(departmentHeadId),
         },
         agm: {
           status: agmStatus,
@@ -100,6 +113,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           designation: agmDesignation,
           updatedAt: agmStatusUpdatedAt,
           signatureUrl: await this.getPrfSignatures(agmId),
+          photoUrl: await this.getPrfPhotoUrl(agmId),
         },
         admin: {
           status: adminStatus,
@@ -109,6 +123,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           designation: adminDesignation,
           updatedAt: adminStatusUpdatedAt,
           signatureUrl: await this.getPrfSignatures(adminId),
+          photoUrl: await this.getPrfPhotoUrl(adminId),
         },
         gm: {
           status: gmStatus,
@@ -118,6 +133,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           designation: gmDesignation,
           updatedAt: gmStatusUpdatedAt,
           signatureUrl: await this.getPrfSignatures(gmId),
+          photoUrl: await this.getPrfPhotoUrl(gmId),
         },
       };
     } catch (error) {
@@ -126,7 +142,6 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
   }
 
   async updatePrf(prfDetailsId: string, prfTrailDto: PrfTrailDTO) {
-    console.log('test test test');
     const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
 
     if (prfTrail.departmentStatus && prfTrail.departmentStatus === 'For approval') {
