@@ -298,6 +298,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
