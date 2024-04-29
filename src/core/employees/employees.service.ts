@@ -766,7 +766,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
-      //console.log('salary z: ', monthlyRate[0]);
+      console.log('salary z: ', monthlyRate[0]);
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
         return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };
