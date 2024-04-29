@@ -12,3 +12,8 @@ export class PrfDetailsDTO {
   dateNeeded: Date;
   prfNo: string;
 }
+
+export class UpdatePrfDetailsDto {
+  _id: string;
+  status?: PrfStatus;
+}

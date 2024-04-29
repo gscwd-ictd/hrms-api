@@ -3,4 +3,5 @@ export enum PrfStatus {
   APPROVED = 'Approved',
   FOR_SIGNING = 'For Signing',
   DISAPPROVED = 'Disapproved',
+  CANCELLED = 'Cancelled',
 }

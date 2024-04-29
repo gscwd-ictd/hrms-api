@@ -5,9 +5,10 @@ import { PlantillaPositionsService } from 'src/core/plantilla-positions/plantill
 import { getManager, Repository } from 'typeorm';
 import { PrfTrailService } from '../document-tracking/prf/trail/prf-trail.service';
 import { PlantillaViewService } from '../plantilla-positions/views/plantilla-view/plantilla-view.service';
-import { PrfDetailsDTO } from './data/dto/prf-details.dto';
+import { PrfDetailsDTO, UpdatePrfDetailsDto } from './data/dto/prf-details.dto';
 import { PrfDetails } from './data/entity/prf-details.entity';
 import { PrfPositionsService } from './prf-positions/prf-positions.service';
+import { PrfStatus } from './utils/enums/prf-status.enum';
 
 @Injectable()
 export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
@@ -195,5 +196,20 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
     } catch (error) {
       throw new HttpException('error', 500);
     }
+  }
+
+  async updatePrfStatus(prfDetailsDto: UpdatePrfDetailsDto) {
+    try {
+      const { _id, status } = prfDetailsDto;
+      const result = await this.entityRepository.createQueryBuilder().update().set({ status }).where('_id = :_id', { _id }).execute();
+      if (result.affected > 0) return prfDetailsDto;
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async cancelPrf(prfDetailsDto: UpdatePrfDetailsDto) {
+    const { _id } = prfDetailsDto;
+    return await this.updatePrfStatus({ _id, status: PrfStatus.CANCELLED });
   }
 }
