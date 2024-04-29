@@ -7,9 +7,10 @@ import { PrfTrail } from './data/entities/prf-trail.entity';
 import { PrfTrailController } from './prf-trail.controller';
 import { PrfTrailService } from './prf-trail.service';
 import { PrfTrailMsController } from './prf-trail-ms.controller';
+import { EmployeesModule } from 'src/core/employees/employees.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PrfTrail]), PrfPositionsViewModule, VppPositionsModule, VacantPositionPostingModule],
+  imports: [TypeOrmModule.forFeature([PrfTrail]), PrfPositionsViewModule, VppPositionsModule, VacantPositionPostingModule, EmployeesModule],
   providers: [PrfTrailService],
   controllers: [PrfTrailController, PrfTrailMsController],
   exports: [TypeOrmModule.forFeature([PrfTrail]), PrfTrailService],
