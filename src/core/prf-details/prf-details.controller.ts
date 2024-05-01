@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { PrfDetailsDTO } from './data/dto/prf-details.dto';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { PrfDetailsDTO, UpdatePrfDetailsDto } from './data/dto/prf-details.dto';
 import { PrfDetailsService } from './prf-details.service';
 
 @Controller('prf')
@@ -25,6 +25,11 @@ export class PrfDetailsController {
     return await this.prfDetailsService.getAllPrfsByStatus('disapproved');
   }
 
+  @Get('cancelled')
+  async getAllCancelledPrfs() {
+    return await this.prfDetailsService.getAllPrfsByStatus('cancelled');
+  }
+
   @Get('clear')
   async clearPrf() {
     return await this.prfDetailsService.clearPrfs();
@@ -38,5 +43,10 @@ export class PrfDetailsController {
   @Post()
   async addPrf(@Body() prfDetailsDto: PrfDetailsDTO) {
     return await this.prfDetailsService.addPrf(prfDetailsDto);
+  }
+
+  @Patch()
+  async cancelPrf(@Body() prfDetailsDTO: UpdatePrfDetailsDto) {
+    return await this.prfDetailsService.cancelPrf(prfDetailsDTO);
   }
 }
