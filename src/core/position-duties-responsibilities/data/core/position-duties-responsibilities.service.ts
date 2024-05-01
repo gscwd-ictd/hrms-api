@@ -239,4 +239,15 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
+
+  async findPositionDutiesResponsibilities(positionId: string) {
+    try {
+      const result = await this.positionDutiesResponsibilitiesRepository.createQueryBuilder().select().execute();
+
+      return result; 
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server errror', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

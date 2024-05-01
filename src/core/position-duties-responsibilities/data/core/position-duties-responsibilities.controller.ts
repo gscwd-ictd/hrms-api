@@ -1,4 +1,4 @@
-import { Body, Controller, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { PositionDutiesResponsibilitiesService } from './position-duties-responsibilities.service';
 import { CreatePositionDutiesResponsibilitiesDto, UpdatePositionDutiesResponsibilitiesDto } from '../dtos/position-duties-responsibilities.dto';
 
@@ -14,5 +14,10 @@ export class PositionDutiesResponsibilitiesController {
   @Patch()
   async updatePositionDutiesResponsibilities(@Body() data: UpdatePositionDutiesResponsibilitiesDto) {
     return await this.positionDutiesResponsibilitiesService.updatePositionDutiesResponsibilities(data);
+  }
+
+  @Get('position/:positionId')
+  async findPositionDutiesResponsibilities(@Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.findPositionDutiesResponsibilities(positionId);
   }
 }
