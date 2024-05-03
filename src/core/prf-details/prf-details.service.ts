@@ -65,8 +65,10 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
 
         const { divisionStatus, departmentStatus, agmStatus, adminStatus, gmStatus, boardStatus } = prfTrailObject;
 
+        const updatedAts = await this.generateUpdatedAt(prfTrailObject);
+
         prfTrail = await transactionEntityManager.save(
-          this.prfTrailService.createEntity({ prfDetailsId: prfDetails._id, divisionStatus, departmentStatus, agmStatus, adminStatus, gmStatus, boardStatus }),
+          this.prfTrailService.createEntity({ prfDetailsId: prfDetails._id, ...updatedAts, divisionStatus, departmentStatus, agmStatus, adminStatus, gmStatus, boardStatus }),
         );
 
         prf = { prfDetails: { ...prfDetails, prfPositions: _prfPositions } };
@@ -77,6 +79,15 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
       if (error.code == 'ER_DUP_ENTRY') throw new HttpException('One or more positions were already been requested.', HttpStatus.NOT_ACCEPTABLE);
       throw new HttpException('Error adding PRF', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  async generateUpdatedAt(prfTrailObject: { divisionStatus: string; departmentStatus: string; agmStatus: string; adminStatus: string; gmStatus: string; boardStatus: string }) {
+    const { divisionStatus, departmentStatus, adminStatus, agmStatus, gmStatus } = prfTrailObject;
+    const divisionStatusUpdatedAt = divisionStatus === 'Sent' ? new Date() : null;
+    const departmentStatusUpdatedAt = departmentStatus === 'Sent' ? new Date() : null;
+    const agmStatusUpdatedAt = agmStatus === 'Sent' ? new Date() : null;
+    const gmStatusUpdatedAt = gmStatus === 'Sent' ? new Date() : null;
+    return { divisionStatusUpdatedAt, departmentStatusUpdatedAt, agmStatusUpdatedAt, gmStatusUpdatedAt };
   }
 
   async clearPrfs() {
