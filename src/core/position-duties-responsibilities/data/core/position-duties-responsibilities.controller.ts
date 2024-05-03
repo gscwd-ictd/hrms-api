@@ -11,11 +11,12 @@ export class PositionDutiesResponsibilitiesController {
     return await this.positionDutiesResponsibilitiesService.createPositionDutiesResponsibilities(data);
   }
 
-  /*  @Patch()
+  @Patch()
   async updatePositionDutiesResponsibilities(@Body() data: UpdatePositionDutiesResponsibilitiesDto) {
     return await this.positionDutiesResponsibilitiesService.updatePositionDutiesResponsibilities(data);
   }
 
+  /*
   @Get('position/:positionId')
   async findPositionDutiesResponsibilities(@Param('positionId') positionId: string) {
     return await this.positionDutiesResponsibilitiesService.findPositionDutiesResponsibilities(positionId);
