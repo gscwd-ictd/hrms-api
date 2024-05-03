@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsDecimal, IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsDecimal, IsInt, IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
 
 export class DutiesReponsibilitiesDto {
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class DutiesReponsibilitiesDto {
   duty: string;
 
   @IsNotEmpty()
-  @IsDecimal()
+  @IsInt()
   percentage: number;
 }
 
@@ -27,7 +27,6 @@ export class CreatePositionDutiesResponsibilitiesDto {
   @Type(() => DutiesReponsibilitiesDto)
   core: Array<DutiesReponsibilitiesDto>;
 
-  @ArrayNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DutiesReponsibilitiesDto)
