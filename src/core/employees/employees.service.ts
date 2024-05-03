@@ -614,6 +614,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllAssignableSupervisoryEmployees() {
+    return await this.entityRepository.query(`
+      SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp 
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+        INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
+      WHERE (pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent') 
+      AND sg.salary_grade >= 16 
+      ORDER BY get_employee_fullname(emp._id) ASC;
+    `);
+  }
+
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 

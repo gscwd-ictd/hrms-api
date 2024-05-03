@@ -187,6 +187,11 @@ export class EmployeesController {
     return await this.employeesService.getAllPermanentCasualEmployees();
   }
 
+  @MessagePattern('get_all_assignable_supervisory_employees')
+  async getAllAssignableSupervisoryEmployees() {
+    return await this.employeesService.getAllAssignableSupervisoryEmployees();
+  }
+
   @MessagePattern('get_all_permanent_casual_employees2')
   async getAllPermanentCasualEmployees2MS() {
     return await this.employeesService.getAllPermanentCasualEmployees2();
