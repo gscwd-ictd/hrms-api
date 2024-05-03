@@ -19,7 +19,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
   async createPositionDutiesResponsibilities(data: CreatePositionDutiesResponsibilitiesDto) {
     try {
       return await this.positionDutiesResponsibilitiesRepository.manager.transaction(async (transactionManager) => {
-        const { plantillaPositionId, core, support } = data;
+        const { positionId, core, support } = data;
 
         const coreResult = await Promise.all(
           core.map(async (items) => {
@@ -28,9 +28,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
               .insert()
               .into(PositionDutiesResponsibilities)
               .values({
-                plantillaPositionId: {
-                  _id: plantillaPositionId,
-                },
                 pcplId: {
                   _id: items.pcplId,
                 },
@@ -43,12 +40,14 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
             const competency = await transactionManager
               .createQueryBuilder()
               .select('cm.code', 'code')
+              .addSelect('cm.name', 'name')
               .addSelect('cm.desc', 'description')
               .addSelect('pf.key_actions', 'keyActions')
-              .addSelect('cm.name', 'name')
+              .addSelect('pf.level', 'level')
               .from(PositionDutiesResponsibilities, 'pdr')
               .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
               .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+              .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
               .innerJoin('proficiency', 'pf', 'pcpl.proficiency_id_fk = pf._id')
               .innerJoin('competency_model', 'cm', 'pf.competency_id_fk = cm._id')
               .where('pdr._id = :id', { id: pdrId.identifiers[0]._id })
@@ -73,9 +72,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
               .insert()
               .into(PositionDutiesResponsibilities)
               .values({
-                plantillaPositionId: {
-                  _id: plantillaPositionId,
-                },
                 pcplId: {
                   _id: items.pcplId,
                 },
@@ -88,12 +84,14 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
             const competency = await transactionManager
               .createQueryBuilder()
               .select('cm.code', 'code')
+              .addSelect('cm.name', 'name')
               .addSelect('cm.desc', 'description')
               .addSelect('pf.key_actions', 'keyActions')
-              .addSelect('cm.name', 'name')
+              .addSelect('pf.level', 'level')
               .from(PositionDutiesResponsibilities, 'pdr')
               .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
               .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+              .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
               .innerJoin('proficiency', 'pf', 'pcpl.proficiency_id_fk = pf._id')
               .innerJoin('competency_model', 'cm', 'pf.competency_id_fk = cm._id')
               .where('pdr._id = :id', { id: pdrId.identifiers[0]._id })
@@ -112,7 +110,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
         );
 
         return {
-          plantillaPositionId: plantillaPositionId,
+          positionId: positionId,
           core: coreResult,
           support: supportResult,
         };
@@ -126,7 +124,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
   async updatePositionDutiesResponsibilities(data: UpdatePositionDutiesResponsibilitiesDto) {
     try {
       return await this.positionDutiesResponsibilitiesRepository.manager.transaction(async (transactionManager) => {
-        const { plantillaPositionId, positionDuties, core, support } = data;
+        const { positionId, positionDuties, core, support } = data;
 
         const pdrId = await Promise.all(positionDuties.map(async (items) => items.pdrId));
 
@@ -140,9 +138,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
                 .insert()
                 .into(PositionDutiesResponsibilities)
                 .values({
-                  plantillaPositionId: {
-                    _id: plantillaPositionId,
-                  },
                   pcplId: {
                     _id: items.pcplId,
                   },
@@ -155,12 +150,14 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
               const competency = await transactionManager
                 .createQueryBuilder()
                 .select('cm.code', 'code')
+                .addSelect('cm.name', 'name')
                 .addSelect('cm.desc', 'description')
                 .addSelect('pf.key_actions', 'keyActions')
-                .addSelect('cm.name', 'name')
+                .addSelect('pf.level', 'level')
                 .from(PositionDutiesResponsibilities, 'pdr')
                 .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
                 .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+                .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
                 .innerJoin('proficiency', 'pf', 'pcpl.proficiency_id_fk = pf._id')
                 .innerJoin('competency_model', 'cm', 'pf.competency_id_fk = cm._id')
                 .where('pdr._id = :id', { id: pdrId.identifiers[0]._id })
@@ -185,9 +182,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
                 .insert()
                 .into(PositionDutiesResponsibilities)
                 .values({
-                  plantillaPositionId: {
-                    _id: plantillaPositionId,
-                  },
                   pcplId: {
                     _id: items.pcplId,
                   },
@@ -200,12 +194,14 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
               const competency = await transactionManager
                 .createQueryBuilder()
                 .select('cm.code', 'code')
+                .addSelect('cm.name', 'name')
                 .addSelect('cm.desc', 'description')
                 .addSelect('pf.key_actions', 'keyActions')
-                .addSelect('cm.name', 'name')
+                .addSelect('pf.level', 'level')
                 .from(PositionDutiesResponsibilities, 'pdr')
                 .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
                 .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+                .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
                 .innerJoin('proficiency', 'pf', 'pcpl.proficiency_id_fk = pf._id')
                 .innerJoin('competency_model', 'cm', 'pf.competency_id_fk = cm._id')
                 .where('pdr._id = :id', { id: pdrId.identifiers[0]._id })
@@ -224,7 +220,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
           );
 
           return {
-            plantillaPositionId: plantillaPositionId,
+            positionId: positionId,
             core: coreResult,
             support: supportResult,
           };
@@ -244,7 +240,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     try {
       const result = await this.positionDutiesResponsibilitiesRepository.createQueryBuilder().select().execute();
 
-      return result; 
+      return result;
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server errror', HttpStatus.INTERNAL_SERVER_ERROR);

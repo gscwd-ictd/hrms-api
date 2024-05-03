@@ -19,7 +19,7 @@ export class DutiesReponsibilitiesDto {
 export class CreatePositionDutiesResponsibilitiesDto {
   @IsNotEmpty()
   @IsUUID()
-  plantillaPositionId: string;
+  positionId: string;
 
   @ArrayNotEmpty()
   @IsArray()
