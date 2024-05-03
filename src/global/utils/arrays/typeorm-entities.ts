@@ -57,6 +57,7 @@ import { VacantPositionPostingPublicationView } from 'src/core/vacant-position-p
 import { OfficerInChargeView } from 'src/core/officer-in-charge/data/officer-in-charge-view/officer-incharge.view';
 import { OrgStructView } from 'src/core/organization/data/views/organization.view';
 import { EmployeeTags } from 'src/core/employee-tags/data/employee-tags.entity';
+import { PositionDutiesResponsibilities } from 'src/core/position-duties-responsibilities/data/entities/position-duties-responsibilities.entity';
 
 export const typeormEntities = [
   ...PrfEntities,
@@ -121,4 +122,6 @@ export const typeormEntities = [
   UserLogs,
   OrgStructView,
   EmployeeTags,
+
+  PositionDutiesResponsibilities,
 ];
