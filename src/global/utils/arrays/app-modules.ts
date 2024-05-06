@@ -42,6 +42,7 @@ import { UserRolesModule } from 'src/core/user-roles/user-roles.module';
 import { HolidaysModule } from 'src/core/holidays/holidays.module';
 import { EmployeeTagsModule } from 'src/core/employee-tags/employee-tags.module';
 import { StatsModule } from 'src/core/stats/stats.module';
+import { PositionDutiesResponsibilitiesModule } from 'src/core/position-duties-responsibilities/data/core/position-duties-responsibilities.module';
 
 export const modules = [
   AuthModule,
@@ -89,4 +90,6 @@ export const modules = [
   HolidaysModule,
   ModulesModule,
   StatsModule,
+
+  PositionDutiesResponsibilitiesModule,
 ];
