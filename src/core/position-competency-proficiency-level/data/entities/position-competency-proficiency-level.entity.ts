@@ -1,7 +1,7 @@
 import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { OccupationalGroup } from 'src/core/occupational-group/data/entities/occupational-group.entity';
 import { Proficiency } from 'src/core/proficiency/data/entities/proficiency.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 export class PositionCompetencyProficiencyLevel extends DefaultTable {
