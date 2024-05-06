@@ -187,6 +187,29 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
     }
   }
 
+  async getAllCompetencyProficienciesManagerial(posId: string) {
+    try {
+      const salarygrade = await this.salaryGrade.entityRepository
+        .createQueryBuilder('salary_grade')
+        .select('salary_grade')
+        .innerJoin('plantilla_positions', 'pp', 'pp.salary_grade_id_fk = salary_grade._id')
+        .where('pp._id = :posId', { posId })
+        .getRawOne();
+
+      const pos_name = await this.position.entityRepository.createQueryBuilder('plantilla_positions').select('position_title').where('_id = :posId', { posId }).getRawOne();
+      const managerial = await this.getCompetencyIdCodeNamePerPosition(posId, '13747e8b-8e3c-11ec-ae65-54ab3a99e60e');
+      //const crossCutting = await this.getCompetencyIdCodeNamePerPosition(posId, '1371f33c-8e3c-11ec-ae65-54ab3a99e60e');
+      return {
+        positionId: posId,
+        positionName: pos_name.position_title,
+        salaryGrade: salarygrade.salary_grade_salary_grade,
+        functional: [...managerial],
+      };
+    } catch (error) {
+      throw new HttpException('Position not found', 404);
+    }
+  }
+
   async getOccupationCompetenciesForPositionForDropdown(positionId: string) {
     const salaryGrade = await this.salaryGrade.entityRepository
       .createQueryBuilder('salary_grade')
