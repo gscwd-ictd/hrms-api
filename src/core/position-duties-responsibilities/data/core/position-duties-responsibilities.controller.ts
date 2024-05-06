@@ -16,9 +16,18 @@ export class PositionDutiesResponsibilitiesController {
     return await this.positionDutiesResponsibilitiesService.updatePositionDutiesResponsibilities(data);
   }
 
-  /*
-  @Get('position/:positionId')
-  async findPositionDutiesResponsibilities(@Param('positionId') positionId: string) {
-    return await this.positionDutiesResponsibilitiesService.findPositionDutiesResponsibilities(positionId);
-  } */
+  @Get(':positionId/pending')
+  async getPendingDutiesAndResponsibilities(@Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPendingDutiesAndResponsibilities(positionId);
+  }
+
+  @Get(':positionId/finished')
+  async getFinishedDutiesAndResponsibilities(@Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getFinishedDutiesAndResponsibilities(positionId);
+  }
+
+  @Get(':positionId')
+  async getPositionsUnderManager(@Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPositionsUnderManager(positionId);
+  }
 }
