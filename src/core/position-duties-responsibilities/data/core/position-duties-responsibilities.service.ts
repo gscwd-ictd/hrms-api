@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { PositionDutiesResponsibilities } from '../entities/position-duties-responsibilities.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, getManager } from 'typeorm';
 import { CreatePositionDutiesResponsibilitiesDto, UpdatePositionDutiesResponsibilitiesDto } from '../dtos/position-duties-responsibilities.dto';
 import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
 import { PositionCompetencyProficiencyLevelService } from 'src/core/position-competency-proficiency-level/position-competency-proficiency-level.service';
@@ -236,14 +236,119 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     }
   }
 
-  async findPositionDutiesResponsibilities(positionId: string) {
-    try {
-      const result = await this.positionDutiesResponsibilitiesRepository.createQueryBuilder().select().execute();
+  /* find all position under managerd */
+  async getPositionsUnderManager(positionId: string) {
+    const employeeId = (await this.entityRepository.query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [positionId]))[0].employeeId;
+    const oicPositionId = await this.entityRepository.query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
+      employeeId,
+    ]);
 
-      return result;
-    } catch (error) {
-      Logger.error(error);
-      throw new HttpException('Internal server errror', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    let positions;
+    if (oicPositionId.length > 0) positions = (await this.entityRepository.query(`CALL sp_get_positions_under_manager_v2(?);`, [oicPositionId[0].positionId]))[0];
+    else positions = (await this.entityRepository.query(`CALL sp_get_positions_under_manager_v2(?);`, [positionId]))[0];
+    return positions;
+  }
+
+  /* find all permanent positions under manager  */
+  async getPermanentPositionsUnderManager(positionId: string) {
+    const employeeId = (await getManager().query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [positionId]))[0].employeeId;
+    const oicPositionId = await getManager().query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
+      employeeId,
+    ]);
+
+    let positions;
+    if (oicPositionId.length > 0) positions = (await getManager().query(`CALL sp_get_permanent_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
+    else positions = (await getManager().query(`CALL sp_get_permanent_positions_under_manager(?);`, [positionId]))[0];
+    return positions;
+  }
+
+  /* find all unfilled position under manager */
+  async getPendingDutiesAndResponsibilities(positionId: string) {
+    const positions = await this.getPermanentPositionsUnderManager(positionId);
+    const positionIds = await Promise.all(
+      positions.map((position) => {
+        return position.positionId;
+      }),
+    );
+
+    return await this.entityRepository.query(
+      `
+      SELECT position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation
+      FROM
+          plantilla_view pv
+      INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id
+      INNER JOIN position_competency_proficiency_level pcpl ON pcpl.occupational_group_id_fk = og._id
+      INNER JOIN position_duties_responsibilities pdr ON pdr.position_competency_proficiency_level_id_fk = pcpl._id
+      WHERE
+          pv.position_id IN (?) AND pdr.position_competency_proficiency_level_id_fk IN(
+              ( SELECT pcplId FROM
+              ( SELECT SUM(pdr.percentage) AS percentage, pdr.position_competency_proficiency_level_id_fk pcplId
+                  FROM
+                      position_duties_responsibilities pdr
+                  GROUP BY
+                      pdr.position_competency_proficiency_level_id_fk
+              ) a
+          WHERE
+              a.percentage < 100 AND duty_type = 'core'
+          )
+      UNION
+          ( SELECT pcplId FROM
+          ( SELECT SUM(pdr.percentage) AS percentage, pdr.position_competency_proficiency_level_id_fk pcplId
+              FROM
+                  position_duties_responsibilities pdr
+              GROUP BY
+                  pdr.position_competency_proficiency_level_id_fk
+          ) a
+      WHERE
+          a.percentage < 100 AND duty_type = 'support'
+      ))
+      UNION
+          ( SELECT position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation
+          FROM
+              plantilla_view pv
+          INNER JOIN occupational_group og ON
+              og.position_id_fk = pv.position_id
+          WHERE
+              pv.position_id IN (?) AND og._id NOT IN(
+              SELECT position_competency_proficiency_level_id_fk
+              FROM
+              position_duties_responsibilities
+          )
+      );
+      `,
+      [positionIds, positionIds],
+    );
+  }
+
+  /* find all filled position under manager */
+  async getFinishedDutiesAndResponsibilities(positionId: string) {
+    const positions = await this.getPermanentPositionsUnderManager(positionId);
+    const positionIds = await Promise.all(
+      positions.map((position) => {
+        return position.positionId;
+      }),
+    );
+
+    return await this.entityRepository.query(
+      `SELECT DISTINCT position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation,
+            DATE_FORMAT(pdr.updated_at, '%Y-%m-%d') updatedAt
+        FROM
+            plantilla_view pv
+        INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id
+        INNER JOIN position_competency_proficiency_level pcpl ON pcpl.occupational_group_id_fk = og._id
+        INNER JOIN position_duties_responsibilities pdr ON pdr.position_competency_proficiency_level_id_fk = pcpl._id
+        WHERE
+            pv.position_id IN (?) AND pdr.position_competency_proficiency_level_id_fk IN(
+            SELECT pcplId
+            FROM
+                ( SELECT SUM(pdr.percentage) AS percentage, pdr.position_competency_proficiency_level_id_fk pcplId
+                FROM position_duties_responsibilities pdr
+                GROUP BY pdr.position_competency_proficiency_level_id_fk
+            ) a
+        WHERE
+            a.percentage >= 100
+        )`,
+      [positionIds],
+    );
   }
 }
