@@ -187,65 +187,115 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
     }
   }
 
+  async getAllCompetencyProficienciesManagerial(posId: string) {
+    try {
+      const salarygrade = await this.salaryGrade.entityRepository
+        .createQueryBuilder('salary_grade')
+        .select('salary_grade')
+        .innerJoin('plantilla_positions', 'pp', 'pp.salary_grade_id_fk = salary_grade._id')
+        .where('pp._id = :posId', { posId })
+        .getRawOne();
+
+      const pos_name = await this.position.entityRepository.createQueryBuilder('plantilla_positions').select('position_title').where('_id = :posId', { posId }).getRawOne();
+      const managerial = await this.getCompetencyIdCodeNamePerPosition(posId, '13747e8b-8e3c-11ec-ae65-54ab3a99e60e');
+      //const crossCutting = await this.getCompetencyIdCodeNamePerPosition(posId, '1371f33c-8e3c-11ec-ae65-54ab3a99e60e');
+      return {
+        positionId: posId,
+        positionName: pos_name.position_title,
+        salaryGrade: salarygrade.salary_grade_salary_grade,
+        functional: [...managerial],
+      };
+    } catch (error) {
+      throw new HttpException('Position not found', 404);
+    }
+  }
+
   async getOccupationCompetenciesForPositionForDropdown(positionId: string) {
-    //1. count competencies currently assigned to the position
-    const countCurrentAssignedCompetencies = this.countAssignedCompetenciesPerPosition(positionId);
-    //2. check if count reached 4
-    // if ((countCurrentAssignedCompetencies.currentCompetencyCount = 4)) {
-    //   throw new HttpException('Competencies already set for this positions.', HttpStatus.FORBIDDEN);
-    // }
-    const occupationId = (
-      await this.competencyService.entityRepository.query('SELECT occupation_id_fk as occupationId FROM occupational_group WHERE position_id_fk = ?', [positionId])
-    )[0].occupationId;
+    const salaryGrade = await this.salaryGrade.entityRepository
+      .createQueryBuilder('salary_grade')
+      .select('salary_grade', 'salaryGrade')
+      .innerJoin('plantilla_positions', 'pp', 'pp.salary_grade_id_fk = salary_grade._id')
+      .where('pp._id = :positionId', { positionId })
+      .getRawOne();
 
-    const functionalCompetencies = await this.competencyService.entityRepository
-      .createQueryBuilder('cm')
-      .select('p._id', 'proficiencyId')
-      .addSelect(`concat(cm.code,'-',cm.name)`, 'label')
-      .addSelect('cm.code', 'code')
-      .addSelect('p.level', 'level')
-      .innerJoin('proficiency', 'p', 'p.competency_id_fk = cm._id')
-      .innerJoin('domain', 'd', 'cm.domain_id_fk = d._id')
-      .where(
-        `p.level = 'BASIC' AND  cm._id IN (SELECT competency_model_id_fk FROM competency_model_occupation WHERE occupation_id_fk = :occupationId) AND d.type='Functional' 
-      `,
-        {
-          occupationId,
-        },
-      )
-      .orderBy('cm.code', 'ASC')
-      .getRawMany();
+    if (salaryGrade.salary_grade_salary_grade <= 20) {
+      //1. count competencies currently assigned to the position
+      const countCurrentAssignedCompetencies = this.countAssignedCompetenciesPerPosition(positionId);
+      //2. check if count reached 4
+      // if ((countCurrentAssignedCompetencies.currentCompetencyCount = 4)) {
+      //   throw new HttpException('Competencies already set for this positions.', HttpStatus.FORBIDDEN);
+      // }
+      const occupationId = (
+        await this.competencyService.entityRepository.query('SELECT occupation_id_fk as occupationId FROM occupational_group WHERE position_id_fk = ?', [positionId])
+      )[0].occupationId;
 
-    const crossCuttingCompetencies = await this.competencyService.entityRepository
-      .createQueryBuilder('cm')
-      .select('p._id', 'proficiencyId')
-      .addSelect(`concat(cm.code,'-',cm.name)`, 'label')
-      .addSelect('cm.code', 'code')
-      .addSelect('p.level', 'level')
-      .innerJoin('proficiency', 'p', 'p.competency_id_fk = cm._id')
-      .innerJoin('domain', 'd', 'cm.domain_id_fk = d._id')
-      .where(`p.level = 'BASIC' AND d.type='Cross-Cutting Functional'`)
-      .orderBy('cm.code', 'ASC')
-      .getRawMany();
+      const functionalCompetencies = await this.competencyService.entityRepository
+        .createQueryBuilder('cm')
+        .select('p._id', 'proficiencyId')
+        .addSelect(`concat(cm.code,'-',cm.name)`, 'label')
+        .addSelect('cm.code', 'code')
+        .addSelect('p.level', 'level')
+        .innerJoin('proficiency', 'p', 'p.competency_id_fk = cm._id')
+        .innerJoin('domain', 'd', 'cm.domain_id_fk = d._id')
+        .where(
+          `p.level = 'BASIC' AND  cm._id IN (SELECT competency_model_id_fk FROM competency_model_occupation WHERE occupation_id_fk = :occupationId) AND d.type='Functional' 
+              `,
+          {
+            occupationId,
+          },
+        )
+        .orderBy('cm.code', 'ASC')
+        .getRawMany();
 
-    const crossCutting = await Promise.all(
-      crossCuttingCompetencies.map(async (competency) => {
-        const { proficiencyId, label, code, level } = competency;
-        return { label, value: { proficiencyId, code, name: label } };
-      }),
-    );
+      const crossCuttingCompetencies = await this.competencyService.entityRepository
+        .createQueryBuilder('cm')
+        .select('p._id', 'proficiencyId')
+        .addSelect(`concat(cm.code,'-',cm.name)`, 'label')
+        .addSelect('cm.code', 'code')
+        .addSelect('p.level', 'level')
+        .innerJoin('proficiency', 'p', 'p.competency_id_fk = cm._id')
+        .innerJoin('domain', 'd', 'cm.domain_id_fk = d._id')
+        .where(`p.level = 'BASIC' AND d.type='Cross-Cutting Functional'`)
+        .orderBy('cm.code', 'ASC')
+        .getRawMany();
 
-    const functional = await Promise.all(
-      functionalCompetencies.map(async (competency) => {
-        const { proficiencyId, label, code, level } = competency;
-        return { label, value: { proficiencyId, code, name: label } };
-      }),
-    );
+      const crossCutting = await Promise.all(
+        crossCuttingCompetencies.map(async (competency) => {
+          const { proficiencyId, label, code, level } = competency;
+          return { label, value: { proficiencyId, code, name: label } };
+        }),
+      );
 
-    return [
-      { label: 'Functional', options: functional },
-      { label: 'Cross-Cutting Functional', options: crossCutting },
-    ];
+      const functional = await Promise.all(
+        functionalCompetencies.map(async (competency) => {
+          const { proficiencyId, label, code, level } = competency;
+          return { label, value: { proficiencyId, code, name: label } };
+        }),
+      );
+      return [
+        { label: 'Functional', options: functional },
+        { label: 'Cross-Cutting Functional', options: crossCutting },
+      ];
+    } else {
+      const managerialCompetencies = await this.competencyService.entityRepository
+        .createQueryBuilder('cm')
+        .select('p._id', 'proficiencyId')
+        .addSelect(`concat(cm.code,'-',cm.name)`, 'label')
+        .addSelect('cm.code', 'code')
+        .addSelect('p.level', 'level')
+        .innerJoin('proficiency', 'p', 'p.competency_id_fk = cm._id')
+        .innerJoin('domain', 'd', 'cm.domain_id_fk = d._id')
+        .where(`p.level = 'BASIC' AND d.type='Leadership/Managerial'`)
+        .orderBy('cm.code', 'ASC')
+        .getRawMany();
+      const managerial = await Promise.all(
+        managerialCompetencies.map(async (competency) => {
+          const { proficiencyId, label, code, level } = competency;
+          return { label, value: { proficiencyId, code, name: label } };
+        }),
+      );
+      return [{ label: 'Managerial', options: managerial }];
+    }
   }
 
   private async updatePcplPerDomain(pcplsPerDomain: PcplUpdateType[]) {

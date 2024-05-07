@@ -142,114 +142,25 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
   }
 
   async updatePrf(prfDetailsId: string, prfTrailDto: PrfTrailDTO) {
-    const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
+    try {
+      const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
+      const prfTrailInitStatus = (await this.entityRepository.query('CALL sp_set_prf_trail_init_status2(?)', [prfTrailDto.employeeId]))[0][0];
 
-    if (prfTrail.departmentStatus && prfTrail.departmentStatus === 'For approval') {
-      let departmentStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
-      departmentStatus = prfTrailDto.status;
-      if (departmentStatus === 'Approved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                departmentStatus,
-                agmStatus: PrfTrailStatus.FOR_APPROVAL,
-                departmentStatusUpdatedAt: getDateTimeNow(),
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        )
-          return { prfDetailsId, ...prfTrailDto };
-      }
-      if (departmentStatus === 'Disapproved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                departmentStatus,
-                departmentStatusUpdatedAt: getDateTimeNow(),
-                agmStatus: PrfTrailStatus.DISAPPROVED,
-                agmStatusUpdatedAt: getDateTimeNow(),
-                adminStatus: PrfTrailStatus.DISAPPROVED,
-                adminStatusUpdatedAt: getDateTimeNow(),
-                gmStatus: PrfTrailStatus.DISAPPROVED,
-                gmStatusUpdatedAt: getDateTimeNow(),
-                remarks: prfTrailDto.remarks,
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        ) {
-          if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
-            return { prfDetailsId, ...prfTrailDto };
-        }
-      }
-    }
-
-    if (!prfTrail.adminStatus && prfTrail.agmStatus && prfTrail.agmStatus === 'For approval') {
-      let agmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
-      agmStatus = prfTrailDto.status;
-      if (agmStatus === 'Approved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                agmStatus,
-                agmStatusUpdatedAt: getDateTimeNow(),
-                adminStatus: PrfTrailStatus.FOR_APPROVAL,
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        )
-          return { prfDetailsId, ...prfTrailDto };
-      }
-      if (agmStatus === 'Disapproved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                agmStatus,
-                agmStatusUpdatedAt: getDateTimeNow(),
-                adminStatus: PrfTrailStatus.DISAPPROVED,
-                adminStatusUpdatedAt: getDateTimeNow(),
-                gmStatus: PrfTrailStatus.DISAPPROVED,
-                gmStatusUpdatedAt: getDateTimeNow(),
-                remarks: prfTrailDto.remarks,
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        ) {
-          if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
-            return { prfDetailsId, ...prfTrailDto };
-        }
-      }
-    }
-
-    if (prfTrail.adminStatus) {
-      if (!prfTrail.agmStatus) {
-        let adminStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
-        adminStatus = prfTrailDto.status;
-        if (adminStatus === 'Approved') {
+      if (prfTrail.departmentStatus && prfTrail.departmentStatus === 'For approval') {
+        let departmentStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
+        departmentStatus = prfTrailDto.status;
+        if (departmentStatus === 'Approved') {
+          const _adminStatus = prfTrailInitStatus.agmStatus === 'N/A' ? PrfTrailStatus.FOR_APPROVAL : PrfTrailStatus.PENDING;
           if (
             (
               await this.entityRepository
                 .createQueryBuilder()
                 .update()
                 .set({
-                  adminStatus,
-                  adminStatusUpdatedAt: getDateTimeNow(),
-                  gmStatus: PrfTrailStatus.FOR_APPROVAL,
+                  departmentStatus,
+                  agmStatus: prfTrailInitStatus.agmStatus === 'N/A' ? PrfTrailStatus.NA : PrfTrailStatus.FOR_APPROVAL,
+                  adminStatus: _adminStatus,
+                  departmentStatusUpdatedAt: getDateTimeNow(),
                 })
                 .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
                 .execute()
@@ -257,14 +168,18 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           )
             return { prfDetailsId, ...prfTrailDto };
         }
-        if (adminStatus === 'Disapproved') {
+        if (departmentStatus === 'Disapproved') {
           if (
             (
               await this.entityRepository
                 .createQueryBuilder()
                 .update()
                 .set({
-                  adminStatus,
+                  departmentStatus,
+                  departmentStatusUpdatedAt: getDateTimeNow(),
+                  agmStatus: PrfTrailStatus.DISAPPROVED,
+                  agmStatusUpdatedAt: getDateTimeNow(),
+                  adminStatus: PrfTrailStatus.DISAPPROVED,
                   adminStatusUpdatedAt: getDateTimeNow(),
                   gmStatus: PrfTrailStatus.DISAPPROVED,
                   gmStatusUpdatedAt: getDateTimeNow(),
@@ -279,8 +194,10 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           }
         }
       }
-      if (prfTrail.agmStatus === 'For approval' && prfTrail.adminStatus === 'Pending') {
-        const agmStatus = prfTrailDto.status;
+
+      if (!prfTrail.adminStatus && prfTrail.agmStatus && prfTrail.agmStatus === 'For approval') {
+        let agmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
+        agmStatus = prfTrailDto.status;
         if (agmStatus === 'Approved') {
           if (
             (
@@ -291,8 +208,6 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
                   agmStatus,
                   agmStatusUpdatedAt: getDateTimeNow(),
                   adminStatus: PrfTrailStatus.FOR_APPROVAL,
-                  adminStatusUpdatedAt: getDateTimeNow(),
-                  gmStatus: PrfTrailStatus.PENDING,
                 })
                 .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
                 .execute()
@@ -324,65 +239,158 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           }
         }
       }
-    }
 
-    if (prfTrail.gmStatus && prfTrail.gmStatus === 'For approval') {
-      let gmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
-      gmStatus = prfTrailDto.status;
-      if (gmStatus === 'Approved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                gmStatus,
-                gmStatusUpdatedAt: getDateTimeNow(),
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        ) {
-          if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Approved', prfDetailsId])).affectedRows > 0) {
-            //1. get grouped prf_positions by title, division, occupation, competency; (parameter: prf_details_id)
-            const prfPositions = await this.prfPositionsViewService.entityRepository.find({ where: { prfDetailsId } });
-            const vppData = await Promise.all(
-              prfPositions.map(async (vppPosition) => {
-                //2. SAVE TO vpp set vppstatus to For csc approval
-                const vpp = await this.vppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
-                //3. save grouped positions to vpp_positions;
-                const splittedPositions = vppPosition.positionId.split(',');
-                const vppPositions = await Promise.all(
-                  splittedPositions.map(async (prfPositionsId) => {
-                    return await this.vppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
-                  }),
-                );
-                return { vppId: vpp._id, status: vpp.postingStatus, positions: vppPositions };
-              }),
-            );
-            return { prfDetailsId, ...prfTrailDto, vppData };
+      if (prfTrail.adminStatus) {
+        if (!prfTrail.agmStatus) {
+          let adminStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
+          adminStatus = prfTrailDto.status;
+          if (adminStatus === 'Approved') {
+            if (
+              (
+                await this.entityRepository
+                  .createQueryBuilder()
+                  .update()
+                  .set({
+                    adminStatus,
+                    adminStatusUpdatedAt: getDateTimeNow(),
+                    gmStatus: PrfTrailStatus.FOR_APPROVAL,
+                  })
+                  .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                  .execute()
+              ).affected != 0
+            )
+              return { prfDetailsId, ...prfTrailDto };
+          }
+          if (adminStatus === 'Disapproved') {
+            if (
+              (
+                await this.entityRepository
+                  .createQueryBuilder()
+                  .update()
+                  .set({
+                    adminStatus,
+                    adminStatusUpdatedAt: getDateTimeNow(),
+                    gmStatus: PrfTrailStatus.DISAPPROVED,
+                    gmStatusUpdatedAt: getDateTimeNow(),
+                    remarks: prfTrailDto.remarks,
+                  })
+                  .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                  .execute()
+              ).affected != 0
+            ) {
+              if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
+                return { prfDetailsId, ...prfTrailDto };
+            }
+          }
+        }
+        if (prfTrail.agmStatus === 'For approval' && prfTrail.adminStatus === 'Pending') {
+          const agmStatus = prfTrailDto.status;
+          if (agmStatus === 'Approved') {
+            if (
+              (
+                await this.entityRepository
+                  .createQueryBuilder()
+                  .update()
+                  .set({
+                    agmStatus,
+                    agmStatusUpdatedAt: getDateTimeNow(),
+                    adminStatus: PrfTrailStatus.FOR_APPROVAL,
+                    adminStatusUpdatedAt: getDateTimeNow(),
+                    gmStatus: PrfTrailStatus.PENDING,
+                  })
+                  .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                  .execute()
+              ).affected != 0
+            )
+              return { prfDetailsId, ...prfTrailDto };
+          }
+          if (agmStatus === 'Disapproved') {
+            if (
+              (
+                await this.entityRepository
+                  .createQueryBuilder()
+                  .update()
+                  .set({
+                    agmStatus,
+                    agmStatusUpdatedAt: getDateTimeNow(),
+                    adminStatus: PrfTrailStatus.DISAPPROVED,
+                    adminStatusUpdatedAt: getDateTimeNow(),
+                    gmStatus: PrfTrailStatus.DISAPPROVED,
+                    gmStatusUpdatedAt: getDateTimeNow(),
+                    remarks: prfTrailDto.remarks,
+                  })
+                  .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                  .execute()
+              ).affected != 0
+            ) {
+              if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
+                return { prfDetailsId, ...prfTrailDto };
+            }
           }
         }
       }
-      if (gmStatus === 'Disapproved') {
-        if (
-          (
-            await this.entityRepository
-              .createQueryBuilder()
-              .update()
-              .set({
-                gmStatus,
-                gmStatusUpdatedAt: getDateTimeNow(),
-                remarks: prfTrailDto.remarks,
-              })
-              .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
-              .execute()
-          ).affected != 0
-        ) {
-          if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
-            return { prfDetailsId, ...prfTrailDto };
+
+      if (prfTrail.gmStatus && prfTrail.gmStatus === 'For approval') {
+        let gmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
+        gmStatus = prfTrailDto.status;
+        if (gmStatus === 'Approved') {
+          if (
+            (
+              await this.entityRepository
+                .createQueryBuilder()
+                .update()
+                .set({
+                  gmStatus,
+                  gmStatusUpdatedAt: getDateTimeNow(),
+                })
+                .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                .execute()
+            ).affected != 0
+          ) {
+            if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Approved', prfDetailsId])).affectedRows > 0) {
+              //1. get grouped prf_positions by title, division, occupation, competency; (parameter: prf_details_id)
+              const prfPositions = await this.prfPositionsViewService.entityRepository.find({ where: { prfDetailsId } });
+              const vppData = await Promise.all(
+                prfPositions.map(async (vppPosition) => {
+                  //2. SAVE TO vpp set vppstatus to For csc approval
+                  const vpp = await this.vppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
+                  //3. save grouped positions to vpp_positions;
+                  const splittedPositions = vppPosition.positionId.split(',');
+                  const vppPositions = await Promise.all(
+                    splittedPositions.map(async (prfPositionsId) => {
+                      return await this.vppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
+                    }),
+                  );
+                  return { vppId: vpp._id, status: vpp.postingStatus, positions: vppPositions };
+                }),
+              );
+              return { prfDetailsId, ...prfTrailDto, vppData };
+            }
+          }
+        }
+        if (gmStatus === 'Disapproved') {
+          if (
+            (
+              await this.entityRepository
+                .createQueryBuilder()
+                .update()
+                .set({
+                  gmStatus,
+                  gmStatusUpdatedAt: getDateTimeNow(),
+                  remarks: prfTrailDto.remarks,
+                })
+                .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                .execute()
+            ).affected != 0
+          ) {
+            if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Disapproved', prfDetailsId])).affectedRows > 0)
+              return { prfDetailsId, ...prfTrailDto };
+          }
         }
       }
+    } catch (error) {
+      console.log('ASDASDASDASDSADSADSAD', error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
