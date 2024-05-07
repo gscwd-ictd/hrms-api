@@ -30,10 +30,12 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
       console.log(vpp);
       if (vpp.count === '0') throw new HttpException('Invalid Posting ID', 404);
       if (details) {
-        await this.emailService.sendEmailForApplicant(email.email, details, vppId);
+        const applicantEmailResult = await this.emailService.sendEmailForApplicant(email.email, details, vppId);
+        console.log('TOKEN EMAIL', applicantEmailResult);
         return {
           email,
           details,
+          applicantEmailResult,
         };
       }
       return null;
