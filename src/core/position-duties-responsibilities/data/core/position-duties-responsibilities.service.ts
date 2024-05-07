@@ -358,4 +358,63 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
       [positionIds],
     );
   }
+
+  /* find all duties and responsibilities by plantilla position id (core and support) */
+  async getPositionDutiesResponsibilities(positionId: string) {
+    const core = await this.getDutiesAndResponsibilities(positionId, DutyType.CORE);
+    const support = await this.getDutiesAndResponsibilities(positionId, DutyType.SUPPORT);
+
+    return {
+      positionId: positionId,
+      core: core,
+      support: support,
+    };
+  }
+
+  /* find all duties and responsibilities by plantilla position id */
+  async getDutiesAndResponsibilities(positionId: string, dutyType: DutyType) {
+    try {
+      console.log(positionId);
+      const duties = await this.entityRepository
+        .createQueryBuilder('pdr')
+        .select('pdr._id', 'pdrId')
+        .addSelect('pdr.duty', 'duty')
+        .addSelect('pdr.percentage', 'percentage')
+        .addSelect('cm.name', 'name')
+        .addSelect('cm.code', 'code')
+        .addSelect('cm.desc', 'competencyDescription')
+        .addSelect('p.key_actions', 'keyActions')
+        .addSelect('pcpl._id', 'pcplId')
+        .addSelect('p.level', 'level')
+        .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
+        .innerJoin('proficiency', 'p', 'pcpl.proficiency_id_fk = p._id')
+        .innerJoin('competency_model', 'cm', 'p.competency_id_fk = cm._id')
+        .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+        .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
+        .where('pp._id = :positionId and pdr.duty_type = :dutyType', { positionId, dutyType })
+        .execute();
+
+      return await Promise.all(
+        duties.map(async (items) => {
+          const { pdrId, duty, percentage, level, pcplId, code, name, competencyDescription, keyActions } = items;
+          return {
+            pdrId: pdrId,
+            duty: duty,
+            percentage: percentage,
+            competency: {
+              level: level,
+              pcplId: pcplId,
+              code: code,
+              name: name,
+              competencyDescription: competencyDescription,
+              keyActions: keyActions,
+            },
+          };
+        }),
+      );
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
