@@ -203,7 +203,7 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         positionId: posId,
         positionName: pos_name.position_title,
         salaryGrade: salarygrade.salary_grade_salary_grade,
-        managerial: [...managerial],
+        functional: [...managerial],
       };
     } catch (error) {
       throw new HttpException('Position not found', 404);
@@ -217,8 +217,6 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
       .innerJoin('plantilla_positions', 'pp', 'pp.salary_grade_id_fk = salary_grade._id')
       .where('pp._id = :positionId', { positionId })
       .getRawOne();
-
-    console.log(salaryGrade);
 
     if (salaryGrade.salary_grade_salary_grade <= 20) {
       //1. count competencies currently assigned to the position

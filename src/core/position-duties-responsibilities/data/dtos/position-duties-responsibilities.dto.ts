@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsInt, IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsDecimal, IsInt, IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
 
 export class DutiesReponsibilitiesDto {
   @IsNotEmpty()

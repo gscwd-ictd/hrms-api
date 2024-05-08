@@ -166,7 +166,7 @@ export class OrganizationalPositionsService {
             .innerJoin('departments', 'd', 'd._id = dp.department_id_fk')
             .where(
               `d._id = :assignmentId  AND has_duties(pp._id) = true AND pp.employee_id_fk IS NULL AND pp._id NOT IN (SELECT position_id_fk FROM 
-              prf_positions,prf_details, plantilla_positions 
+              prf_positions,prf_details, plantilla_positions  
               WHERE position_id_fk = plantilla_positions._id AND prf_details._id = prf_positions.prf_details_id_fk AND (prf_details.status<>'Disapproved' AND prf_details.status<>'Cancelled'))  AND pp._id <> :positionId`,
               { assignmentId, positionId },
             )
