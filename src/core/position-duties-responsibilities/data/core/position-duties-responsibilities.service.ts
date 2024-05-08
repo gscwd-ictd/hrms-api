@@ -17,6 +17,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
   }
 
   async createPositionDutiesResponsibilities(data: CreatePositionDutiesResponsibilitiesDto) {
+    console.log(data);
     try {
       return await this.positionDutiesResponsibilitiesRepository.manager.transaction(async (transactionManager) => {
         const { positionId, core, support } = data;

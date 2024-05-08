@@ -20,8 +20,8 @@ export class WorkExperienceSheetDTO {
   to: string | null;
   isSelected?: boolean;
   isPresentWork?: boolean;
-  immediateSupervisor: string;
-  nameOfOffice: string;
+  supervisor: string;
+  office: string;
   accomplishments: WorkExperienceSheetAccomplishmentsDTO[];
   duties: WorkExperienceSheetDutiesDTO[];
 }

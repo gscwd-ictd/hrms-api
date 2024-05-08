@@ -4,6 +4,6 @@ export class WorkExperienceSheetBasicDTO {
   _id?: string;
   workExperienceId: PDSWorkExperience;
   postingApplicantId: string;
-  nameOfOffice: string;
-  immediateSupervisor: string;
+  office: string;
+  supervisor: string;
 }

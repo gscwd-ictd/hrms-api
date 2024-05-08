@@ -146,7 +146,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
       const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
       const prfTrailInitStatus = (await this.entityRepository.query('CALL sp_set_prf_trail_init_status2(?)', [prfTrailDto.employeeId]))[0][0];
 
-      if (prfTrail.departmentStatus && prfTrail.departmentStatus === 'For approval') {
+      if (typeof prfTrail.departmentStatus !== 'undefined' && prfTrail.departmentStatus === 'For approval') {
         let departmentStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
         departmentStatus = prfTrailDto.status;
         if (departmentStatus === 'Approved') {
@@ -195,7 +195,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         }
       }
 
-      if (!prfTrail.adminStatus && prfTrail.agmStatus && prfTrail.agmStatus === 'For approval') {
+      if (!prfTrail.adminStatus && typeof prfTrail.agmStatus !== 'undefined' && prfTrail.agmStatus === 'For approval') {
         let agmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
         agmStatus = prfTrailDto.status;
         if (agmStatus === 'Approved') {
@@ -240,7 +240,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         }
       }
 
-      if (prfTrail.adminStatus) {
+      if (typeof prfTrail.adminStatus !== 'undefined') {
         if (!prfTrail.agmStatus) {
           let adminStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
           adminStatus = prfTrailDto.status;
@@ -330,7 +330,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         }
       }
 
-      if (prfTrail.gmStatus && prfTrail.gmStatus === 'For approval') {
+      if (typeof prfTrail.gmStatus !== 'undefined' && prfTrail.gmStatus === 'For approval') {
         let gmStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
         gmStatus = prfTrailDto.status;
         if (gmStatus === 'Approved') {

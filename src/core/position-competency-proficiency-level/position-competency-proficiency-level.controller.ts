@@ -26,6 +26,11 @@ export class PositionCompetencyProficiencyLevelController {
     return await this.pcplService.getAllCompetencyProficienciesFunctional(posId);
   }
 
+  @Get('single/managerial/:posId')
+  async getAllManagerialFunctional(@Param('posId') posId: string) {
+    return await this.pcplService.getAllCompetencyProficienciesManagerial(posId);
+  }
+
   @Post(':position_id')
   async addCompetencyPerPosition(@Param('position_id') positionId: string, @Body() proficiencyIds: PcplDTO) {
     return await this.pcplService.assignCompetenciesToPosition(positionId, proficiencyIds);

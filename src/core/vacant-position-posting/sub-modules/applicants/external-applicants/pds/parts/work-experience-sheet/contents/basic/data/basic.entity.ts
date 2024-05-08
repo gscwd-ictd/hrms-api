@@ -17,8 +17,8 @@ export class WorkExperienceSheetBasic extends DefaultTable {
   postingApplicantId: string;
 
   @Column({ name: 'supervisor' })
-  immediateSupervisor: string;
+  supervisor: string;
 
   @Column({ name: 'office' })
-  nameOfOffice: string;
+  office: string;
 }

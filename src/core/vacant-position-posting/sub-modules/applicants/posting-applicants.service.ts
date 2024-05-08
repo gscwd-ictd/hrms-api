@@ -104,7 +104,7 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
         withRelevantExperience,
       });
       const payload = { postingApplicantId: internalApplicant._id, workExperienceSheetAddDTO: { workExperienceSheet, vppId } };
-      console.log('========================================== ', payload);
+      console.log('PAYLOAD ========================================== PAYLOAD ', payload);
       console.log(withRelevantExperience);
       if (withRelevantExperience) {
         const workExperienceSheetResult = await lastValueFrom(this.client.send({ msg: 'add_employee_work_experience_sheet' }, payload));
