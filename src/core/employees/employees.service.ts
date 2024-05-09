@@ -594,7 +594,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
             positionId,
             scheduleBase: employeeSchedule.schedule.scheduleBase,
             natureOfAppointment,
-            avatarUrl,
+            photoUrl: avatarUrl,
           },
           personalDetails: { fullName, firstName, middleName, lastName, nameExt },
         };
