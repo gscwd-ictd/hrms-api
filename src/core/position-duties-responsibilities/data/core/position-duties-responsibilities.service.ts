@@ -236,7 +236,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     }
   }
 
-  /* find all position under supervisor position id */
+  /* find position under supervisor position id */
   async getPositionsUnderManager(supervisorPositionId: string) {
     const employeeId = (await this.entityRepository.query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [supervisorPositionId]))[0].employeeId;
     const oicPositionId = await this.entityRepository.query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
@@ -249,7 +249,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     return positions;
   }
 
-  /* find all permanent positions under supervisor position id  */
+  /* find permanent positions under supervisor position id  */
   async getPermanentPositionsUnderManager(supervisorPositionId: string) {
     const employeeId = (await getManager().query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [supervisorPositionId]))[0].employeeId;
     const oicPositionId = await getManager().query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
@@ -262,7 +262,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     return positions;
   }
 
-  /* find all unfilled position under supervisor position id */
+  /* find unfilled position under supervisor position id */
   async getPendingDutiesAndResponsibilities(supervisorPositionId: string) {
     const positions = await this.getPermanentPositionsUnderManager(supervisorPositionId);
     const positionIds = await Promise.all(
@@ -324,7 +324,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     );
   }
 
-  /* find all filled position under supervisor position id */
+  /* find filled position under supervisor position id */
   async getFinishedDutiesAndResponsibilities(supervisorPositionId: string) {
     const positions = await this.getPermanentPositionsUnderManager(supervisorPositionId);
     const positionIds = await Promise.all(
@@ -359,7 +359,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     );
   }
 
-  /* find all duties and responsibilities by plantilla position id (core and support) */
+  /* find duties and responsibilities by plantilla position id (core and support) */
   async getPositionDutiesResponsibilities(positionId: string) {
     const core = await this.getDutiesAndResponsibilities(positionId, DutyType.CORE);
     const support = await this.getDutiesAndResponsibilities(positionId, DutyType.SUPPORT);
@@ -371,7 +371,7 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     };
   }
 
-  /* find all duties and responsibilities by plantilla position id */
+  /* find duties and responsibilities by plantilla position id */
   async getDutiesAndResponsibilities(positionId: string, dutyType: DutyType) {
     try {
       console.log(positionId);
@@ -412,6 +412,30 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
           };
         }),
       );
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /* find all position about duties and responsibilities*/
+  async getAllPositionDutiesAndResponsibilities() {
+    try {
+      return await this.entityRepository
+        .createQueryBuilder('pdr')
+        .select('pp._id', 'positionId')
+        .addSelect('pp.item_number', 'plantillaNumber')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('count(pdr._id)', 'numberOfCoreFunction')
+        .addSelect('oc.occupation_name', 'occupationalGroup')
+        .innerJoin('position_competency_proficiency_level', 'pcpl', 'pdr.position_competency_proficiency_level_id_fk = pcpl._id')
+        .innerJoin('proficiency', 'pf', 'pcpl.proficiency_id_fk = pf._id')
+        .innerJoin('competency_model', 'cm', 'pf.competency_id_fk = cm._id')
+        .innerJoin('occupational_group', 'og', 'pcpl.occupational_group_id_fk = og._id')
+        .innerJoin('occupations', 'oc', 'og.occupation_id_fk = oc._id')
+        .innerJoin('plantilla_positions', 'pp', 'og.position_id_fk = pp._id')
+        .where('pdr.duty_type = :dutyType group by og._id', { dutyType: DutyType.CORE })
+        .execute();
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);

@@ -330,4 +330,9 @@ export class EmployeesController {
   async getCompanyIdsByOrgId(@Payload() orgId: string) {
     return await this.employeesService.getCompanyIdsByOrgId(orgId);
   }
+
+  @Get('plantilla/:plantillaId')
+  async getEmployeeDetailsByPlantillaId(@Param('plantillaId') plantillaId: string) {
+    return await this.employeesService.getEmployeeDetailsByPlantillaId(plantillaId);
+  }
 }
