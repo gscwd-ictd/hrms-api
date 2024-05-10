@@ -192,6 +192,11 @@ export class EmployeesController {
     return await this.employeesService.getAllAssignableSupervisoryEmployees();
   }
 
+  @MessagePattern('get_all_assignable_supervisory_employees_by_id')
+  async getAllAssignableSupervisoryEmployeesByEmployeeId(@Payload() employeeId: string) {
+    return await this.employeesService.getAllAssignableSupervisorEmployeesByEmployeeId(employeeId);
+  }
+
   @MessagePattern('get_all_permanent_casual_employees2')
   async getAllPermanentCasualEmployees2MS() {
     return await this.employeesService.getAllPermanentCasualEmployees2();
@@ -329,5 +334,11 @@ export class EmployeesController {
   @MessagePattern('get_company_ids_by_org_id')
   async getCompanyIdsByOrgId(@Payload() orgId: string) {
     return await this.employeesService.getCompanyIdsByOrgId(orgId);
+  }
+
+  /* find employee details by plantilla id */
+  @Get('plantilla/:plantillaId')
+  async getEmployeeDetailsByPlantillaId(@Param('plantillaId') plantillaId: string) {
+    return await this.employeesService.getEmployeeDetailsByPlantillaId(plantillaId);
   }
 }

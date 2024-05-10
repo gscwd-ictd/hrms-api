@@ -30,4 +30,14 @@ export class PositionDutiesResponsibilitiesController {
   async getPositionsUnderManager(@Param('supervisorPositionId') supervisorPositionId: string) {
     return await this.positionDutiesResponsibilitiesService.getPositionsUnderManager(supervisorPositionId);
   }
+
+  @Get(':supervisorPositionId/:positionId')
+  async getPositionDutiesResponsibilities(@Param('supervisorPositionId') supervisorPositionId: string, @Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPositionDutiesResponsibilities(positionId);
+  }
+
+  @Get()
+  async getAllPositionDutiesAndResponsibilities() {
+    return await this.positionDutiesResponsibilitiesService.getAllPositionDutiesAndResponsibilities();
+  }
 }
