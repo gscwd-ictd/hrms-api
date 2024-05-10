@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { isEmpty, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { EmailService } from 'src/global/auth/services/email.service';
 import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
@@ -12,7 +12,6 @@ import { PlantillaPositionsService } from '../plantilla-positions/plantilla-posi
 import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
-import { cp } from 'fs';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -847,5 +846,27 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     else if (salaryGrade === 27) return UserRole.ASSISTANT_GENERAL_MANAGER;
     else if (salaryGrade === 28) return UserRole.GENERAL_MANAGER;
     else if (salaryGrade === 0) return UserRole.BOARD_MEMBER;
+  }
+
+  /* find employee details by plantilla id */
+  async getEmployeeDetailsByPlantillaId(plantillaId: string) {
+    try {
+      const plantilla = await this.entityRepository.query(
+        `select em._id employeeId, get_employee_fullname(em._id) fullName, em.company_id companyId, pp.nature_of_appointment natureOfAppointment from plantilla_positions pp left join employees em on pp.employee_id_fk = em._id where pp._id = ?`,
+        [plantillaId],
+      );
+
+      const photoUrl = (await this.getEmployeePortalDetails(plantilla[0].employeeId)).photoUrl;
+
+      return {
+        photoUrl: photoUrl,
+        name: plantilla[0].fullName,
+        companyId: plantilla[0].companyId,
+        natureOfAppointment: plantilla[0].natureOfAppointment,
+      };
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
   }
 }
