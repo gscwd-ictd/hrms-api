@@ -331,6 +331,7 @@ export class EmployeesController {
     return await this.employeesService.getCompanyIdsByOrgId(orgId);
   }
 
+  /* find employee details by plantilla id */
   @Get('plantilla/:plantillaId')
   async getEmployeeDetailsByPlantillaId(@Param('plantillaId') plantillaId: string) {
     return await this.employeesService.getEmployeeDetailsByPlantillaId(plantillaId);
