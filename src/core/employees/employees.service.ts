@@ -613,6 +613,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllAssignableSupervisorEmployeesByEmployeeId(employeeId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_assignable_supervisors(?);`, [employeeId]))[0];
+  }
+
   async getAllAssignableSupervisoryEmployees() {
     return await this.entityRepository.query(`
       SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp 
