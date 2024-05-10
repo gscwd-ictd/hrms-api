@@ -16,18 +16,28 @@ export class PositionDutiesResponsibilitiesController {
     return await this.positionDutiesResponsibilitiesService.updatePositionDutiesResponsibilities(data);
   }
 
-  @Get(':positionId/pending')
-  async getPendingDutiesAndResponsibilities(@Param('positionId') positionId: string) {
-    return await this.positionDutiesResponsibilitiesService.getPendingDutiesAndResponsibilities(positionId);
+  @Get(':supervisorPositionId/pending')
+  async getPendingDutiesAndResponsibilities(@Param('supervisorPositionId') supervisorPositionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPendingDutiesAndResponsibilities(supervisorPositionId);
   }
 
-  @Get(':positionId/finished')
-  async getFinishedDutiesAndResponsibilities(@Param('positionId') positionId: string) {
-    return await this.positionDutiesResponsibilitiesService.getFinishedDutiesAndResponsibilities(positionId);
+  @Get(':supervisorPositionId/finished')
+  async getFinishedDutiesAndResponsibilities(@Param('supervisorPositionId') supervisorPositionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getFinishedDutiesAndResponsibilities(supervisorPositionId);
   }
 
-  @Get(':positionId')
-  async getPositionsUnderManager(@Param('positionId') positionId: string) {
-    return await this.positionDutiesResponsibilitiesService.getPositionsUnderManager(positionId);
+  @Get(':supervisorPositionId')
+  async getPositionsUnderManager(@Param('supervisorPositionId') supervisorPositionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPositionsUnderManager(supervisorPositionId);
+  }
+
+  @Get(':supervisorPositionId/:positionId')
+  async getPositionDutiesResponsibilities(@Param('supervisorPositionId') supervisorPositionId: string, @Param('positionId') positionId: string) {
+    return await this.positionDutiesResponsibilitiesService.getPositionDutiesResponsibilities(positionId);
+  }
+
+  @Get()
+  async getAllPositionDutiesAndResponsibilities() {
+    return await this.positionDutiesResponsibilitiesService.getAllPositionDutiesAndResponsibilities();
   }
 }
