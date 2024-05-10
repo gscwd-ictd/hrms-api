@@ -277,7 +277,7 @@ export class OrganizationService {
       return await this.divisionService.entityRepository.query(
         `
       SELECT _id, name, orgStruct,code  
-      FROM hris_dev1.org_struct_view 
+      FROM org_struct_view 
       WHERE orgStruct = 'department' OR 
       name = 'Office of the General Manager';`,
       );
