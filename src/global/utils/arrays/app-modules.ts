@@ -43,6 +43,7 @@ import { HolidaysModule } from 'src/core/holidays/holidays.module';
 import { EmployeeTagsModule } from 'src/core/employee-tags/employee-tags.module';
 import { StatsModule } from 'src/core/stats/stats.module';
 import { PositionDutiesResponsibilitiesModule } from 'src/core/position-duties-responsibilities/data/core/position-duties-responsibilities.module';
+import { EmployeeTemporaryAssignmentModule } from 'src/core/employee-temporary-assignment/core';
 
 export const modules = [
   AuthModule,
@@ -92,4 +93,5 @@ export const modules = [
   StatsModule,
 
   PositionDutiesResponsibilitiesModule,
+  EmployeeTemporaryAssignmentModule,
 ];
