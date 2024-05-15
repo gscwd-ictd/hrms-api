@@ -58,6 +58,7 @@ import { OfficerInChargeView } from 'src/core/officer-in-charge/data/officer-in-
 import { OrgStructView } from 'src/core/organization/data/views/organization.view';
 import { EmployeeTags } from 'src/core/employee-tags/data/employee-tags.entity';
 import { PositionDutiesResponsibilities } from 'src/core/position-duties-responsibilities/data/entities/position-duties-responsibilities.entity';
+import { EmployeeTemporaryAssignment } from 'src/core/employee-temporary-assignment/data';
 
 export const typeormEntities = [
   ...PrfEntities,
@@ -124,4 +125,5 @@ export const typeormEntities = [
   EmployeeTags,
 
   PositionDutiesResponsibilities,
+  EmployeeTemporaryAssignment,
 ];

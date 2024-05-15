@@ -45,6 +45,19 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     return positions;
   }
 
+  async getPermanentUnfilledFilledUnderManager(positionId: string) {
+    //sp_get_permanent_filled_unfilled_positions_under_manager
+    const employeeId = (await this.entityRepository.query(`SELECT employee_id_fk employeeId FROM plantilla_positions WHERE _id=?`, [positionId]))[0].employeeId;
+    const oicPositionId = await this.entityRepository.query(`SELECT get_position_id_by_org_position_id(orgPositionId) positionId FROM officer_in_charge_view WHERE employeeId=?;`, [
+      employeeId,
+    ]);
+
+    let positions;
+    if (oicPositionId.length > 0) positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_filled_unfilled_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
+    else positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_filled_unfilled_positions_under_manager(?);`, [positionId]))[0];
+    return positions;
+  }
+
   /**
    * @audience Employee Portal
    *
@@ -83,7 +96,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
 
     const pendingDutiesAndResponsibilities = await this.entityRepository.query(
       `
-      SELECT position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation
+      SELECT position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation,get_salary_grade_by_id(get_salary_grade_id_by_position_id(position_id)) salaryGrade
         FROM plantilla_view pv 
       INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id
       INNER JOIN occupational_group_duties_responsibilities ogdr ON ogdr.occupational_group_id_fk = og._id
@@ -107,7 +120,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       )
       UNION
       (
-        SELECT position_id positionId, position_title positionTitle, item_number itemNumber,get_position_assignment(position_id) designation 
+        SELECT position_id positionId, position_title positionTitle, item_number itemNumber,get_position_assignment(position_id) designation,get_salary_grade_by_id(get_salary_grade_id_by_position_id(position_id)) salaryGrade
         FROM plantilla_view pv INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id  
         WHERE  pv.position_id IN (?) AND og._id NOT IN (SELECT occupational_group_id_fk FROM occupational_group_duties_responsibilities)
       );
@@ -118,7 +131,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
   }
 
   async getFinishedDutiesAndResponsibilities(positionId: string) {
-    const positions = await this.getPermanentPositionsUnderManager(positionId);
+    const positions = await this.getPermanentUnfilledFilledUnderManager(positionId);
     const positionIds = await Promise.all(
       positions.map((position) => {
         return position.positionId;
@@ -127,16 +140,24 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
 
     return await this.entityRepository.query(
       `
-    SELECT distinct position_id positionId, position_title positionTitle, item_number itemNumber, get_position_assignment(position_id) designation,DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt
+    (SELECT distinct position_id positionId, pv.position_title positionTitle, pv.item_number itemNumber, get_position_assignment(position_id) designation,has_employee(position_id) hasEmployee, has_ongoing_prf(position_id) hasOngoingPrf,IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName  ,DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt
     FROM plantilla_view pv 
       INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id
       INNER JOIN occupational_group_duties_responsibilities ogdr ON ogdr.occupational_group_id_fk = og._id
-    WHERE pv.position_id IN (?) AND ogdr.occupational_group_id_fk IN 
+      INNER JOIN plantilla_positions pp ON pp._id = pv.position_id 
+    WHERE pv.position_id IN (?) AND pp._id <> ? AND ogdr.occupational_group_id_fk IN 
     (SELECT occupationalGroupId 
       FROM 
       (SELECT sum(ogdr.percentage) as percentage, ogdr.occupational_group_id_fk occupationalGroupId FROM occupational_group_duties_responsibilities ogdr    
-    GROUP BY ogdr.occupational_group_id_fk) a WHERE a.percentage >= 100)`,
-      [positionIds],
+    GROUP BY ogdr.occupational_group_id_fk) a WHERE a.percentage >= 100)) UNION (
+      SELECT distinct position_id positionId, pv.position_title positionTitle, pv.item_number itemNumber, get_position_assignment(position_id) designation,has_employee(position_id) hasEmployee, has_ongoing_prf(position_id) hasOngoingPrf ,IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName ,DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt 
+          FROM plantilla_view pv 
+      LEFT JOIN occupational_group og ON og.position_id_fk = pv.position_id
+      LEFT JOIN occupational_group_duties_responsibilities ogdr ON ogdr.occupational_group_id_fk = og._id
+      INNER JOIN plantilla_positions pp ON pp._id = pv.position_id 
+      WHERE pv.position_id IN (?) AND pp._id <> ?
+    )`,
+      [positionIds, positionId, positionIds, positionId],
     );
   }
 
@@ -226,6 +247,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     try {
       console.log('PERCENTAGE', updateOgdrDTO);
       const { add, update } = updateOgdrDTO;
+      console.log('PERCENTAGEZ', updateOgdrDTO);
       const updateResult = await getManager().transaction(async (transactionEntityManager) => {
         //return transactionEntityManager;
         let addCoreResult = [];
@@ -247,9 +269,10 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
 
         let updateCoreResult = [];
 
-        if (update.support.length > 0) {
+        if (update.core.length > 0) {
           updateCoreResult = await Promise.all(
             update.core.map(async (coreDuty) => {
+              console.log('CORE DUTYZ', coreDuty);
               if ((await this.updateOgdrTransaction(transactionEntityManager, coreDuty, DutyType.CORE)).affected > 0) return coreDuty;
             }),
           );
@@ -290,6 +313,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       });
       return updateResult;
     } catch (error) {
+      console.log(updateOgdrDTO);
       console.log(error);
     }
   }
