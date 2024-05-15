@@ -160,6 +160,7 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         managerial: await this.getCompetencyPerDomainPerPosition(posId, '13747e8b-8e3c-11ec-ae65-54ab3a99e60e'),
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException('Position not found', 404);
     }
   }
@@ -203,9 +204,10 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         positionId: posId,
         positionName: pos_name.position_title,
         salaryGrade: salarygrade.salary_grade_salary_grade,
-        functional: [...managerial],
+        managerial: [...managerial],
       };
     } catch (error) {
+      console.log('test test', error);
       throw new HttpException('Position not found', 404);
     }
   }
