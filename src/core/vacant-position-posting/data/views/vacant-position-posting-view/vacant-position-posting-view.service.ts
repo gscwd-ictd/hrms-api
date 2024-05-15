@@ -41,7 +41,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
           .numberOfApplicants;
         const withExam = (await this.entityRepository.query(`SELECT IF(with_exam = true, 'Yes','No') withExam FROM prf_details WHERE _id=?`, [posting.prfId]))[0].withExam;
         const core = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
         INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
         INNER JOIN domain d ON d._id = cm.domain_id_fk
         INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
@@ -51,7 +51,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
         );
 
         const functional = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
         INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
         INNER JOIN domain d ON d._id = cm.domain_id_fk
         INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
@@ -61,7 +61,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
         );
 
         const managerial = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
         INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
         INNER JOIN domain d ON d._id = cm.domain_id_fk
         INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
@@ -83,7 +83,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
         const positionId = vpp.positionId.split(',')[0];
 
         const functional = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
           INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
           INNER JOIN domain d ON d._id = cm.domain_id_fk
           INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
@@ -93,7 +93,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
         );
 
         const core = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
           INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
           INNER JOIN domain d ON d._id = cm.domain_id_fk
           INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
@@ -103,7 +103,7 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
         );
 
         const managerial = await this.entityRepository.query(
-          `SELECT DISTINCT cm.name \`name\`, cm.desc \`description\`, p.level FROM competency_model cm
+          `SELECT DISTINCT cm.name \`name\`, p.key_actions \`description\`, p.level FROM competency_model cm
       INNER JOIN proficiency p ON p.competency_id_fk = cm._id 
       INNER JOIN domain d ON d._id = cm.domain_id_fk
       INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id

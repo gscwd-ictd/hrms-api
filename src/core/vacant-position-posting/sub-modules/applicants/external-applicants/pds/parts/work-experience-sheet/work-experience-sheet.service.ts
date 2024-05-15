@@ -110,14 +110,14 @@ export class WorkExperienceSheetService {
             // );
             const workExperienceSheets = await Promise.all(
               workExperienceSheetDTO.workExperiencesSheet.map(async (workExperienceSheet) => {
-                const { _id, accomplishments, duties, immediateSupervisor, nameOfOffice, ...rest } = workExperienceSheet;
+                const { _id, accomplishments, duties, supervisor, office, ...rest } = workExperienceSheet;
 
                 const basic = await transactionEntityManager.save(
                   this.basicService.createEntity({
                     postingApplicantId: postingApplicant._id,
                     workExperienceId: _id,
-                    immediateSupervisor,
-                    nameOfOffice,
+                    supervisor,
+                    office,
                   }),
                 );
 

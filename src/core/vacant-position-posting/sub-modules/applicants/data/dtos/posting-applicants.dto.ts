@@ -48,14 +48,14 @@ export class PostingApplicantsExamDTO {
 export class EmployeeWorkExperienceSheet {
   basic: Basic;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Duties)
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => Duties)
   duties: Duties[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Accomplishments)
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => Accomplishments)
   accomplishments: Accomplishments[];
 }
 

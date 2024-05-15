@@ -297,6 +297,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -612,6 +613,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllAssignableSupervisorEmployeesByEmployeeId(employeeId: string) {
+    return (await this.entityRepository.query(`CALL sp_get_assignable_supervisors(?);`, [employeeId]))[0];
+  }
+
   async getAllAssignableSupervisoryEmployees() {
     return await this.entityRepository.query(`
       SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp 
@@ -791,7 +796,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
-      //console.log('salary z: ', monthlyRate[0]);
+      console.log('salary z: ', monthlyRate[0]);
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
         return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };

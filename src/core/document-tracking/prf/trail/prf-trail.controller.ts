@@ -1,7 +1,5 @@
-import { PrfTrailInterceptor } from './interceptors/prf-trail.interceptor';
 import { Body, Controller, Get, Param, Patch, Put, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PrfTrailDTO } from './data/dtos/prf-trail.dto';
-import { PrfTrailGuard } from './guards/prf-trail.guard';
 import { PrfTrailService } from './prf-trail.service';
 
 @Controller('prf-trail')

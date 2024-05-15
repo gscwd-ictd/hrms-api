@@ -4,8 +4,8 @@ import { AuthenticatedGuard } from 'src/global/auth/guards/authenticated2.guard'
 import { QualificationStandardsDto } from 'src/core/qualification-standards/data/dtos/qualification-standards.dto';
 import { QualificationStandardsService } from './qualification-standards.service';
 
-@UseGuards(AuthenticatedGuard)
-@UseInterceptors(UserLogsInterceptor)
+// @UseGuards(AuthenticatedGuard)
+// @UseInterceptors(UserLogsInterceptor)
 @Controller('qualification-standards')
 export class QualificationStandardsController {
   constructor(private qualificationStandardsService: QualificationStandardsService) {}
