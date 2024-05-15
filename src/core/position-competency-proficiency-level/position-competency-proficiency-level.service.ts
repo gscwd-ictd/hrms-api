@@ -203,7 +203,7 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         positionId: posId,
         positionName: pos_name.position_title,
         salaryGrade: salarygrade.salary_grade_salary_grade,
-        functional: [...managerial],
+        managerial: [...managerial],
       };
     } catch (error) {
       throw new HttpException('Position not found', 404);

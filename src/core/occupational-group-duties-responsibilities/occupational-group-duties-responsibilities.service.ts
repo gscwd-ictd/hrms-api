@@ -224,6 +224,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
 
   async updateDRPercentagePerPosition(positionId: string, updateOgdrDTO: UpdateOgdrDto) {
     try {
+      console.log('PERCENTAGE', updateOgdrDTO);
       const { add, update } = updateOgdrDTO;
       const updateResult = await getManager().transaction(async (transactionEntityManager) => {
         //return transactionEntityManager;
@@ -237,7 +238,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
         }
 
         let addSupportResult = [];
-        if (add.support.length > 0)
+        if (add.core.length > 0)
           addSupportResult = await Promise.all(
             add.support.map(async (supportDuty) => {
               return await this.addOgdrTransaction(transactionEntityManager, supportDuty, positionId, DutyType.SUPPORT);
