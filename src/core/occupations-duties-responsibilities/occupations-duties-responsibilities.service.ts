@@ -1,13 +1,17 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
-import { OccupationDutiesResponsibilitiesDeleteDTO, OccupationDutiesResponsibilitiesDTO } from './data/dtos/occupations-duties-responsibilities.dto';
+import {
+  CreateOccupationDutiesResponsibilitiesDto,
+  OccupationDutiesResponsibilitiesDeleteDTO,
+  OccupationDutiesResponsibilitiesDTO,
+} from './data/dtos/occupations-duties-responsibilities.dto';
 import { OccupationsDutiesResponsibilities } from './data/entities/occupations-duties-responsibilities.entity';
-import { OccupationsDutiesResponsibilitiesModule } from './occupations-duties-responsibilities.module';
+import { DutiesResponsibilities } from '../duties-responsibilities/data/entities/duties-resposibilities.entity';
 
 @Injectable()
-export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudService<OccupationsDutiesResponsibilitiesModule> {
+export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudService<OccupationsDutiesResponsibilities> {
   constructor(
     @InjectRepository(OccupationsDutiesResponsibilities)
     public readonly odrRepo: Repository<OccupationsDutiesResponsibilities>,
@@ -85,5 +89,44 @@ export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudServ
       );
       return [{ options: optionItems }];
     } catch (error) {}
+  }
+
+  /* insert duty and responsibility, then assign them to the occupation group. */
+  async createOccupationsDutiesResponsibilities(occupationGroupId: string, data: CreateOccupationDutiesResponsibilitiesDto) {
+    try {
+      return await this.entityRepository.manager.transaction(async (entityManager) => {
+        const dutiesResponsibilitiesId = await entityManager.createQueryBuilder().insert().into(DutiesResponsibilities).values(data).execute();
+
+        const occupationDutiesResponsibilitiesId = await entityManager
+          .createQueryBuilder()
+          .insert()
+          .into(OccupationsDutiesResponsibilities)
+          .values({
+            occupationId: {
+              _id: occupationGroupId,
+            },
+            dutiesResponsibilities: {
+              _id: dutiesResponsibilitiesId.identifiers[0]._id,
+            },
+          })
+          .execute();
+
+        return await entityManager
+          .createQueryBuilder()
+          .select('ogdr._id', 'id')
+          .addSelect('ogdr.occupation_id_fk', 'occupationId')
+          .addSelect('ogdr.duties_responsibilities_id_fk', 'dutiesResponsibilitiesId')
+          .addSelect('dr.description', 'description')
+          .addSelect('ogdr.created_at', 'createdAt')
+          .addSelect('ogdr.updated_at', 'updatedAt')
+          .from('occupations_duties_responsibilities', 'ogdr')
+          .innerJoin('duties_responsibilities', 'dr', 'dr._id = ogdr.duties_responsibilities_id_fk')
+          .where('ogdr._id = :id ', { id: occupationDutiesResponsibilitiesId.identifiers[0]._id })
+          .getRawOne();
+      });
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+    }
   }
 }

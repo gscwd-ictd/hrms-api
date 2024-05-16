@@ -1,10 +1,19 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { OccupationDutiesResponsibilitiesDeleteDTO, OccupationDutiesResponsibilitiesDTO } from './data/dtos/occupations-duties-responsibilities.dto';
+import {
+  CreateOccupationDutiesResponsibilitiesDto,
+  OccupationDutiesResponsibilitiesDeleteDTO,
+  OccupationDutiesResponsibilitiesDTO,
+} from './data/dtos/occupations-duties-responsibilities.dto';
 import { OccupationsDutiesResponsibilitiesService } from './occupations-duties-responsibilities.service';
 
 @Controller('occupation-duties-responsibilities')
 export class OccupationsDutiesResponsibilitiesController {
   constructor(private readonly occupationsDutiesResponsibilitiesService: OccupationsDutiesResponsibilitiesService) {}
+
+  @Post('occupation/:occupationId')
+  async createOccupationsDutiesResponsibilities(@Param('occupationId') occupationId: string, @Body() data: CreateOccupationDutiesResponsibilitiesDto) {
+    return await this.occupationsDutiesResponsibilitiesService.createOccupationsDutiesResponsibilities(occupationId, data);
+  }
 
   @Post(':occupation_id')
   async assignDRtoOccupation(@Param('occupation_id') occupationId: string, @Body() odrDto: OccupationDutiesResponsibilitiesDTO) {
