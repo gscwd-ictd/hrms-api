@@ -555,7 +555,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .createQueryBuilder('emp')
       .select('emp._id', 'employeeId')
       .addSelect('emp.company_id', 'companyId')
-      .addSelect('get_employee_fullname(emp._id)', 'fullName')
+      .addSelect('get_employee_fullname2(emp._id)', 'fullName')
       .addSelect('emp.first_name', 'firstName')
       .addSelect('emp.middle_name', 'middleName')
       .addSelect('emp.last_name', 'lastName')
@@ -566,6 +566,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('get_employee_assignment_id(emp._id)', 'id')
       .addSelect('get_employee_assignment(emp._id)', 'name')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+      .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+      .where(`pp.position_title<>'Chairman'`, {})
       .getRawMany();
 
     const _empPositions = await Promise.all(
