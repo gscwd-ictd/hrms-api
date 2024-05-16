@@ -30,4 +30,9 @@ export class EmployeeTemporaryAssignmentController {
   async removeEmployeeTemporaryAssingmentById(@Param('id') id: string) {
     return await this.employeeTemporaryAssignmentService.deleteEmployeTemporaryAssignmentById(id);
   }
+
+  @Get('assignable/employee')
+  async findAllAssignableEmployee() {
+    return await this.employeeTemporaryAssignmentService.findAllAssignableEmployee();
+  }
 }
