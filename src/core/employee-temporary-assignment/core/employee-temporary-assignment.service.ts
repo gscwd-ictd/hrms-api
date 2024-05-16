@@ -127,4 +127,32 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
       throw new HttpException('Bad requet', HttpStatus.BAD_REQUEST);
     }
   }
+
+  /* find all assignable employee */
+  async findAllAssignableEmployee() {
+    try {
+      const employeeList = (await this.employeeTemporaryAssignmentRepository.query(`SELECT 
+      get_employee_fullname(emp._id) label,
+      emp._id value FROM employees emp 
+      INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+      INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
+      WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
+      AND sg.salary_grade <= 27
+      ORDER BY get_employee_fullname(emp._id) ASC;`)) as { label: string; value: string }[];
+
+      const employeeTemporaryAssignmentList = await this.employeeTemporaryAssignmentRepository.createQueryBuilder().select('employee_id_fk', 'employeeId').getRawMany();
+
+      const employeeTemporaryAssignmentId = employeeTemporaryAssignmentList.map((items) => items.employeeId);
+
+      return employeeList
+        .filter((items) => !employeeTemporaryAssignmentId.includes(items.value))
+        .map((items) => ({
+          label: items.label,
+          value: items.value,
+        }));
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
