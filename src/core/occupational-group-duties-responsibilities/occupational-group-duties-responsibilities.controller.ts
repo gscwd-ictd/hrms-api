@@ -40,7 +40,7 @@ export class OccupationalGroupDutiesResponsibilitiesController {
 
   @Get(':position_id')
   async getPositionsUnderManager(@Param('position_id') positionId: string) {
-    return await this.ogdrService.getPermanentPositionsUnderManager(positionId);
+    return await this.ogdrService.getPermanentUnfilledFilledUnderManager(positionId);
   }
 
   @Get('duties-responsibilities/:position_id')
