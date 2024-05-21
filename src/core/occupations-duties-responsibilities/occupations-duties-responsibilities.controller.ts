@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
   CreateOccupationDutiesResponsibilitiesDto,
+  DeleteOccupationDutiesResponsibilitiesDto,
   OccupationDutiesResponsibilitiesDeleteDTO,
   OccupationDutiesResponsibilitiesDTO,
 } from './data/dtos/occupations-duties-responsibilities.dto';
@@ -13,6 +14,11 @@ export class OccupationsDutiesResponsibilitiesController {
   @Post('occupation/:occupationId')
   async createOccupationsDutiesResponsibilities(@Param('occupationId') occupationId: string, @Body() data: CreateOccupationDutiesResponsibilitiesDto) {
     return await this.occupationsDutiesResponsibilitiesService.createOccupationsDutiesResponsibilities(occupationId, data);
+  }
+
+  @Delete('occupation/:occupationId')
+  async deleteOccupationsDutiesResponsibilities(@Param('occupationId') occupationId: string, @Body() data: DeleteOccupationDutiesResponsibilitiesDto) {
+    return await this.occupationsDutiesResponsibilitiesService.deleteOccupationsDutiesResponsibilities(occupationId, data);
   }
 
   @Post(':occupation_id')
