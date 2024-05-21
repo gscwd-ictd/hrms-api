@@ -18,6 +18,11 @@ export class EmployeesController {
     return await this.employeesService.getAllEmployees();
   }
 
+  @Get('test/test/test/test')
+  async testEmail() {
+    return await this.employeesService.testEmail();
+  }
+
   @Get('/sub')
   async getEmployeesUnderSupervisor(employeeId: string) {
     return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
@@ -92,6 +97,16 @@ export class EmployeesController {
   async getEmployeeDetailsByEmployeeId(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId);
+    } catch (error) {
+      console.log(error);
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_employee_details_with_signature')
+  async getEmployeeDetailsWithSignatureByEmployeeId(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getEmployeeDetailsWithSignatureByEmployeeId(employeeId);
     } catch (error) {
       console.log(error);
       throw new RpcException('Employee not found');

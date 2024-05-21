@@ -15,7 +15,7 @@ export class EmailService extends MicroserviceHelper {
     return await this.sendRequest(
       { msg: 'email.send.registration' },
       {
-        from: 'GSCWD HRD <hrd@gscwd.com>',
+        from: '"HRD" <hrd@gscwd.com>',
         to: email,
         employeeId,
         details,
@@ -31,7 +31,7 @@ export class EmailService extends MicroserviceHelper {
     return await this.sendRequest(
       { msg: 'email.applicant.send.message' },
       {
-        from: 'GSCWD HRD <hrd@gscwd.com>',
+        from: '"HRD" <hrd@gscwd.com>',
         to: email,
         details,
         subject: 'GSCWD Job Portal',
