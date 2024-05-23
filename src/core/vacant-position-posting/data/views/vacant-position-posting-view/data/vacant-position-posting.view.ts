@@ -30,7 +30,8 @@ import { ViewColumn, ViewEntity } from 'typeorm';
       INNER JOIN occupational_group og ON og.position_id_fk = pp._id 
       INNER JOIN occupations o ON og.occupation_id_fk = o._id 
       INNER JOIN prf_positions prfp ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
-      INNER JOIN prf_details prfd ON prfd._id = prfp.prf_details_id_fk
+      INNER JOIN prf_details prfd ON prfd._id = prfp.prf_details_id_fk 
+  WHERE prfd.status <> 'Cancelled' AND prfd.status <> 'Disapproved'
   GROUP BY vppId,positionTitle,salaryGradeLevel,salaryGrade,education,experience,eligibility,training, postingDate, postingDeadline,annualSalary, placeOfAssignment,occupationName, prfNo,prfId, withExam, postingStatus`,
 })
 export class VacantPositionPostingView {
