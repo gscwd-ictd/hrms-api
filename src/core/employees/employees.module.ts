@@ -11,6 +11,7 @@ import { EmployeesController } from './employees.controller';
 import { EmployeesService } from './employees.service';
 import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.module';
 import { CommitteeMembersModule } from '../committee-members/committee-members.module';
+import { EmployeesMsController } from './employees-ms.controller';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { CommitteeMembersModule } from '../committee-members/committee-members.m
     CommitteeMembersModule,
   ],
   providers: [EmployeesService, PlantillaPositionsService, EmailService],
-  controllers: [EmployeesController],
+  controllers: [EmployeesController, EmployeesMsController],
   exports: [EmployeesService],
 })
 export class EmployeesModule {}
