@@ -936,4 +936,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       throw new HttpException('Not found', HttpStatus.NOT_FOUND);
     }
   }
+
+  async getEmployeePosition(employeeId: string) {
+    try {
+      //return 'haha';
+      const result = await this.entityRepository.query(`SELECT _id id, position_title positionTitle FROM plantilla_positions WHERE employee_id_fk = ?;`, [employeeId]);
+      console.log(result);
+      if (result.length === 0) return null;
+      return result[0];
+    } catch (error) {
+      return null;
+    }
+  }
 }
