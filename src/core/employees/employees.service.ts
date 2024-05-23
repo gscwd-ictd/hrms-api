@@ -97,7 +97,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async testEmail() {
-    return await this.emailService.sendEmail('johnhenryalfeche@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
+    return await this.emailService.sendEmail('jofhernilapirot@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
   }
 
   async getEmployeesUnderSupervisor(employeeId: string) {
@@ -249,6 +249,59 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
     console.log(employees);
     return employees;
+  }
+
+  async getEmployeeDetailsWithSignatureByEmployeeId(employeeId: string) {
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+        .addSelect('emp.signature_url', 'signatureUrl')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp._id = :employeeId', { employeeId })
+        .getRawOne();
+
+      const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+      const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
+      const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole, signatureUrl } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+      const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
+
+      const salaryGradeAmount = salaryGradeDetails.monthlyRate;
+
+      const salaryGrade = salaryGradeDetails.salaryGrade;
+
+      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+
+      return {
+        userId,
+        companyId,
+        isPdcChairman,
+        isPdcSecretariat,
+        employeeFullName,
+        photoUrl: employeePortalDetails.photoUrl,
+        signatureUrl,
+        salaryGradeAmount,
+        salaryGrade,
+        isHRMPSB,
+        assignment: { id, name, positionId, positionTitle },
+        orgStruct: { officeName, divisionName, departmentName },
+        scheduleBase: employeeSchedule.schedule.scheduleBase,
+        userRole,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.status, error.message);
+    }
   }
 
   async getEmployeeDetailsByEmployeeId(employeeId: string) {
@@ -475,6 +528,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .createQueryBuilder('emp')
       .select('emp._id', 'userId')
       .addSelect('emp.company_id', 'companyId')
+      .addSelect('first_name', 'firstName')
+      .addSelect('middle_name', 'middleName')
+      .addSelect('last_name', 'lastName')
+      .addSelect('name_extension', 'nameExtension')
       .addSelect('pp.position_title', 'positionTitle')
       .addSelect('pp._id', 'positionId')
       .addSelect('get_leave_form_assignment(pp._id)', 'name')
@@ -487,10 +544,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, _id));
 
-    const { id, name, userId, companyId, positionId, positionTitle, userRole, salary } = empPosition;
+    const { id, name, userId, companyId, positionId, positionTitle, userRole, salary, firstName, middleName, lastName, nameExtension } = empPosition;
     return {
       userId,
       companyId,
+      firstName,
+      middleName,
+      lastName,
+      nameExtension,
       photoUrl: employeePortalDetails.photoUrl,
       assignment: { id, name, positionId, positionTitle, salary },
       userRole,
@@ -873,6 +934,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async getEmployeePosition(employeeId: string) {
+    try {
+      //return 'haha';
+      const result = await this.entityRepository.query(`SELECT _id id, position_title positionTitle FROM plantilla_positions WHERE employee_id_fk = ?;`, [employeeId]);
+      console.log(result);
+      if (result.length === 0) return null;
+      return result[0];
+    } catch (error) {
+      return null;
     }
   }
 }

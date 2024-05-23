@@ -59,7 +59,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
     //all vacant managerial positions;
     try {
       const result = await this.entityRepository.query(`
-      (SELECT 
+      SELECT orgPositionId, positionTitle, assignedTo, orgType FROM ((SELECT 
         dp._id orgPositionId,
         pp.position_title positionTitle, 
         get_position_assignment(pp._id) assignedTo, 
@@ -90,7 +90,8 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
         INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk
        INNER JOIN office_positions dp ON dp.position_id_fk = pp._id 
   WHERE pp.employee_id_fk IS NULL AND sg.salary_grade >= 24 
-  ORDER BY positionTitle ASC,assignedTo ASC);`);
+  ORDER BY positionTitle ASC,assignedTo ASC)) assignable 
+  WHERE assignable.orgPositionId NOT IN (SELECT orgPositionId FROM officer_in_charge_view);`);
 
       const options = await Promise.all(
         result.map(async (item) => {
