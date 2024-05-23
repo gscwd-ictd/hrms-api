@@ -26,6 +26,8 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
         .addSelect('get_employee_fullname(employee_id_fk)', 'fullName')
         .addSelect('organization_id_fk', 'organizationId')
         .addSelect('get_org_name_by_org_id(organization_id_fk)', 'organizationName')
+        .addSelect('date_from', 'dateFrom')
+        .addSelect('date_to', 'dateTo')
         .addSelect('status')
         .getRawMany();
     } catch (error) {
