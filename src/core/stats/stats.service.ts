@@ -4,10 +4,17 @@ import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum'
 import { ClientProxy } from '@nestjs/microservices';
 import { PrfTrailService } from '../document-tracking/prf/trail/prf-trail.service';
 import { getManager } from 'typeorm';
+import { OrganizationService } from '../organization/organization.service';
+import { EmployeesService } from '../employees/employees.service';
 
 @Injectable()
 export class StatsService {
-  constructor(@Inject(MicroserviceType.AUTHN) private readonly clientAuthn: ClientProxy, private readonly prfTrailService: PrfTrailService) {}
+  constructor(
+    @Inject(MicroserviceType.AUTHN) private readonly clientAuthn: ClientProxy,
+    private readonly prfTrailService: PrfTrailService,
+    private readonly organizationService: OrganizationService,
+    private readonly employeesService: EmployeesService,
+  ) {}
 
   async countEmployees() {
     try {
@@ -78,16 +85,60 @@ export class StatsService {
 
   async countPersonnelPerDepartment() {
     try {
-      return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_birthdays_for_the_current_month' }, ''));
+      const organization = await this.organizationService.getAllDepartmentsAndOgm();
+
+      const result = await Promise.all(
+        organization.map(async (department) => {
+          const employees = await this.employeesService.getEmployeesByOrgId(department._id);
+
+          const genderCounts = { male: 0, female: 0 };
+
+          await Promise.all(
+            employees.map(async (employee) => {
+              const genderResponse = await lastValueFrom(this.clientAuthn.send({ msg: 'find_employee_gender_by_employee_id' }, employee.value));
+
+              if (genderResponse && genderResponse.sex) {
+                if (genderResponse.sex === 'Male') {
+                  genderCounts.male++;
+                } else if (genderResponse.sex === 'Female') {
+                  genderCounts.female++;
+                }
+              }
+            }),
+          );
+
+          return {
+            label: department.code,
+            gender: genderCounts,
+          };
+        }),
+      );
+
+      const labels = result.map((item) => item.label);
+      const maleData = result.map((item) => item.gender.male);
+      const femaleData = result.map((item) => item.gender.female);
+      return {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Male',
+            data: maleData,
+          },
+          {
+            label: 'Female',
+            data: femaleData,
+          },
+        ],
+      };
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async countPersoneelByAgeBracket() {
+  async countPersonnelByAgeBracket() {
     try {
-      return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_birthdays_for_the_current_month' }, ''));
+      return await lastValueFrom(this.clientAuthn.send({ msg: 'count_personnel_by_age_bracket' }, ''));
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
