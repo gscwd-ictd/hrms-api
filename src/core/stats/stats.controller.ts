@@ -36,7 +36,7 @@ export class StatsController {
   }
 
   @Get('count/age')
-  async countPersoneelByAgeBracket() {
-    return await this.statsService.countPersoneelByAgeBracket();
+  async countPersonnelByAgeBracket() {
+    return await this.statsService.countPersonnelByAgeBracket();
   }
 }
