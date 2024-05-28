@@ -4,6 +4,7 @@ import { CreateEmployeeTemporaryAssignmentDto, EmployeeTemporaryAssignment, Upda
 import { Repository } from 'typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { EmployeeTemporaryAssignmentStatus } from 'src/global/utils/enums/employee-temporary-assignment.enum';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<EmployeeTemporaryAssignment> {
@@ -71,6 +72,8 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
         .addSelect('get_employee_fullname(employee_id_fk)', 'fullName')
         .addSelect('organization_id_fk', 'organizationId')
         .addSelect('get_org_name_by_org_id(organization_id_fk)', 'organizationName')
+        .addSelect('date_from', 'dateFrom')
+        .addSelect('date_to', 'dateTo')
         .addSelect('status')
         .where('_id = :id', { id: id })
         .getRawOne();
@@ -133,7 +136,7 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
   /* find all assignable employee */
   async findAllAssignableEmployee() {
     try {
-      const employeeList = (await this.employeeTemporaryAssignmentRepository.query(`SELECT 
+      return (await this.employeeTemporaryAssignmentRepository.query(`SELECT 
       get_employee_fullname(emp._id) label,
       emp._id value FROM employees emp 
       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
@@ -141,20 +144,29 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
       WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
       AND sg.salary_grade <= 27
       ORDER BY get_employee_fullname(emp._id) ASC;`)) as { label: string; value: string }[];
-
-      const employeeTemporaryAssignmentList = await this.employeeTemporaryAssignmentRepository.createQueryBuilder().select('employee_id_fk', 'employeeId').getRawMany();
-
-      const employeeTemporaryAssignmentId = employeeTemporaryAssignmentList.map((items) => items.employeeId);
-
-      return employeeList
-        .filter((items) => !employeeTemporaryAssignmentId.includes(items.value))
-        .map((items) => ({
-          label: items.label,
-          value: items.value,
-        }));
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /* schedule for updating status of temporary assignment */
+  @Cron('* 59 23 * * *')
+  async updateTemporaryAssignmentStatus() {
+    try {
+      Logger.log('------ Update temporary assignment status inactive -----------');
+
+      return await this.entityRepository
+        .createQueryBuilder()
+        .update()
+        .set({
+          status: EmployeeTemporaryAssignmentStatus.INACTIVE,
+        })
+        .where(`date(date_to) = curdate() and status = 'active'`)
+        .execute();
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
 }
