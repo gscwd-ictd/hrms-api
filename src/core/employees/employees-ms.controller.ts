@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { EmployeeDTO } from './data/dtos/employee.dto';
+import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 
 @Controller('')
 export class EmployeesMsController {
@@ -262,5 +263,10 @@ export class EmployeesMsController {
   @MessagePattern('get_employee_position_by_id')
   async getEmployeePosition(@Payload() employeeId: string) {
     return await this.employeesService.getEmployeePosition(employeeId);
+  }
+
+  @MessagePattern('get_employees_by_nature_of_appointment_employee_id')
+  async getAllEmployeesByNatureOfAppointmentAndEmployeeId(@Payload() employeeDetailsFilter: { natureOfAppointment: NatureOfAppointment; employeeId: string }) {
+    return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeId(employeeDetailsFilter.natureOfAppointment, employeeDetailsFilter.employeeId);
   }
 }
