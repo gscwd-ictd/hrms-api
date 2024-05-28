@@ -121,6 +121,7 @@ export class EmployeesController {
     @Query('pagibig') pagibig: boolean,
     @Query('sss') sss: boolean,
     @Query('tin') tin: boolean,
+    @Query('philhealth') philhealth: boolean,
     @Query('residential_address') residentialAddress: boolean,
     @Query('permanent_address') permanentAddress: boolean,
     @Query('primary_education') primaryEducation: boolean,
@@ -147,6 +148,7 @@ export class EmployeesController {
       collegeEducation,
       graduateStudies,
       eligibility,
+      philhealth,
     });
   }
 }

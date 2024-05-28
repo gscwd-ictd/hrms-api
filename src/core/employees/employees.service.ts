@@ -1065,6 +1065,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     collegeEducation: boolean;
     graduateStudies: boolean;
     eligibility: boolean;
+    philhealth: boolean;
   }) {
     return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
   }
