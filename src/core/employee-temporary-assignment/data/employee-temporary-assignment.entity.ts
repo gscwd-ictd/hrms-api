@@ -3,7 +3,7 @@ import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { EmployeeTemporaryAssignmentStatus } from 'src/global/utils/enums/employee-temporary-assignment.enum';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-@Entity({ name: 'employee-temporary-assignment' })
+@Entity({ name: 'employee_temporary_assignment' })
 export class EmployeeTemporaryAssignment extends DefaultTable {
   @ManyToOne(() => Employees, (employee) => employee._id, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'employee_id_fk' })
