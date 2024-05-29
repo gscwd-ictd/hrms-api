@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query } 
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
 import { EmployeesService } from './employees.service';
+import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 
 @Controller('employees')
 export class EmployeesController {
@@ -108,5 +109,44 @@ export class EmployeesController {
   async getEmployeePosition(@Param('employee_id') employeeId: string) {
     //return employeeId;
     return await this.employeesService.getEmployeePosition(employeeId);
+  }
+
+  @Get('reports/detailed/')
+  async generateReportOnEmployeeDetails(
+    @Query('company_id') companyId: boolean,
+    @Query('employee_id') employeeId: string,
+    @Query('nature_of_appointment') natureOfAppointment: NatureOfAppointment,
+    @Query('personal_details') personalDetails: boolean,
+    @Query('gsis') gsis: boolean,
+    @Query('pagibig') pagibig: boolean,
+    @Query('sss') sss: boolean,
+    @Query('tin') tin: boolean,
+    @Query('residential_address') residentialAddress: boolean,
+    @Query('permanent_address') permanentAddress: boolean,
+    @Query('primary_education') primaryEducation: boolean,
+    @Query('secondary_education') secondaryEducation: boolean,
+    @Query('vocational_course') vocationalCourse: boolean,
+    @Query('college_education') collegeEducation: boolean,
+    @Query('graduate_studies') graduateStudies: boolean,
+    @Query('eligibility') eligibility: boolean,
+  ) {
+    return await this.employeesService.generateReportOnEmployeeDetails({
+      companyId,
+      employeeId,
+      natureOfAppointment,
+      personalDetails,
+      gsis,
+      pagibig,
+      sss,
+      tin,
+      residentialAddress,
+      permanentAddress,
+      primaryEducation,
+      secondaryEducation,
+      vocationalCourse,
+      collegeEducation,
+      graduateStudies,
+      eligibility,
+    });
   }
 }

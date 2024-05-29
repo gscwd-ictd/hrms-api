@@ -12,6 +12,7 @@ import { PlantillaPositionsService } from '../plantilla-positions/plantilla-posi
 import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
+import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -611,6 +612,104 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
+  async getEmployeesByNatureOfAppointmentAndEmployeeId(natureOfAppointment: string, employeeId: string) {
+    let empPositions;
+    // console.log('asd asd asd', natureOfAppointment);
+    if (employeeId !== null && employeeId !== '' && typeof employeeId !== 'undefined') {
+      console.log('as', employeeId);
+      empPositions = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'employeeId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+        .addSelect('emp.first_name', 'firstName')
+        .addSelect('emp.middle_name', 'middleName')
+        .addSelect('emp.last_name', 'lastName')
+        .addSelect('emp.name_extension', 'nameExt')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+        .where(`pp.position_title<>'Chairman' AND emp._id= :employeeId`, { employeeId })
+        .getRawMany();
+    } else if (typeof employeeId === 'undefined' && natureOfAppointment !== null && natureOfAppointment !== '') {
+      console.log('asd asd asd asd');
+      empPositions = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'employeeId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+        .addSelect('emp.first_name', 'firstName')
+        .addSelect('emp.middle_name', 'middleName')
+        .addSelect('emp.last_name', 'lastName')
+        .addSelect('emp.name_extension', 'nameExt')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+        .where(`pp.position_title<>'Chairman' AND nature_of_appointment = :natureOfAppointment`, { natureOfAppointment })
+        .getRawMany();
+    } else if (typeof employeeId === 'undefined' && natureOfAppointment === '') {
+      empPositions = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'employeeId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+        .addSelect('emp.first_name', 'firstName')
+        .addSelect('emp.middle_name', 'middleName')
+        .addSelect('emp.last_name', 'lastName')
+        .addSelect('emp.name_extension', 'nameExt')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+        .where(`pp.position_title<>'Chairman'`, {})
+        .getRawMany();
+    }
+
+    const _empPositions = await Promise.all(
+      empPositions.map(async (empPosition) => {
+        const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+        let avatarUrl = null;
+        const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+        const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+
+        try {
+          const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
+          const { photoUrl } = employeePortalDetails;
+          avatarUrl = photoUrl;
+        } catch {
+          avatarUrl = null;
+        }
+        return {
+          employmentDetails: {
+            employeeId,
+            userId,
+            companyId,
+            positionTitle,
+            assignment: { id, name, divisionName, departmentName, officeName },
+            positionId,
+            scheduleBase: employeeSchedule.schedule.scheduleBase,
+            natureOfAppointment,
+            avatarUrl,
+          },
+          personalDetails: { fullName, firstName, middleName, lastName, nameExt },
+        };
+      }),
+    );
+    return _empPositions;
+  }
+
   async getAllEmployees() {
     const empPositions = await this.employeeRepository
       .createQueryBuilder('emp')
@@ -947,5 +1046,26 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     } catch (error) {
       return null;
     }
+  }
+
+  async generateReportOnEmployeeDetails(employeeDetailsFilter: {
+    companyId: boolean;
+    employeeId: string;
+    natureOfAppointment: NatureOfAppointment;
+    personalDetails: boolean;
+    gsis: boolean;
+    pagibig: boolean;
+    sss: boolean;
+    tin: boolean;
+    residentialAddress: boolean;
+    permanentAddress: boolean;
+    primaryEducation: boolean;
+    secondaryEducation: boolean;
+    vocationalCourse: boolean;
+    collegeEducation: boolean;
+    graduateStudies: boolean;
+    eligibility: boolean;
+  }) {
+    return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
   }
 }
