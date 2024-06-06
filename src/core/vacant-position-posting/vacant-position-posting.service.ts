@@ -215,6 +215,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .addSelect('vs.venue', 'venue')
         .addSelect('pp.position_title', 'positionTitle')
         .addSelect('get_plantilla_salary_grade(pp._id)', 'salaryGrade')
+        .addSelect(`vp.declined_schedule`, 'declinedSchedule')
         .innerJoin('vpp_psb', 'vp', 'vp.vacant_position_posting_id_fk = vpp._id')
         .innerJoin('vpp_schedule', 'vs', 'vs.vacant_position_posting_id_fk = vpp._id')
         .innerJoin('vpp_positions', 'vppp', 'vpp._id=vppp.vacant_position_posting_id_fk')
