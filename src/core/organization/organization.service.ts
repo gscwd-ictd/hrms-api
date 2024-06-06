@@ -276,10 +276,10 @@ export class OrganizationService {
     try {
       return await this.divisionService.entityRepository.query(
         `
-      SELECT _id, name, orgStruct,code  
-      FROM org_struct_view 
-      WHERE orgStruct = 'department' OR 
-      name = 'Office of the General Manager';`,
+        SELECT _id, name, orgStruct, code  
+              FROM org_struct_view 
+        WHERE orgStruct = 'department' AND code<>'LEG' OR 
+        name = 'Office of the General Manager';`,
       );
     } catch (error) {
       console.log(error);
