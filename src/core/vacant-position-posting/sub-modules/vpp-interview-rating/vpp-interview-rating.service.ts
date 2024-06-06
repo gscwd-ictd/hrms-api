@@ -260,7 +260,8 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       get_employee_position(employee_id_fk) position,
       get_employee_assignment(employee_id_fk) assignment, 
       CONCAT('PSB ',psb_no) role FROM vpp_psb 
-    WHERE vacant_position_posting_id_fk=? AND employee_id_fk IS NOT NULL
+    WHERE vacant_position_posting_id_fk=? AND 
+    employee_id_fk IS NOT NULL AND declined_schedule = 0 AND done = 1
     )
     UNION
     (
