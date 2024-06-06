@@ -602,6 +602,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     `);
   }
 
+  async getAllManagersForLnd() {
+    return await this.entityRepository.query(`
+      SELECT emp._id employeeId, get_employee_fullname2(emp._id) fullName FROM employees emp 
+      INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+      INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk 
+      WHERE sg.salary_grade >= 24 ORDER BY get_employee_fullname2(emp._id) ASC;
+    `);
+  }
+
   async getEmployeePhotoUrl(employeeId: string) {
     try {
       const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
@@ -1065,6 +1074,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     collegeEducation: boolean;
     graduateStudies: boolean;
     eligibility: boolean;
+    philhealth: boolean;
   }) {
     return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
   }

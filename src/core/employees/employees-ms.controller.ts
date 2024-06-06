@@ -230,6 +230,11 @@ export class EmployeesMsController {
     return await this.employeesService.getAllManagers();
   }
 
+  @MessagePattern('get_all_managers_for_lnd')
+  async getAllManagersForLnd() {
+    return await this.employeesService.getAllManagersForLnd();
+  }
+
   @MessagePattern('get_monthly_hourly_rate_by_employee_id')
   async getMonthHourlyRateByEmployeeId(@Payload() employeeId: string) {
     return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
