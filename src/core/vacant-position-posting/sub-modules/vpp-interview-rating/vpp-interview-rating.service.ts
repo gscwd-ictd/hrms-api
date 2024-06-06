@@ -39,7 +39,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
   async getFormHrd002_3PerPsb(vppId: string) {
     //1. get all psb members per posting;
     const psbMembers = await this.entityRepository.query(
-      `SELECT employee_id_fk employeeId FROM vpp_psb WHERE vacant_position_posting_id_fk=? AND acknowledged_schedule=1 AND done=1 ORDER BY psb_no ASC;`,
+      `SELECT employee_id_fk employeeId FROM vpp_psb WHERE vacant_position_posting_id_fk=? AND acknowledged_schedule=1 AND declined_schedule = 0 AND done=1 ORDER BY psb_no ASC;`,
       [vppId],
     );
 
