@@ -281,6 +281,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const salaryGrade = salaryGradeDetails.salaryGrade;
 
+      const salaryGradeLevel = salaryGradeDetails.salaryGradeLevel;
+
+      const salaryGradeStepIncrement = salaryGradeDetails.stepIncrement;
+
       const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
 
       return {
@@ -293,6 +297,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         signatureUrl,
         salaryGradeAmount,
         salaryGrade,
+        salaryGradeLevel,
+        salaryGradeStepIncrement,
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
@@ -603,12 +609,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllManagersForLnd() {
-    return await this.entityRepository.query(`
-      SELECT emp._id employeeId, get_employee_fullname2(emp._id) fullName FROM employees emp 
+    const managers = await this.entityRepository.query(`
+    SELECT employeeId, fullName FROM ((SELECT emp._id employeeId, get_employee_fullname2(emp._id) fullName FROM employees emp 
       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
       INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk 
-      WHERE sg.salary_grade >= 24 ORDER BY get_employee_fullname2(emp._id) ASC;
+    WHERE sg.salary_grade >= 24 ORDER BY get_employee_fullname2(emp._id) ASC)
+    UNION (
+      SELECT employee_id_fk employeeId, get_employee_fullname2(employee_id_fk) fullName FROM officer_in_charge oic
+    )) managers ORDER BY fullName ASC; 
     `);
+    return managers;
   }
 
   async getEmployeePhotoUrl(employeeId: string) {
@@ -961,7 +971,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       const monthlyRate = await this.entityRepository.query(
         `
-        SELECT amount, concat(sg.salary_grade,'-',sg.step_increment) salaryGrade
+        SELECT 
+          amount, 
+          concat(sg.salary_grade, '-',sg.step_increment) salaryGrade,
+          sg.salary_grade salaryGradeLevel,
+          sg.step_increment stepIncrement 
         FROM salary_grade sg 
           INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
@@ -970,12 +984,30 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       console.log('salary z: ', monthlyRate[0]);
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
-        return { monthlyRate: monthlyRate[0].amount, hourlyRate, salaryGrade: monthlyRate[0].salaryGrade };
-      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
+        return {
+          monthlyRate: monthlyRate[0].amount,
+          hourlyRate,
+          salaryGrade: monthlyRate[0].salaryGrade,
+          salaryGradeLevel: monthlyRate[0].salaryGradeLevel,
+          stepIncrement: monthlyRate[0].stepIncrement,
+        };
+      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
     } catch (error) {
       console.log(error);
-      return { monthlyRate: null, hourlyRate: null, salaryGrade: null };
+      return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
     }
+  }
+
+  async getSalaryGradeIdOrDailyRateByEmployeeId(employeeId: string) {
+    return (
+      await this.entityRepository.query(
+        `
+      SELECT amount salaryGradeAmount, daily_rate dailyRate FROM plantilla_positions pp 
+          LEFT JOIN salary_grade sg ON pp.salary_grade_id_fk = sg._id
+      WHERE employee_id_fk = ?`,
+        [employeeId],
+      )
+    )[0];
   }
 
   async getEmployeeNatureOfAppointment(employeeId: string) {
@@ -1074,8 +1106,32 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     collegeEducation: boolean;
     graduateStudies: boolean;
     eligibility: boolean;
+    dateHired: boolean;
     philhealth: boolean;
+    assignment: boolean;
+    office: boolean;
+    department: boolean;
+    division: boolean;
+    positionTitle: boolean;
+    salaryGrade: boolean;
+    stepIncrement: boolean;
   }) {
     return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
+  }
+
+  async getHrdManager() {
+    return (
+      await this.entityRepository.query(`
+    SELECT employeeId FROM 
+    ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp 
+      INNER JOIN department_positions dp ON dp.position_id_fk = pp._id 
+      INNER JOIN departments d ON dp.department_id_fk = d._id 
+    WHERE pp.position_title = 'Department Manager A' AND d.name = 'Human Resource Department') 
+    UNION
+    (
+      SELECT employeeId FROM officer_in_charge_view 
+      WHERE oicOrgName = 'Human Resource Department' AND oicPosition = 'OIC-Department Manager'
+    )) hrdManagers LIMIT 1;`)
+    )[0].employeeId;
   }
 }
