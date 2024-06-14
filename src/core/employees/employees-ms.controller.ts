@@ -205,6 +205,11 @@ export class EmployeesMsController {
     }
   }
 
+  @MessagePattern('get_salary_grade_or_daily_rate_by_employee_id')
+  async getSalaryGradeIdOrDailyRateByEmployeeId(@Payload() employeeId: string) {
+    return await this.employeesService.getSalaryGradeIdOrDailyRateByEmployeeId(employeeId);
+  }
+
   @MessagePattern('get_employee_details_by_company_id')
   async getEmployeeDetailsByCompanyIdMS(@Payload() companyId: string) {
     return await this.employeesService.getEmployeeDetailByCompanyIdMS(companyId);
@@ -233,6 +238,11 @@ export class EmployeesMsController {
   @MessagePattern('get_all_managers_for_lnd')
   async getAllManagersForLnd() {
     return await this.employeesService.getAllManagersForLnd();
+  }
+
+  @MessagePattern('get_employees_under_manager')
+  async getEmployeesUnderManager(@Payload() employeeId: string) {
+    return await this.employeesService.getSubordinates(employeeId);
   }
 
   @MessagePattern('get_monthly_hourly_rate_by_employee_id')
@@ -273,5 +283,10 @@ export class EmployeesMsController {
   @MessagePattern('get_employees_by_nature_of_appointment_employee_id')
   async getAllEmployeesByNatureOfAppointmentAndEmployeeId(@Payload() employeeDetailsFilter: { natureOfAppointment: NatureOfAppointment; employeeId: string }) {
     return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeId(employeeDetailsFilter.natureOfAppointment, employeeDetailsFilter.employeeId);
+  }
+
+  @MessagePattern('get_hrd_manager')
+  async getHrdManager() {
+    return await this.employeesService.getHrdManager();
   }
 }
