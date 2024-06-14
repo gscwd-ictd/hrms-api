@@ -3,6 +3,7 @@ import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
 import { EmployeesService } from './employees.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
+import { SalaryGrade } from '../salary-grade/data/entities/salary-grade.entity';
 
 @Controller('employees')
 export class EmployeesController {
@@ -130,6 +131,14 @@ export class EmployeesController {
     @Query('college_education') collegeEducation: boolean,
     @Query('graduate_studies') graduateStudies: boolean,
     @Query('eligibility') eligibility: boolean,
+    @Query('date_hired') dateHired: boolean,
+    @Query('office') office: boolean,
+    @Query('division') division: boolean,
+    @Query('department') department: boolean,
+    @Query('position_title') positionTitle: boolean,
+    @Query('assignment') assignment: boolean,
+    @Query('salary_grade') salaryGrade: boolean,
+    @Query('step_increment') stepIncrement: boolean,
   ) {
     return await this.employeesService.generateReportOnEmployeeDetails({
       companyId,
@@ -149,6 +158,14 @@ export class EmployeesController {
       graduateStudies,
       eligibility,
       philhealth,
+      dateHired,
+      assignment,
+      positionTitle,
+      department,
+      division,
+      office,
+      salaryGrade,
+      stepIncrement,
     });
   }
 }
