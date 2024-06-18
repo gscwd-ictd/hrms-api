@@ -1,6 +1,6 @@
 import { Controller, HttpStatus } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
+import { CheckEmployeeTagsDto, CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
 import { EmployeeTagsService } from './employee-tags.service';
 import { MESSAGES } from '@nestjs/core/constants';
 
@@ -43,5 +43,10 @@ export class EmployeeTagsController {
   @MessagePattern('count_employee_tags')
   async countEmployeeTags(@Payload() tagId: string) {
     return await this.employeeTagsService.countEmployeeTags(tagId);
+  }
+
+  @MessagePattern('check_employee_tags')
+  async checkEmployeeTags(@Payload() data: CheckEmployeeTagsDto) {
+    return await this.employeeTagsService.checkEmployeeTags(data);
   }
 }

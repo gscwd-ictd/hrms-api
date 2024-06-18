@@ -178,17 +178,17 @@ export class PDSService {
   }
   async savePDS(externalApplicantId: string, pdsDTO: PdsDTO) {
     let personalInfo = {};
-    let children = [];
+    const children = [];
     let governmentIssuedIds = {};
     let permanentAddress = {};
     let address = {};
     let parents = {};
     let familyBackground = {};
     let education = {};
-    let eligibility = [];
-    let workExperience = [];
-    let learningDevelopment = [];
-    let voluntaryWork = [];
+    const eligibility = [];
+    const workExperience = [];
+    const learningDevelopment = [];
+    const voluntaryWork = [];
     let otherInformation = {};
 
     try {
@@ -225,7 +225,7 @@ export class PDSService {
             secondary = await transactionEntityManager.save(this.pdsEducationSecondaryService.createEntity({ externalApplicantId, ...pdsDTO.secondary }));
         }
 
-        let vocational = [];
+        const vocational = [];
 
         if (pdsDTO.vocational) {
           await Promise.all(
@@ -236,7 +236,7 @@ export class PDSService {
           );
         }
 
-        let college = [];
+        const college = [];
 
         if (pdsDTO.college) {
           await Promise.all(
@@ -247,7 +247,7 @@ export class PDSService {
           );
         }
 
-        let graduate = [];
+        const graduate = [];
 
         if (pdsDTO.graduate) {
           await Promise.all(
@@ -301,7 +301,7 @@ export class PDSService {
           );
         }
 
-        let skills = [];
+        const skills = [];
         if (pdsDTO.skills) {
           await Promise.all(
             pdsDTO.skills.map(async (skillItem) => {
@@ -311,7 +311,7 @@ export class PDSService {
           );
         }
 
-        let recognitions = [];
+        const recognitions = [];
         if (pdsDTO.recognitions) {
           await Promise.all(
             pdsDTO.recognitions.map(async (recognitionItem) => {
@@ -321,7 +321,7 @@ export class PDSService {
           );
         }
 
-        let organizations = [];
+        const organizations = [];
         if (pdsDTO.organizations) {
           await Promise.all(
             pdsDTO.organizations.map(async (organizationItem) => {
@@ -341,7 +341,7 @@ export class PDSService {
           this.pdsIndigenousPWDSoloParentService.createEntity({ externalApplicantId, ...pdsDTO.indigenousPwdSoloParent }),
         );
 
-        let references = [];
+        const references = [];
         if (pdsDTO.references) {
           await Promise.all(
             pdsDTO.references.map(async (reference) => {
@@ -846,14 +846,14 @@ export class PDSService {
       where: { externalApplicantId },
     });
 
-    let skills = [];
+    const skills = [];
     Promise.all(
       _skills.map(async (skill) => {
         skills.push(skill.skill);
       }),
     );
 
-    let recognitions = [];
+    const recognitions = [];
     const _recognitions = await this.pdsRecognitionService.entityRepository.find({
       select: ['recognition'],
       where: { externalApplicantId },
@@ -865,7 +865,7 @@ export class PDSService {
       }),
     );
 
-    let organizations = [];
+    const organizations = [];
     const _organizations = await this.pdsOrganizationService.entityRepository.find({
       select: ['organization'],
       where: { externalApplicantId },

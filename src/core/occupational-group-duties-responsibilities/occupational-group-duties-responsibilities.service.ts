@@ -405,16 +405,16 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     try {
       return await this.entityRepository.query(
         `
-      SELECT percentage, CONCAT(RANK() OVER (
-        ORDER BY dr._id 
-    ), '. ',dr.description) dutyResponsibility, p.level competencyLevel   
+      SELECT percentage, cm.name competencyName, dr.description dutyResponsibility, p.level competencyLevel
             FROM occupational_group_duties_responsibilities ogdr
           INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
           INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
           INNER JOIN position_competency_proficiency_level pcpl ON pcpl._id = ogdr.pcpl_id_fk
           INNER JOIN proficiency p ON p._id = pcpl.proficiency_id_fk
+          INNER JOIN competency_model cm on p.competency_id_fk = cm._id
           INNER JOIN occupational_group og ON og._id = ogdr.occupational_group_id_fk
-        WHERE og.position_id_fk = ? AND duty_type=?;
+        WHERE og.position_id_fk = ? AND duty_type=?
+        ORDER BY percentage desc, competencyName asc;
       `,
         [positionId, dutyType],
       );

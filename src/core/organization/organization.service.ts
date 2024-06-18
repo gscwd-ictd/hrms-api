@@ -84,7 +84,7 @@ export class OrganizationService {
 
   async getPositionsPerOffice(officeId: string, positionId?: string) {
     try {
-      let positionQuery: string = '';
+      let positionQuery = '';
       positionId ? (positionQuery = ' AND op.position_id_fk = :positionId ') : '';
       return await this.officePositionsService.entityRepository
         .createQueryBuilder('office_positions')
@@ -125,7 +125,7 @@ export class OrganizationService {
 
   async getPositionsPerDepartment(officeId: string, departmentId: string, positionId?: string) {
     try {
-      let positionQuery: string = ' AND dept.office_id_fk=:officeId ';
+      let positionQuery = ' AND dept.office_id_fk=:officeId ';
       positionId ? (positionQuery = ' AND dept.office_id_fk=:officeId AND dp.position_id_fk = :positionId ') : '';
       return await this.departmentPositionsService.entityRepository
         .createQueryBuilder('department_positions')
@@ -152,7 +152,7 @@ export class OrganizationService {
 
   async getDivisions(officeId: string, departmentId: string, _id?: string) {
     try {
-      let divisionQuery: string = '';
+      let divisionQuery = '';
       _id ? (divisionQuery = ' AND div._id = :_id') : '';
       return await this.divisionService.entityRepository
         .createQueryBuilder('div')

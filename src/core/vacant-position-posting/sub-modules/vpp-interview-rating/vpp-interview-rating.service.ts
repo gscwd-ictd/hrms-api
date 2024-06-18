@@ -195,7 +195,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     const { dateOfPanelInterview } =
       (
         await this.entityRepository.query(
-          `SELECT DATE_FORMAT(schedule,'%M %d, %Y %H:%i%p') dateOfPanelInterview 
+          `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
           FROM vpp_schedule 
          WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
           [vppId],
@@ -203,7 +203,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       ).length > 0
         ? (
             await this.entityRepository.query(
-              `SELECT DATE_FORMAT(schedule,'%M %d, %Y %H:%i%p') dateOfPanelInterview 
+              `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
         FROM vpp_schedule 
        WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
               [vppId],
