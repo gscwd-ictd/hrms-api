@@ -1,4 +1,3 @@
-import { PickType } from '@nestjs/swagger';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 
 export class EmployeeTagsDto {
@@ -15,4 +14,9 @@ export class CreateEmployeeTagsDto {
 export class DeleteEmployeeTagDto {
   employeeId: string;
   tagId: string;
+}
+
+export class CheckEmployeeTagsDto {
+  employeeId: string;
+  tagsId: Array<string>;
 }

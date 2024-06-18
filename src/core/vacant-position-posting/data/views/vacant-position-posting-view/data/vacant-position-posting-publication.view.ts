@@ -8,6 +8,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   vpp.posting_deadline postingDeadline, 
   GROUP_CONCAT(pp._id) positionId,
   pp.position_title as positionTitle, 
+  pp.nature_of_appointment as natureOfAppointment,
   pp.item_number itemNumber,
   COUNT(pp._id) numberOfPositions,
   get_plantilla_salary_grade(pp._id) salaryGradeLevel,
@@ -32,7 +33,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
       INNER JOIN prf_positions prfp ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
       INNER JOIN prf_details prfd ON prfd._id = prfp.prf_details_id_fk 
   WHERE prfd.status <> 'Cancelled' AND prfd.status <> 'Disapproved' 
-  GROUP BY vppId,positionTitle,salaryGradeLevel,salaryGrade,education,experience,eligibility,training, postingDate, postingDeadline,annualSalary, placeOfAssignment,occupationName, prfNo,prfId, withExam, postingStatus, item_number`,
+  GROUP BY vppId,positionTitle, natureOfAppointment,salaryGradeLevel,salaryGrade,education,experience,eligibility,training, postingDate, postingDeadline,annualSalary, placeOfAssignment,occupationName, prfNo,prfId, withExam, postingStatus, item_number`,
 })
 export class VacantPositionPostingPublicationView {
   @ViewColumn()
@@ -52,6 +53,9 @@ export class VacantPositionPostingPublicationView {
 
   @ViewColumn()
   positionTitle: string;
+
+  @ViewColumn()
+  natureOfAppointment: string;
 
   @ViewColumn()
   itemNumber: string;

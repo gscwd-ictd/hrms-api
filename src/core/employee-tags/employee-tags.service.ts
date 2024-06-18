@@ -1,9 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getManager, Repository } from 'typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
-import { CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
+import { CheckEmployeeTagsDto, CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
 import { EmployeeTags } from './data/employee-tags.entity';
 
 @Injectable()
@@ -174,6 +174,21 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       return (await this.entityRepository.query(`SELECT distinct count(employee_id_fk) employeeCount FROM employee_tags WHERE tag_id_fk=?`, [tagId]))[0].employeeCount;
     } catch {
       throw new RpcException('RPC Error');
+    }
+  }
+
+  async checkEmployeeTags(data: CheckEmployeeTagsDto) {
+    try {
+      const { employeeId, tagsId } = data;
+      return (
+        await this.entityRepository.query(`select case when exists(select 1 from employee_tags where employee_id_fk = ? and tag_id_fk in (?)) then true else false end as result`, [
+          employeeId,
+          tagsId,
+        ])
+      )[0].result;
+    } catch (error) {
+      Logger.error(error);
+      throw new RpcException('check employee tags error');
     }
   }
 }

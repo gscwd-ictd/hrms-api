@@ -43,7 +43,7 @@ export class ScopeGuard implements CanActivate {
         };
         console.log(requestedResource);
         //3. find if the client app has the scope { method: get, route:  }
-        var found = false;
+        let found = false;
         jwtScopeKuno.map((jwtScopeEl) => {
           if (jwtScopeEl.method === requestedResource.method && jwtScopeEl.path === requestedResource.path) found = true;
         });

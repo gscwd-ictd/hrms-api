@@ -76,7 +76,7 @@ export class WorkExperienceSheetService {
     try {
       console.log(workExperienceSheetDTO);
       const { vppId, withRelevantExperience, ...rest } = workExperienceSheetDTO;
-      let _withRelevantWorkExperience = withRelevantExperience;
+      const _withRelevantWorkExperience = withRelevantExperience;
 
       const { applicantCount } = (
         await this.postingApplicantService.entityRepository.query(
