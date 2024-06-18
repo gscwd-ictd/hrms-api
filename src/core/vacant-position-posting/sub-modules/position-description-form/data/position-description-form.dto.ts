@@ -3,11 +3,19 @@ import { PositionDescriptionFormWorkingConditionDTO } from '../parts/working-con
 import { PositionDescriptionFormTypeContacts } from '../utils/types/position-description-form.type';
 import { IsNotEmpty, IsObject } from 'class-validator';
 export class PositionDescriptionFormDTO {
+  @IsNotEmpty({ message: 'Basic should not be empty.' })
+  @IsObject({ message: 'Basic must be an object.' })
   basic: PositionDescriptionFormBasicDTO;
+
+  @IsNotEmpty({ message: 'Working condition should not be empty.' })
+  @IsObject({ message: 'Working must be an object.' })
   workingCondition: PositionDescriptionFormWorkingConditionDTO;
+
+  @IsNotEmpty({ message: 'Contacts should not be empty.' })
+  @IsObject({ message: 'Contacts must be an object.' })
   contacts: PositionDescriptionFormTypeContacts;
 
-  @IsNotEmpty({ message: 'certificate of appointment should not empty' })
-  @IsObject({ message: 'certificate of appointment must be an object' })
+  @IsNotEmpty({ message: 'Certificate of appointment should not be empty.' })
+  @IsObject({ message: 'Certificate of appointment must be an object.' })
   certificateOfAppointment: CertifiedOfAppointmentDto;
 }
