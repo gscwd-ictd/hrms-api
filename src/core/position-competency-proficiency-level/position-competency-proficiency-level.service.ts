@@ -1,4 +1,4 @@
-import { HttpCode, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpCode, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
@@ -137,6 +137,53 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
       .where("pcpl.occupational_group_id_fk = :occupationalGroupId AND d.type not in ('Core','Leadership/Managerial')", { occupationalGroupId })
       .getRawMany();
     return { ...rest, competencies };
+  }
+
+  async findAllCompetenciesProficienciesByPositionId(posId: string) {
+    try {
+      const salarygrade = await this.salaryGrade.entityRepository
+        .createQueryBuilder('salary_grade')
+        .select('salary_grade')
+        .innerJoin('plantilla_positions', 'pp', 'pp.salary_grade_id_fk = salary_grade._id')
+        .where('pp._id = :posId', { posId })
+        .getRawOne();
+
+      const pos_name = await this.position.entityRepository.createQueryBuilder('plantilla_positions').select('position_title').where('_id = :posId', { posId }).getRawOne();
+
+      const functional = await this.position.entityRepository.query(
+        `SELECT 
+                distinct
+                ogdr.percentage,
+                pcpl._id, code, name, cm.desc, prof.level, prof.key_actions
+            FROM
+                competency_model cm
+                    INNER JOIN
+                domain domain ON domain._id = cm.domain_id_fk
+                    INNER JOIN
+                proficiency prof ON prof.competency_id_fk = cm._id
+                    INNER JOIN
+                position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = prof._id
+                    INNER JOIN
+                occupational_group og ON og._id = pcpl.occupational_group_id_fk
+                INNER JOIN 
+              occupational_group_duties_responsibilities ogdr on ogdr.pcpl_id_fk = pcpl._id
+            WHERE
+                og.position_id_fk = ?
+                    AND cm.domain_id_fk IN ('136f44fe-8e3c-11ec-ae65-54ab3a99e60e','1371f33c-8e3c-11ec-ae65-54ab3a99e60e','13747e8b-8e3c-11ec-ae65-54ab3a99e60e')
+              order by ogdr.percentage desc, cm.name asc`,
+        [posId],
+      );
+      return {
+        positionId: posId,
+        positionName: pos_name.position_title,
+        salaryGrade: salarygrade.salary_grade_salary_grade,
+        core: await this.getCompetencyPerDomainPerPosition(posId, '136c50f0-8e3c-11ec-ae65-54ab3a99e60e'),
+        functional: functional,
+      };
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Not Found Competencies', HttpStatus.NOT_FOUND);
+    }
   }
 
   async getAllCompetencyProficiencies(posId: string) {

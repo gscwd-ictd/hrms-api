@@ -6,9 +6,10 @@ import { PositionDescriptionFormDTO } from './data/position-description-form.dto
 export class PositionDescriptionFormController {
   constructor(private readonly positionDescriptionFormService: PositionDescriptionFormService) {}
 
-  @Post(':posting_applicant_id')
-  async savePositionDescriptionForm(@Param('posting_applicant_id') postingApplicantId: string, @Body() positionDescriptionFormDTO: PositionDescriptionFormDTO) {
-    return await this.positionDescriptionFormService.savePositionDescriptionForm(postingApplicantId, positionDescriptionFormDTO);
+  @Post()
+  async savePositionDescriptionForm(@Body() positionDescriptionFormDTO: PositionDescriptionFormDTO) {
+    console.log(positionDescriptionFormDTO);
+    return await this.positionDescriptionFormService.savePositionDescriptionForm(positionDescriptionFormDTO);
   }
 
   @Get('/status/:posting_applicant_id')
@@ -19,5 +20,10 @@ export class PositionDescriptionFormController {
   @Get(':posting_applicant_id')
   async getPositionDescriptionFormByPostingApplicantId(@Param('posting_applicant_id') postingApplicantId: string) {
     return await this.positionDescriptionFormService.getPositionDescriptionFormByPostingApplicantId(postingApplicantId);
+  }
+
+  @Get('csc-form-33-b/certified/list')
+  async listCertifiedBy() {
+    return await this.positionDescriptionFormService.listCertifiedBy();
   }
 }

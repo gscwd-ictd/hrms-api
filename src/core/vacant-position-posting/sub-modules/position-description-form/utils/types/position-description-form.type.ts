@@ -5,3 +5,9 @@ export type PositionDescriptionFormTypeContacts = {
   internal: PositionDescriptionFormInternalContactsDTO;
   external: PositionDescriptionFormExternalContactsDTO;
 };
+
+export type CertifiedList = {
+  employeeId: string;
+  name: string;
+  positionTitle: string;
+};
