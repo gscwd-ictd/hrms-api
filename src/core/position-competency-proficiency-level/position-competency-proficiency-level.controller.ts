@@ -11,6 +11,11 @@ export class PositionCompetencyProficiencyLevelController {
     return await this.pcplService.getAllCompetencyProficiencies(posId);
   }
 
+  @Get('document/:posId')
+  async findAllCompetenciesProficienciesByPositionId(@Param('posId') posId: string) {
+    return await this.pcplService.findAllCompetenciesProficienciesByPositionId(posId);
+  }
+
   @Get('/position/:position_id')
   async getOccupationCompetenciesForPositionForDropdown(@Param('position_id') positionId: string) {
     return await this.pcplService.getOccupationCompetenciesForPositionForDropdown(positionId);

@@ -1,6 +1,6 @@
 import { PositionCompetencyProficiencyLevelService } from './../../../position-competency-proficiency-level/position-competency-proficiency-level.service';
 import { QualificationStandardsService } from 'src/core/qualification-standards/qualification-standards.service';
-import { HttpException, Injectable, Param } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OccupationsDutiesResponsibilitiesService } from '../../../occupations-duties-responsibilities/occupations-duties-responsibilities.service';
@@ -186,7 +186,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
 
     //#region Duties and Responsibilities
 
-    const coreDuties = await this.occupationDutiesResponsibilities.entityRepository
+    /* const coreDuties = await this.occupationDutiesResponsibilities.entityRepository
       .createQueryBuilder('odr')
       .select('dr.description', 'description')
       .addSelect('ogdr.percentage', 'percentage')
@@ -204,7 +204,47 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
       .where("ogdr.duty_type = 'core' AND og.position_id_fk = :_id", { _id })
       .orderBy('d.type', 'ASC')
       .addOrderBy('cm.name', 'ASC')
+      .getRawMany(); */
+
+    const coreDuties = await this.occupationDutiesResponsibilities.entityRepository
+      .createQueryBuilder('odr')
+      .select('dr.description', 'description')
+      .addSelect('ogdr.percentage', 'percentage')
+      .addSelect('cm.name', 'competency')
+      .addSelect('p.level', 'level')
+      .addSelect('d.type', 'domain')
+      .distinct(true)
+      .innerJoin('occupational_group_duties_responsibilities', 'ogdr', 'ogdr.odr_id_fk = odr._id')
+      .innerJoin('position_competency_proficiency_level', 'pcpl', 'pcpl._id = ogdr.pcpl_id_fk')
+      .innerJoin('proficiency', 'p', 'p._id = pcpl.proficiency_id_fk')
+      .innerJoin('occupational_group', 'og', 'og._id = ogdr.occupational_group_id_fk')
+      .innerJoin('duties_responsibilities', 'dr', 'dr._id = odr.duties_responsibilities_id_fk')
+      .innerJoin('competency_model', 'cm', 'cm._id = p.competency_id_fk')
+      .innerJoin('domain', 'd', 'd._id = cm.domain_id_fk')
+      .where("ogdr.duty_type = 'core' AND og.position_id_fk = :_id", { _id })
+      .orderBy('ogdr.percentage', 'DESC')
+      .addOrderBy('cm.name', 'ASC')
       .getRawMany();
+
+    /* const supportDuties = await this.occupationDutiesResponsibilities.entityRepository
+      .createQueryBuilder('odr')
+      .select('dr.description', 'description')
+      .addSelect('ogdr.percentage', 'percentage')
+      .addSelect('cm.name', 'competency')
+      .addSelect('p.level', 'level')
+      .addSelect('d.type', 'domain')
+      .distinct(true)
+      .innerJoin('occupational_group_duties_responsibilities', 'ogdr', 'ogdr.odr_id_fk = odr._id')
+      .innerJoin('position_competency_proficiency_level', 'pcpl', 'pcpl._id = ogdr.pcpl_id_fk')
+      .innerJoin('proficiency', 'p', 'p._id = pcpl.proficiency_id_fk')
+      .innerJoin('occupational_group', 'og', 'og._id = ogdr.occupational_group_id_fk')
+      .innerJoin('duties_responsibilities', 'dr', 'dr._id = odr.duties_responsibilities_id_fk')
+      .innerJoin('competency_model', 'cm', 'cm._id = p.competency_id_fk')
+      .innerJoin('domain', 'd', 'd._id = cm.domain_id_fk')
+      .where("ogdr.duty_type = 'support' AND og.position_id_fk = :_id", { _id })
+      .orderBy('d.type', 'ASC')
+      .addOrderBy('cm.name', 'ASC')
+      .getRawMany(); */
 
     const supportDuties = await this.occupationDutiesResponsibilities.entityRepository
       .createQueryBuilder('odr')
@@ -222,7 +262,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
       .innerJoin('competency_model', 'cm', 'cm._id = p.competency_id_fk')
       .innerJoin('domain', 'd', 'd._id = cm.domain_id_fk')
       .where("ogdr.duty_type = 'support' AND og.position_id_fk = :_id", { _id })
-      .orderBy('d.type', 'ASC')
+      .orderBy('ogdr.percentage', 'DESC')
       .addOrderBy('cm.name', 'ASC')
       .getRawMany();
 

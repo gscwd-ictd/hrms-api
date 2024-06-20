@@ -31,6 +31,11 @@ export enum Supervisor {
   GENERAL_MANAGER = 'General Manager',
 }
 
+export enum BasicFormNatureOfAppointment {
+  PERMANENT = 'permanent',
+  TEMPORARY_PERMANENT = 'temporary permanent',
+}
+
 /*
   const publicationMode = [
     "CSC Website www.csc.gov.ph",
