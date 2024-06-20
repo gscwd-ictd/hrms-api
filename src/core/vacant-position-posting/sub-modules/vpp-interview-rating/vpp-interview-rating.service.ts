@@ -448,7 +448,6 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     '${line2}' addressLine2,
     CONCAT(UPPER(amount_in_words(get_salary_grade_amount(get_salary_grade_id(get_plantilla_salary_grade(vppv.positionId))))),' (Php ',FORMAT(get_salary_grade_amount(get_salary_grade_id(get_plantilla_salary_grade(vppv.positionId))),2),')') amountInWords,
     CONCAT(pdfb.item_number,' FY ',DATE_FORMAT(padv.effectivityDate,'%Y')) itemNumber,
-    pp.nature_of_appointment natureOfAppointment,
     pdfb.appointment_type  appointmentType,
     vppv.salaryGradeLevel salaryGradeLevel,
     CONCAT(DATE_FORMAT(vppv.postingDate,'%M %d, %Y'),' to ',DATE_FORMAT(vppv.postingDeadline,'%M %d, %Y')) publicationPeriod, 
@@ -492,25 +491,43 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
              INNER JOIN vpp_psb vppp ON vppp.employee_id_fk = pp.employee_id_fk 
          WHERE vppp.psb_no = 1 AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
        )
-       UNION
-       (
-         SELECT
-           get_employee_fullname(vppp.employee_id_fk) fullName,
-           get_employee_position(vppp.employee_id_fk) position,
-           get_employee_assignment(vppp.employee_id_fk) assignment, 
-           'PSB# 3' role
-           FROM vpp_psb vppp 
-         WHERE vppp.psb_no = 3 
-         AND vppp.vacant_position_posting_id_fk IN ( SELECT vacant_position_posting_id_fk FROM posting_applicants WHERE _id = ? )
-       )
  
      `,
       [postingApplicantId, postingApplicantId],
     );
 
+    const certificateOfAppointment = await this.entityRepository.query(
+      `SELECT 
+          pdfb.vice vice,
+          pdfb.vice_type viceStatus,
+          pdfb.field_page page,
+          pdfb.nature_of_appointment natureOfAppointment,
+          get_employee_fullname(pdfb.certified_by) fullName,
+          get_employee_position_or_oic(pdfb.certified_by) position,
+          get_employee_assignment_or_oic(pdfb.certified_by) assignment
+      FROM
+          position_description_form_basic pdfb
+          where pdfb.posting_applicants_id_fk = ?`,
+      [postingApplicantId],
+    );
+
     return {
-      data,
-      signatories,
+      data: {
+        ...data,
+        vice: certificateOfAppointment[0].vice,
+        viceStatus: certificateOfAppointment[0].viceStatus,
+        page: certificateOfAppointment[0].page,
+        natureOfAppointment: certificateOfAppointment[0].natureOfAppointment,
+      },
+      signatories: [
+        ...signatories,
+        {
+          fullName: certificateOfAppointment[0].fullName,
+          position: certificateOfAppointment[0].position,
+          assignment: certificateOfAppointment[0].assignment,
+          role: null,
+        },
+      ],
     };
   }
 

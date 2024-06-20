@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { PositionDescriptionForm } from '../../../data/position-description-form.entity';
-import { AppointmentType, PublicationMode, Supervisor, WorkStation } from '../../../utils/enums/position-description-form.enum';
+import { AppointmentType, BasicFormNatureOfAppointment, PublicationMode, Supervisor, WorkStation } from '../../../utils/enums/position-description-form.enum';
 import { ViceType } from '../utils/vice-type.enum';
 
 @Entity('position_description_form_basic')
@@ -43,6 +43,9 @@ export class PositionDescriptionFormBasic extends PositionDescriptionForm {
 
   @Column({ name: 'previous_appropriation_act', type: 'varchar', nullable: true })
   previousAppropriationAct: string;
+
+  @Column({ name: 'nature_of_appointment', type: 'enum', enum: BasicFormNatureOfAppointment, nullable: false })
+  appointment: BasicFormNatureOfAppointment;
 
   @Column({ name: 'certified_by', type: 'uuid', nullable: false })
   certifiedBy: string;

@@ -5,10 +5,10 @@ import { PositionDescriptionFormWorkingConditionService } from './parts/working-
 import { PositionDescriptionFormExternalContactsService } from './parts/contacts/external/external-contacts.service';
 import { PositionDescriptionFormInternalContactsService } from './parts/contacts/internal/internal-contacts.service';
 import { PositionDescriptionFormBasicService } from './parts/basic/basic.service';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { getManager } from 'typeorm';
 import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
-import { CertifiedOfAppointmentDto } from './parts/basic/data/position-description-form-basic.dto';
+import { CertifiedList } from './utils/types/position-description-form.type';
 
 @Injectable()
 export class PositionDescriptionFormService {
@@ -20,20 +20,16 @@ export class PositionDescriptionFormService {
     private readonly occupationalGroupDutiesResponsibilities: OccupationalGroupDutiesResponsibilitiesService,
   ) {}
 
-  async savePositionDescriptionForm(postingApplicantId: string, positionDescriptionFormDTO: PositionDescriptionFormDTO) {
+  async savePositionDescriptionForm(positionDescriptionFormDTO: PositionDescriptionFormDTO) {
     try {
       const result = await getManager().transaction(async (transactionEntityManager) => {
         const basic = await transactionEntityManager.save(
-          this.positionDescriptionFormBasic.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.basic, ...positionDescriptionFormDTO.certificateOfAppointment }),
+          this.positionDescriptionFormBasic.createEntity({ ...positionDescriptionFormDTO.basic, ...positionDescriptionFormDTO.certificateOfAppointment }),
         );
-        const internal = await transactionEntityManager.save(
-          this.positionDescriptionFormInternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.internal }),
-        );
-        const external = await transactionEntityManager.save(
-          this.positionDescriptionFormExternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.external }),
-        );
+        const internal = await transactionEntityManager.save(this.positionDescriptionFormInternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.internal }));
+        const external = await transactionEntityManager.save(this.positionDescriptionFormExternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.external }));
         const workingCondition = await transactionEntityManager.save(
-          this.positionDescriptionFormWorkingConditionService.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.workingCondition }),
+          this.positionDescriptionFormWorkingConditionService.createEntity({ ...positionDescriptionFormDTO.workingCondition }),
         );
         return {
           basic,
@@ -177,5 +173,62 @@ export class PositionDescriptionFormService {
         },
       };
     } catch (error) {}
+  }
+
+  async listCertifiedBy() {
+    try {
+      const certifiedBy = (await this.positionDescriptionFormBasic.entityRepository.query(`SELECT 
+              pp.employee_id_fk employeeId,
+                GET_EMPLOYEE_FULLNAME2(pp.employee_id_fk) name,
+                pp.position_title positionTitle
+            FROM
+                plantilla_positions pp
+                    INNER JOIN
+                department_positions dp ON pp._id = dp.position_id_fk
+                    INNER JOIN
+                departments d ON dp.department_id_fk = d._id
+            WHERE
+                d.name = 'Human Resource Department'
+                    AND pp.position_title = 'Department Manager A'
+                    AND pp.employee_id_fk IS NOT NULL 
+            UNION SELECT 
+              pp.employee_id_fk employeeId,
+                GET_EMPLOYEE_FULLNAME2(pp.employee_id_fk) name,
+                pp.position_title positionTitle
+            FROM
+                plantilla_positions pp
+                    INNER JOIN
+                division_positions dp ON pp._id = dp.position_id_fk
+                    INNER JOIN
+                divisions d ON dp.division_id_fk = d._id
+            WHERE
+                d.name = 'Recruitment and Personnel Welfare Division'
+                    AND pp.position_title = 'Division Manager A'
+                    AND pp.employee_id_fk IS NOT NULL 
+            UNION SELECT 
+              employeeId,
+                employeeFullName name, oicPosition positionTitle
+            FROM
+                officer_in_charge_view
+            WHERE
+                oicOrgName IN ('Recruitment and Personnel Welfare Division' , 'Human Resource Department')
+                    AND oicPosition IN ('OIC-Division Manager' , 'OIC-Department Manager');
+        `)) as Array<CertifiedList>;
+
+      return Promise.all(
+        certifiedBy.map(async (items) => {
+          return {
+            label: items.name,
+            value: {
+              employeeId: items.employeeId,
+              positionTitle: items.positionTitle,
+            },
+          };
+        }),
+      );
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
