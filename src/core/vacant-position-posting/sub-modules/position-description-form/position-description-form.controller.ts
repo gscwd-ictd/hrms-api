@@ -1,6 +1,6 @@
 import { PositionDescriptionFormService } from './position-description-form.service';
-import { Controller, Post, Param, Get, Body } from '@nestjs/common';
-import { PositionDescriptionFormDTO } from './data/position-description-form.dto';
+import { Controller, Post, Param, Get, Body, Put } from '@nestjs/common';
+import { PositionDescriptionFormDTO, UpdatePositionDescriptionFormDto } from './data/position-description-form.dto';
 
 @Controller('position-description-form')
 export class PositionDescriptionFormController {
@@ -8,8 +8,12 @@ export class PositionDescriptionFormController {
 
   @Post()
   async savePositionDescriptionForm(@Body() positionDescriptionFormDTO: PositionDescriptionFormDTO) {
-    console.log(positionDescriptionFormDTO);
     return await this.positionDescriptionFormService.savePositionDescriptionForm(positionDescriptionFormDTO);
+  }
+
+  @Put()
+  async updatePositionDescriptionFrom(@Body() data: UpdatePositionDescriptionFormDto) {
+    return await this.positionDescriptionFormService.updatePositionDescriptionForm(data);
   }
 
   @Get('/status/:posting_applicant_id')

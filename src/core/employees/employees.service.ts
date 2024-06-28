@@ -91,6 +91,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return employees;
   }
 
+  async getEmployeesByOrgIdWithManagers(orgId: string) {
+    const employees = (await this.entityRepository.query(`CALL sp_get_employees_with_manager_under_org_id(?);`, [orgId]))[0];
+    console.log(employees);
+    return employees;
+  }
+
   async getEmployeesByOrgId2(orgId: string) {
     const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id2(?);`, [orgId]))[0];
     console.log(employees);
