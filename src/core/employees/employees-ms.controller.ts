@@ -54,6 +54,11 @@ export class EmployeesMsController {
     return await this.employeesService.getEmployeesByOrgId(orgId);
   }
 
+  @MessagePattern('get_employees_with_managers_by_org_id')
+  async getEmployeesByOrgIdWithManagers(@Payload() orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdWithManagers(orgId);
+  }
+
   @MessagePattern('get_employees_by_org_id_alone')
   async getEmployeesByOrgIdAloneMS(orgId: string) {
     return await this.employeesService.getEmployeesByOrgIdAlone(orgId);

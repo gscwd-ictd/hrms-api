@@ -1,4 +1,3 @@
-import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { PostingApplicants } from '../../../../applicants/data/entities/posting-applicants.entity';
 import { WorkStation, AppointmentType, PublicationMode, Supervisor, BasicFormNatureOfAppointment } from '../../../utils/enums/position-description-form.enum';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
@@ -26,7 +25,6 @@ export class CertifiedOfAppointmentDto {
   @IsEnum(() => ViceType)
   viceType: ViceType;
 
-  @IsOptional()
   @IsNotEmpty()
   @IsUUID()
   certifiedBy: string;

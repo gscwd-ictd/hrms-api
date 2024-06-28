@@ -1,6 +1,6 @@
 import { ApplicantEndorsementStatus } from './../applicant-endorsement/utils/types/applicant-endorsement.enum';
 import { OccupationalGroupDutiesResponsibilitiesService } from './../../../occupational-group-duties-responsibilities/occupational-group-duties-responsibilities.service';
-import { PositionDescriptionFormDTO } from './data/position-description-form.dto';
+import { PositionDescriptionFormDTO, UpdatePositionDescriptionFormDto } from './data/position-description-form.dto';
 import { PositionDescriptionFormWorkingConditionService } from './parts/working-condition/working-condition.service';
 import { PositionDescriptionFormExternalContactsService } from './parts/contacts/external/external-contacts.service';
 import { PositionDescriptionFormInternalContactsService } from './parts/contacts/internal/internal-contacts.service';
@@ -9,6 +9,10 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { getManager } from 'typeorm';
 import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
 import { CertifiedList } from './utils/types/position-description-form.type';
+import { PositionDescriptionFormBasic } from './parts/basic/data/position-description-form-basic.entity';
+import { PositionDescriptionFormInternalContacts } from './parts/contacts/internal/data/internal-contacts.entity';
+import { PositionDescriptionFormExternalContacts } from './parts/contacts/external/data/external-contacts.entity';
+import { PositionDescriptionFormWorkingCondition } from './parts/working-condition/data/working-condition.entity';
 
 @Injectable()
 export class PositionDescriptionFormService {
@@ -229,6 +233,59 @@ export class PositionDescriptionFormService {
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /* update position description form by posting application id */
+  async updatePositionDescriptionForm(data: UpdatePositionDescriptionFormDto) {
+    try {
+      return await getManager().transaction(async (entityManager) => {
+        /* deconstruct data */
+        const {
+          basic: { postingApplicantId, ...rest },
+          workingCondition,
+          contacts: { internal, external },
+          certificateOfAppointment,
+        } = data;
+
+        const basics = await entityManager
+          .createQueryBuilder()
+          .update(PositionDescriptionFormBasic)
+          .set({ ...rest, ...certificateOfAppointment })
+          .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
+          .execute();
+
+        const workingConditions = await entityManager
+          .createQueryBuilder()
+          .update(PositionDescriptionFormWorkingCondition)
+          .set(workingCondition)
+          .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
+          .execute();
+
+        const contactsInternal = await entityManager
+          .createQueryBuilder()
+          .update(PositionDescriptionFormInternalContacts)
+          .set({
+            executiveIsOccasional: internal.executiveIsOccasional,
+            supervisorIsOccasional: internal.supervisorIsOccasional,
+            nonSupervisorIsOccasional: internal.nonSupervisorIsOccasional,
+            staffIsOccasional: internal.staffIsOccasional,
+          })
+          .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
+          .execute();
+
+        const contactsExternal = await entityManager
+          .createQueryBuilder()
+          .update(PositionDescriptionFormExternalContacts)
+          .set({})
+          .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
+          .execute();
+
+        return;
+      });
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
 }
