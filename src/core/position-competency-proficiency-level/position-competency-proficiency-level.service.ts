@@ -153,7 +153,7 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         `SELECT 
                 distinct
                 ogdr.percentage,
-                pcpl._id, code, name, cm.desc description, prof.level, prof.key_actions
+                pcpl._id pcplId, code, name, cm.desc description, prof.level, prof.key_actions keyActions
             FROM
                 competency_model cm
                     INNER JOIN
