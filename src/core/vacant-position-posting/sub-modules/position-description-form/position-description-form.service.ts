@@ -27,13 +27,21 @@ export class PositionDescriptionFormService {
   async savePositionDescriptionForm(positionDescriptionFormDTO: PositionDescriptionFormDTO) {
     try {
       const result = await getManager().transaction(async (transactionEntityManager) => {
+        const {
+          basic: { postingApplicantId },
+        } = positionDescriptionFormDTO;
+
         const basic = await transactionEntityManager.save(
           this.positionDescriptionFormBasic.createEntity({ ...positionDescriptionFormDTO.basic, ...positionDescriptionFormDTO.certificateOfAppointment }),
         );
-        const internal = await transactionEntityManager.save(this.positionDescriptionFormInternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.internal }));
-        const external = await transactionEntityManager.save(this.positionDescriptionFormExternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.external }));
+        const internal = await transactionEntityManager.save(
+          this.positionDescriptionFormInternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.internal }),
+        );
+        const external = await transactionEntityManager.save(
+          this.positionDescriptionFormExternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.external }),
+        );
         const workingCondition = await transactionEntityManager.save(
-          this.positionDescriptionFormWorkingConditionService.createEntity({ ...positionDescriptionFormDTO.workingCondition }),
+          this.positionDescriptionFormWorkingConditionService.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.workingCondition }),
         );
         return {
           basic,
@@ -248,6 +256,7 @@ export class PositionDescriptionFormService {
           certificateOfAppointment,
         } = data;
 
+        /* update basic form */
         const basics = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormBasic)
@@ -255,6 +264,7 @@ export class PositionDescriptionFormService {
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update working conditions */
         const workingConditions = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormWorkingCondition)
@@ -262,26 +272,23 @@ export class PositionDescriptionFormService {
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update contacts internal */
         const contactsInternal = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormInternalContacts)
-          .set({
-            executiveIsOccasional: internal.executiveIsOccasional,
-            supervisorIsOccasional: internal.supervisorIsOccasional,
-            nonSupervisorIsOccasional: internal.nonSupervisorIsOccasional,
-            staffIsOccasional: internal.staffIsOccasional,
-          })
+          .set(internal)
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update contacts external */
         const contactsExternal = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormExternalContacts)
-          .set({})
+          .set(external)
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
-        return;
+        if (basics.affected > 0 && workingConditions.affected > 0 && contactsInternal.affected > 0 && contactsExternal.affected > 0) return data;
       });
     } catch (error) {
       Logger.error(error);

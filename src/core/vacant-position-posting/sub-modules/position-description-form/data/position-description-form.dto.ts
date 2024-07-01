@@ -2,7 +2,6 @@ import { CertifiedOfAppointmentDto, PositionDescriptionFormBasicDTO } from './..
 import { PositionDescriptionFormWorkingConditionDTO } from '../parts/working-condition/data/working-condition.dto';
 import { PositionDescriptionFormTypeContacts } from '../utils/types/position-description-form.type';
 import { IsBoolean, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
-import { PostingApplicants } from '../../applicants/data/entities/posting-applicants.entity';
 import { AppointmentType, PublicationMode, Supervisor, WorkStation } from '../utils/enums/position-description-form.enum';
 
 export class PositionDescriptionFormDTO {
@@ -24,9 +23,9 @@ export class PositionDescriptionFormDTO {
 }
 
 export class UpdateBasicFormDto {
-  @IsNotEmpty({ message: 'Basic should not be empty.' })
+  @IsNotEmpty({ message: 'Posting applicant id should not be empty.' })
   @IsUUID()
-  postingApplicantId: PostingApplicants;
+  postingApplicantId: string;
 
   @IsNotEmpty({ message: 'Immediate supervisor should not be empty.' })
   @IsEnum(() => Supervisor)
@@ -74,6 +73,31 @@ export class UpdateWorkingStationDto {
   others: string;
 }
 
+export class InternalContanctsDto {
+  @IsBoolean({ message: 'Executive is occasinal must a boolean.' })
+  executiveIsOccasional: boolean;
+
+  @IsBoolean({ message: 'Supervisor is occasinal must a boolean.' })
+  supervisorIsOccasional: boolean;
+
+  @IsBoolean({ message: 'Non supervisor is occasinal must a boolean.' })
+  nonSupervisorIsOccasional: boolean;
+
+  @IsBoolean({ message: 'Staff is occasinal must a boolean.' })
+  staffIsOccasional: boolean;
+}
+
+export class ExternalContanctsDto {
+  @IsBoolean({ message: 'General public is occasinal must a boolean.' })
+  generalPublicIsOccasional: boolean;
+
+  @IsBoolean({ message: 'Other agencies is occasinal must a boolean.' })
+  otherAgenciesIsOccasional: boolean;
+
+  @IsString({ message: 'others must a string.' })
+  others: string;
+}
+
 export class UpdatePositionDescriptionFormDto {
   @IsNotEmpty({ message: 'Basic should not be empty.' })
   @IsObject({ message: 'Basic must be an object.' })
@@ -85,7 +109,10 @@ export class UpdatePositionDescriptionFormDto {
 
   @IsNotEmpty({ message: 'Contacts should not be empty.' })
   @IsObject({ message: 'Contacts must be an object.' })
-  contacts: PositionDescriptionFormTypeContacts;
+  contacts: {
+    internal: InternalContanctsDto;
+    external: ExternalContanctsDto;
+  };
 
   @IsNotEmpty({ message: 'Certificate of appointment should not be empty.' })
   @IsObject({ message: 'Certificate of appointment must be an object.' })

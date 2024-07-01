@@ -1,4 +1,4 @@
-import { HttpCode, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
@@ -7,7 +7,6 @@ import { SalaryGradeService } from '../salary-grade/salary-grade.service';
 import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { PositionCompetencyProficiencyLevel } from './data/entities/position-competency-proficiency-level.entity';
 import { PcplDeleteDTO, PcplDTO, PcplUpdateDTO } from './data/dtos/position-competency-proficiency-level.dto';
-import { Proficiency } from '../proficiency/data/entities/proficiency.entity';
 import { PcplUpdateType } from './utils/types/pcpl-update.type';
 
 @Injectable()

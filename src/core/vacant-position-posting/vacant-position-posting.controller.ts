@@ -1,14 +1,12 @@
 import { VppEffectivityDateDTO } from './data/dtos/vacant-positions-posting.dto';
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Patch, UseGuards } from '@nestjs/common';
 import { VacantPositionPostingDTO } from 'src/core/vacant-position-posting/data/dtos/vacant-positions-posting.dto';
 import { VacantPositionPostingViewService } from './data/views/vacant-position-posting-view/vacant-position-posting-view.service';
 import { VppPsbDTO } from './sub-modules/vpp-psb/data/dtos/vpp-psb.dto';
 import { VppScheduleDto } from './sub-modules/vpp-schedule/data/dtos/vpp-schedule.dto';
 import { VacantPositionPostingService } from './vacant-position-posting.service';
-import { ExternalApplicantLoginGuard } from './sub-modules/applicants/external-applicants/guards/external-applicants.guard';
 import { ExternalApplicantsPDSGuard } from './sub-modules/applicants/external-applicants/guards/external-applicants-pds.guard';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { HighestSecondaryLevelAttainment } from './sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum';
 
 @Controller('vacant-position-postings')
 export class VacantPositionPostingController {

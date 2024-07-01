@@ -464,6 +464,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
     } catch (error) {}
   }
 
+  /* ----- */
   async getVppJDCompetenciesById(vppId: string) {
     //1. get position Id from vppID
     const positionId = (
@@ -474,6 +475,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
     const positionDescription = await this.plantillaViewService.getPositionDescription(positionId);
     return { ...positionDescription, dutiesAndResponsibilities };
   }
+
   async getVppItemNumbers(vppId: string) {
     try {
       return await this.plantillaViewService.entityRepository.query(
