@@ -202,7 +202,7 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.entityRepository.query(`
       SELECT employees._id employeeId,company_id companyId,first_name firstName,middle_name middleName,last_name lastName,name_extension nameExt, get_employee_position(employees._id) positionTitle,
-      REPLACE(CONCAT(REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(LOWER(REPLACE(last_name,' ','')),'\\'',''),REPLACE(LOWER(name_extension),'.',''),'@gscwd.com'),'-','') email, CONCAT('@',REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(company_id,'-','')) \`password\`
+      REPLACE(CONCAT(REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(LOWER(REPLACE(last_name,' ','')),'\\'',''),'@gscwd.com'),'-','') email, CONCAT('@',REPLACE(REPLACE(LOWER(REPLACE(first_name,' ','')),'\\'',''),'.',''),REPLACE(company_id,'-','')) \`password\`
       FROM employees INNER JOIN plantilla_positions pp ON pp.employee_id_fk = employees._id WHERE DATE_FORMAT(employees.created_at,'%Y-%m-%d') =  DATE_FORMAT(now(),'%Y-%m-%d')  AND employees.company_id IS NOT NULL ORDER BY last_name ASC;
           `);
     } catch (error) {
