@@ -50,7 +50,10 @@ export class PositionDescriptionFormService {
         };
       });
       return result;
-    } catch (error) {}
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request creating positing description form.', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async hasDbmCsc(postingApplicantId: string) {
@@ -293,6 +296,58 @@ export class PositionDescriptionFormService {
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /* find position description form by posting applicant id */
+  async findPositionDescriptionFormByPostingApplicantId(applicantId: string) {
+    try {
+      const basicInfo = await this.positionDescriptionFormBasic.findBasicInfoByPostingApplicantId(applicantId);
+      const internal = await this.positionDescriptionFormInternalContacts.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      const external = await this.positionDescriptionFormExternalContacts.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      const workingCondition = await this.positionDescriptionFormWorkingConditionService.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      return {
+        basic: {
+          postingApplicantId: applicantId,
+          itemNumber: basicInfo.itemNumber,
+          immediateSupervisor: basicInfo.immediateSupervisor,
+          supervisorNextHigher: basicInfo.supervisorNextHigher,
+          toolsUsed: basicInfo.toolsUsed,
+          workStation: basicInfo.workStation,
+          appointmentType: basicInfo.appointmentType,
+          publicationMode: basicInfo.publicationMode,
+          directlySupervised: basicInfo.directlySupervised,
+          directlySupervisedItemNumbers: basicInfo.directlySupervisedItemNumbers,
+        },
+        contacts: {
+          internal: {
+            executiveIsOccasional: internal.executiveIsOccasional,
+            supervisorIsOccasional: internal.supervisorIsOccasional,
+            nonSupervisorIsOccasional: internal.nonSupervisorIsOccasional,
+            staffIsOccasional: internal.staffIsOccasional,
+          },
+          external: {
+            generalPublicIsOccasional: external.generalPublicIsOccasional,
+            otherAgenciesIsOccasional: external.otherAgenciesIsOccasional,
+            others: external.others,
+          },
+        },
+        workingCondition: {
+          isOfficeWork: workingCondition.isOfficeWork,
+          isFieldWork: workingCondition.isFieldWork,
+          others: workingCondition.others,
+        },
+        certificateOfAppointment: {
+          natureOfAppointment: basicInfo.natureOfAppointment,
+          vice: basicInfo.vice,
+          viceType: basicInfo.viceType,
+          fieldPage: basicInfo.fieldPage,
+          certifiedBy: basicInfo.certifiedBy,
+        },
+      };
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Position description form not found.', HttpStatus.NOT_FOUND);
     }
   }
 }
