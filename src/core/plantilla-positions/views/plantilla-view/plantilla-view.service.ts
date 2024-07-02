@@ -287,7 +287,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
           positionId,
         },
       });
-      const competencies = await this.positionCompetencyProficiencyLevelService.getAllCompetencyProficiencies(positionId);
+      const competencies = await this.positionCompetencyProficiencyLevelService.findAllCompetenciesProficienciesByPositionId(positionId);
 
       return {
         jobDescription,
@@ -310,7 +310,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
             INNER JOIN proficiency prof ON prof._id = pcpl.proficiency_id_fk 
             INNER JOIN competency_model cm ON cm._id = prof.competency_id_fk 
             INNER JOIN domain d ON d._id = cm.domain_id_fk 
-        WHERE og.position_id_fk = ? AND ogdr.duty_type='core' ORDER by d.type ASC, dr.description ASC;
+        WHERE og.position_id_fk = ? AND ogdr.duty_type='core' ORDER by ogdr.percentage desc, cm.name asc;
       `,
         [positionId],
       );
@@ -326,7 +326,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
             INNER JOIN proficiency prof ON prof._id = pcpl.proficiency_id_fk 
             INNER JOIN competency_model cm ON cm._id = prof.competency_id_fk 
             INNER JOIN domain d ON d._id = cm.domain_id_fk 
-        WHERE og.position_id_fk = ? AND ogdr.duty_type='support' ORDER by d.type ASC, dr.description ASC;
+        WHERE og.position_id_fk = ? AND ogdr.duty_type='support'  ORDER by ogdr.percentage desc, cm.name asc;
       `,
         [positionId],
       );

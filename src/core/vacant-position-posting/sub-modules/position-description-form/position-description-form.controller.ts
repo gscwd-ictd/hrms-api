@@ -30,4 +30,9 @@ export class PositionDescriptionFormController {
   async listCertifiedBy() {
     return await this.positionDescriptionFormService.listCertifiedBy();
   }
+
+  @Get('applicants/:postingApplicantId')
+  async findPositionDescriptionFormByPostingApplicantId(@Param('postingApplicantId') postingApplicantId: string) {
+    return await this.positionDescriptionFormService.findPositionDescriptionFormByPostingApplicantId(postingApplicantId);
+  }
 }

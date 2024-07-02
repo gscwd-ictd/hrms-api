@@ -27,13 +27,21 @@ export class PositionDescriptionFormService {
   async savePositionDescriptionForm(positionDescriptionFormDTO: PositionDescriptionFormDTO) {
     try {
       const result = await getManager().transaction(async (transactionEntityManager) => {
+        const {
+          basic: { postingApplicantId },
+        } = positionDescriptionFormDTO;
+
         const basic = await transactionEntityManager.save(
           this.positionDescriptionFormBasic.createEntity({ ...positionDescriptionFormDTO.basic, ...positionDescriptionFormDTO.certificateOfAppointment }),
         );
-        const internal = await transactionEntityManager.save(this.positionDescriptionFormInternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.internal }));
-        const external = await transactionEntityManager.save(this.positionDescriptionFormExternalContacts.createEntity({ ...positionDescriptionFormDTO.contacts.external }));
+        const internal = await transactionEntityManager.save(
+          this.positionDescriptionFormInternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.internal }),
+        );
+        const external = await transactionEntityManager.save(
+          this.positionDescriptionFormExternalContacts.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.contacts.external }),
+        );
         const workingCondition = await transactionEntityManager.save(
-          this.positionDescriptionFormWorkingConditionService.createEntity({ ...positionDescriptionFormDTO.workingCondition }),
+          this.positionDescriptionFormWorkingConditionService.createEntity({ postingApplicantId, ...positionDescriptionFormDTO.workingCondition }),
         );
         return {
           basic,
@@ -42,7 +50,10 @@ export class PositionDescriptionFormService {
         };
       });
       return result;
-    } catch (error) {}
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Bad request creating positing description form.', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async hasDbmCsc(postingApplicantId: string) {
@@ -248,6 +259,7 @@ export class PositionDescriptionFormService {
           certificateOfAppointment,
         } = data;
 
+        /* update basic form */
         const basics = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormBasic)
@@ -255,6 +267,7 @@ export class PositionDescriptionFormService {
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update working conditions */
         const workingConditions = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormWorkingCondition)
@@ -262,30 +275,79 @@ export class PositionDescriptionFormService {
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update contacts internal */
         const contactsInternal = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormInternalContacts)
-          .set({
-            executiveIsOccasional: internal.executiveIsOccasional,
-            supervisorIsOccasional: internal.supervisorIsOccasional,
-            nonSupervisorIsOccasional: internal.nonSupervisorIsOccasional,
-            staffIsOccasional: internal.staffIsOccasional,
-          })
+          .set(internal)
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
+        /* update contacts external */
         const contactsExternal = await entityManager
           .createQueryBuilder()
           .update(PositionDescriptionFormExternalContacts)
-          .set({})
+          .set(external)
           .where('posting_applicants_id_fk = :id', { id: postingApplicantId })
           .execute();
 
-        return;
+        if (basics.affected > 0 && workingConditions.affected > 0 && contactsInternal.affected > 0 && contactsExternal.affected > 0) return data;
       });
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /* find position description form by posting applicant id */
+  async findPositionDescriptionFormByPostingApplicantId(applicantId: string) {
+    try {
+      const basicInfo = await this.positionDescriptionFormBasic.findBasicInfoByPostingApplicantId(applicantId);
+      const internal = await this.positionDescriptionFormInternalContacts.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      const external = await this.positionDescriptionFormExternalContacts.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      const workingCondition = await this.positionDescriptionFormWorkingConditionService.entityRepository.findOne({ where: { postingApplicantId: applicantId } });
+      return {
+        basic: {
+          postingApplicantId: applicantId,
+          itemNumber: basicInfo.itemNumber,
+          immediateSupervisor: basicInfo.immediateSupervisor,
+          supervisorNextHigher: basicInfo.supervisorNextHigher,
+          toolsUsed: basicInfo.toolsUsed,
+          workStation: basicInfo.workStation,
+          appointmentType: basicInfo.appointmentType,
+          publicationMode: basicInfo.publicationMode,
+          directlySupervised: basicInfo.directlySupervised,
+          directlySupervisedItemNumbers: basicInfo.directlySupervisedItemNumbers,
+        },
+        contacts: {
+          internal: {
+            executiveIsOccasional: internal.executiveIsOccasional,
+            supervisorIsOccasional: internal.supervisorIsOccasional,
+            nonSupervisorIsOccasional: internal.nonSupervisorIsOccasional,
+            staffIsOccasional: internal.staffIsOccasional,
+          },
+          external: {
+            generalPublicIsOccasional: external.generalPublicIsOccasional,
+            otherAgenciesIsOccasional: external.otherAgenciesIsOccasional,
+            others: external.others,
+          },
+        },
+        workingCondition: {
+          isOfficeWork: workingCondition.isOfficeWork,
+          isFieldWork: workingCondition.isFieldWork,
+          others: workingCondition.others,
+        },
+        certificateOfAppointment: {
+          natureOfAppointment: basicInfo.natureOfAppointment,
+          vice: basicInfo.vice,
+          viceType: basicInfo.viceType,
+          fieldPage: basicInfo.fieldPage,
+          certifiedBy: basicInfo.certifiedBy,
+        },
+      };
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Position description form not found.', HttpStatus.NOT_FOUND);
     }
   }
 }
