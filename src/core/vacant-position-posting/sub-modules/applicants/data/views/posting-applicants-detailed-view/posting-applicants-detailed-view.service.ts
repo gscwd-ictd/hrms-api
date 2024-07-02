@@ -77,7 +77,8 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
       .innerJoin('proficiency', 'p', 'p._id = pcpl.proficiency_id_fk')
       .innerJoin('competency_model', 'cm', 'cm._id = p.competency_id_fk')
       .innerJoin('domain', 'd', 'd._id = cm.domain_id_fk')
-
+      .innerJoin('occupational_group', 'og', 'og._id = pcpl.occupational_group_id_fk')
+      .innerJoin('occupational_group_duties_responsibilities', 'ogdr', ' ogdr.pcpl_id_fk = pcpl._id')
       .where(
         "vpp_psb.employee_id_fk = :employeeId AND padv.vppId = :vppId AND (d.type='Functional' OR d.type='Cross-Cutting Functional') AND vir.posting_applicants_id_fk=:applicantId",
         {
@@ -86,7 +87,8 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
           applicantId: applicant.postingApplicantId,
         },
       )
-      .orderBy('competencyCode', 'ASC')
+      .orderBy('ogdr.percentage', 'DESC')
+      .addOrderBy('cm.name', 'ASC')
       .getRawMany();
 
     const managerialScores = await this.entityRepository
@@ -103,13 +105,15 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
       .innerJoin('proficiency', 'p', 'p._id = pcpl.proficiency_id_fk')
       .innerJoin('competency_model', 'cm', 'cm._id = p.competency_id_fk')
       .innerJoin('domain', 'd', 'd._id = cm.domain_id_fk')
-
+      .innerJoin('occupational_group', 'og', 'og._id = pcpl.occupational_group_id_fk')
+      .innerJoin('occupational_group_duties_responsibilities', 'ogdr', ' ogdr.pcpl_id_fk = pcpl._id')
       .where("vpp_psb.employee_id_fk = :employeeId AND padv.vppId = :vppId AND (d.type='Leadership/Managerial') AND vir.posting_applicants_id_fk=:applicantId", {
         employeeId,
         vppId,
         applicantId: applicant.postingApplicantId,
       })
-      .orderBy('competencyCode', 'ASC')
+      .orderBy('ogdr.percentage', 'DESC')
+      .addOrderBy('cm.name', 'ASC')
       .getRawMany();
 
     return {

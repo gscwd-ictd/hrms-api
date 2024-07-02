@@ -33,7 +33,7 @@ export enum Supervisor {
 
 export enum BasicFormNatureOfAppointment {
   PERMANENT = 'permanent',
-  TEMPORARY_PERMANENT = 'temporary permanent',
+  TEMPORARY_PERMANENT = 'temporary',
 }
 
 /*

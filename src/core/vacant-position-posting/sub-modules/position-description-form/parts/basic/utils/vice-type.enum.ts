@@ -3,4 +3,5 @@ export enum ViceType {
   RETIRED = 'retire',
   RESIGNED = 'resigned',
   DECEASED = 'deceased',
+  VACANT = 'vacant',
 }
