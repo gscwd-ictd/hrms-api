@@ -1,6 +1,4 @@
 import { PDSBasicPersonalInfoService } from './../applicants/external-applicants/pds/parts/basic-info/pds-basic-personal-info/pds-basic-personal-info.service';
-import { CivilStatus } from './../applicants/external-applicants/pds/utils/enums/pds.enum';
-import { PDSBasicAddressDTO } from './../applicants/external-applicants/pds/parts/basic-info/address/data/dto/basic-address.dto';
 import { PDSBasicResidentialAddressService } from './../applicants/external-applicants/pds/parts/basic-info/address/pds-basic-residential-address/pds-basic-residential-address.service';
 import { ApplicantEndorsementService } from './../applicant-endorsement/applicant-endorsement.service';
 import { PostingApplicantsDetailedViewService } from './../applicants/data/views/posting-applicants-detailed-view/posting-applicants-detailed-view.service';
@@ -413,6 +411,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { employeeDetails, pdsPersonalInfo } = employeeInfo;
       applicantSex = employeeDetails.sex;
       applicantCivilStatus = pdsPersonalInfo.civilStatus;
+      console.log(applicantCivilStatus);
     } else {
       const { externalApplicantId } = (
         await this.entityRepository.query('SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id=?', [postingApplicantId])
@@ -422,9 +421,10 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { civilStatus, sex } = applicantDetails;
       applicantSex = sex;
       applicantCivilStatus = civilStatus;
+      console.log(applicantCivilStatus);
     }
     if (applicantSex === 'Female') {
-      if (applicantCivilStatus === 'Married' || 'Widowed') salutation = 'Mrs.';
+      if (applicantCivilStatus === 'Married' || applicantCivilStatus === 'Widowed') salutation = 'Mrs.';
       else salutation = 'Ms.';
     }
 

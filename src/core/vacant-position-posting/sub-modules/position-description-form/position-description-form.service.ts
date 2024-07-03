@@ -292,6 +292,7 @@ export class PositionDescriptionFormService {
           .execute();
 
         if (basics.affected > 0 && workingConditions.affected > 0 && contactsInternal.affected > 0 && contactsExternal.affected > 0) return data;
+        else throw new HttpException('Not found', HttpStatus.NOT_FOUND);
       });
     } catch (error) {
       Logger.error(error);
@@ -343,6 +344,7 @@ export class PositionDescriptionFormService {
           viceType: basicInfo.viceType,
           fieldPage: basicInfo.fieldPage,
           certifiedBy: basicInfo.certifiedBy,
+          psbDurationStartDate: basicInfo.psbDurationStartDate,
         },
       };
     } catch (error) {

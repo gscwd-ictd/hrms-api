@@ -58,4 +58,7 @@ export class PositionDescriptionFormBasic extends PositionDescriptionForm {
 
   @Column({ name: 'field_page', type: 'text', nullable: false })
   fieldPage: string;
+
+  @Column({ name: 'psb_duration_start_date', type: 'date', nullable: true })
+  psbDurationStartDate: Date;
 }

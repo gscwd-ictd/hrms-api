@@ -424,6 +424,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
 
+      console.log(employeePortalDetails);
       return {
         userId,
         companyId,
