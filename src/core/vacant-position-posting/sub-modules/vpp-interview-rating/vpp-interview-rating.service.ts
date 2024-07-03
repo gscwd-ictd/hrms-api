@@ -424,7 +424,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       applicantCivilStatus = civilStatus;
     }
     if (applicantSex === 'Female') {
-      if (applicantCivilStatus === 'Married' || 'Widowed') salutation = 'Mrs.';
+      if (applicantCivilStatus === 'Married' || applicantCivilStatus === 'Widowed') salutation = 'Mrs.';
       else salutation = 'Ms.';
     }
 
