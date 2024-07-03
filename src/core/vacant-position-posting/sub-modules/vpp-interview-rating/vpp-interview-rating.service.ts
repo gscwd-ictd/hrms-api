@@ -504,7 +504,8 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
           pdfb.nature_of_appointment natureOfAppointment,
           get_employee_fullname(pdfb.certified_by) fullName,
           get_employee_position_or_oic(pdfb.certified_by) position,
-          get_employee_assignment_or_oic(pdfb.certified_by) assignment
+          get_employee_assignment_or_oic(pdfb.certified_by) assignment,
+          date_format(pdfb.psb_duration_start_date, '%M %d, %Y') psbDurationStartDate
       FROM
           position_description_form_basic pdfb
           where pdfb.posting_applicants_id_fk = ?`,
@@ -518,6 +519,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
         viceStatus: certificateOfAppointment[0].viceStatus,
         page: certificateOfAppointment[0].page,
         natureOfAppointment: certificateOfAppointment[0].natureOfAppointment,
+        psbDurationStartDate: certificateOfAppointment[0].psbDurationStartDate,
       },
       signatories: [
         ...signatories,
