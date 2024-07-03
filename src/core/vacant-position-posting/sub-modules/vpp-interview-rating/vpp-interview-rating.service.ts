@@ -1,6 +1,4 @@
 import { PDSBasicPersonalInfoService } from './../applicants/external-applicants/pds/parts/basic-info/pds-basic-personal-info/pds-basic-personal-info.service';
-import { CivilStatus } from './../applicants/external-applicants/pds/utils/enums/pds.enum';
-import { PDSBasicAddressDTO } from './../applicants/external-applicants/pds/parts/basic-info/address/data/dto/basic-address.dto';
 import { PDSBasicResidentialAddressService } from './../applicants/external-applicants/pds/parts/basic-info/address/pds-basic-residential-address/pds-basic-residential-address.service';
 import { ApplicantEndorsementService } from './../applicant-endorsement/applicant-endorsement.service';
 import { PostingApplicantsDetailedViewService } from './../applicants/data/views/posting-applicants-detailed-view/posting-applicants-detailed-view.service';
@@ -413,6 +411,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { employeeDetails, pdsPersonalInfo } = employeeInfo;
       applicantSex = employeeDetails.sex;
       applicantCivilStatus = pdsPersonalInfo.civilStatus;
+      console.log(applicantCivilStatus);
     } else {
       const { externalApplicantId } = (
         await this.entityRepository.query('SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id=?', [postingApplicantId])
@@ -422,9 +421,10 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { civilStatus, sex } = applicantDetails;
       applicantSex = sex;
       applicantCivilStatus = civilStatus;
+      console.log(applicantCivilStatus);
     }
     if (applicantSex === 'Female') {
-      if (applicantCivilStatus === 'Married' || 'Widowed') salutation = 'Mrs.';
+      if (applicantCivilStatus === 'Married' || applicantCivilStatus === 'Widowed') salutation = 'Mrs.';
       else salutation = 'Ms.';
     }
 
@@ -504,7 +504,8 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
           pdfb.nature_of_appointment natureOfAppointment,
           get_employee_fullname(pdfb.certified_by) fullName,
           get_employee_position_or_oic(pdfb.certified_by) position,
-          get_employee_assignment_or_oic(pdfb.certified_by) assignment
+          get_employee_assignment_or_oic(pdfb.certified_by) assignment,
+          date_format(pdfb.psb_duration_start_date, '%M %d, %Y') psbDurationStartDate
       FROM
           position_description_form_basic pdfb
           where pdfb.posting_applicants_id_fk = ?`,
@@ -518,6 +519,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
         viceStatus: certificateOfAppointment[0].viceStatus,
         page: certificateOfAppointment[0].page,
         natureOfAppointment: certificateOfAppointment[0].natureOfAppointment,
+        psbDurationStartDate: certificateOfAppointment[0].psbDurationStartDate,
       },
       signatories: [
         ...signatories,

@@ -1,6 +1,6 @@
 import { PostingApplicants } from '../../../../applicants/data/entities/posting-applicants.entity';
 import { WorkStation, AppointmentType, PublicationMode, Supervisor, BasicFormNatureOfAppointment } from '../../../utils/enums/position-description-form.enum';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ViceType } from '../utils/vice-type.enum';
 
 export class PositionDescriptionFormBasicDTO {
@@ -36,4 +36,8 @@ export class CertifiedOfAppointmentDto {
   @IsNotEmpty()
   @IsString()
   fieldPage: string;
+
+  @IsNotEmpty()
+  @IsDateString()
+  psbDurationStartDate: Date;
 }
