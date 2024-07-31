@@ -58,6 +58,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('pp.position_title', 'positionTitle')
       .addSelect('pp._id', 'positionId')
       .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+      .addSelect('get_employee_fullname(emp._id)', 'fullNameFirst')
       .addSelect('get_employee_assignment_id(emp._id)', 'id')
       .addSelect('get_employee_assignment(emp._id)', 'name')
       .addSelect('get_user_role(emp._id)', 'userRole')
@@ -66,7 +67,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .where('emp._id = :_id', { _id })
       .getRawOne();
 
-    const { id, name, userId, companyId, positionId, positionTitle, fullName, isHRMPSB, userRole } = empPosition;
+    const { id, name, userId, companyId, positionId, positionTitle, fullNameFirst, fullName, isHRMPSB, userRole } = empPosition;
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
     const overtimeImmediateSupervisorId = await lastValueFrom(this.clientEms.send('get_overtime_immediate_supervisor', _id));
     const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
@@ -77,6 +78,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       ...employeePortalDetails,
       companyId: companyId !== null ? companyId : 'BOD001',
       fullName,
+      fullNameFirst,
       isHRMPSB,
       scheduleBase: employeeSchedule.schedule.scheduleBase,
       overtimeImmediateSupervisorId,
@@ -179,12 +181,13 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('pp._id', 'positionId')
       .addSelect('get_employee_assignment_id(emp._id)', 'id')
       .addSelect('get_employee_assignment(emp._id)', 'name')
-      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+      .addSelect('get_employee_fullname(emp._id)', 'fullNameFirst')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('pp.employee_id_fk IS NOT NULL AND company_id IS NOT NULL AND emp._id=:employeeId', { employeeId })
       .getRawOne();
 
-    const { id, employeeFullName, companyId, positionId, positionTitle } = empPosition;
+    const { id, employeeFullName, fullNameFirst, companyId, positionTitle } = empPosition;
 
     const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
 
@@ -202,6 +205,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       id: employeeId,
       companyId,
       fullName: employeeFullName,
+      fullNameFirst,
       avatar: employeePortalDetails.photoUrl,
       email: employeePortalDetails.emailAddress,
       division: divisionName,
@@ -220,14 +224,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       .addSelect('pp._id', 'positionId')
       .addSelect('get_employee_assignment_id(emp._id)', 'id')
       .addSelect('get_employee_assignment(emp._id)', 'name')
-      .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+      .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+      .addSelect('get_employee_fullname(emp._id)', 'fullNameFirst')
       .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
       .where('pp.employee_id_fk IS NOT NULL AND company_id IS NOT NULL')
       .getRawMany();
 
     const employees = await Promise.all(
       empPositions.map(async (empPosition) => {
-        const { id, name, employeeId, employeeFullName, companyId, positionId, positionTitle } = empPosition;
+        const { id, name, employeeId, employeeFullName, fullNameFirst, companyId, positionTitle } = empPosition;
 
         const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
 
@@ -245,6 +250,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           id: employeeId,
           companyId,
           fullName: employeeFullName,
+          fullNameFirst,
           avatar: employeePortalDetails.photoUrl,
           email: employeePortalDetails.emailAddress,
           division: divisionName,
@@ -271,6 +277,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
         .addSelect('emp.signature_url', 'signatureUrl')
         .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeefullNameFirst')
         .addSelect('get_user_role(emp._id)', 'userRole')
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .where('emp._id = :employeeId', { employeeId })
@@ -279,7 +286,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
-      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole, signatureUrl } = empPosition;
+      const { id, name, userId, employeeFullName, employeeFullNameFirst, companyId, positionId, positionTitle, isHRMPSB, userRole, signatureUrl } = empPosition;
       const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
       const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
 
@@ -299,6 +306,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isPdcChairman,
         isPdcSecretariat,
         employeeFullName,
+        employeeFullNameFirst,
         photoUrl: employeePortalDetails.photoUrl,
         signatureUrl,
         salaryGradeAmount,
@@ -328,7 +336,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
         .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
         .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
-        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
         .addSelect('get_user_role(emp._id)', 'userRole')
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .where('emp._id = :employeeId', { employeeId })
@@ -337,7 +346,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
-      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole } = empPosition;
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole, employeeFullNameFirst } = empPosition;
       const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
       const salaryGradeDetails = await this.getMonthHourlyRateByEmployeeId(employeeId);
 
@@ -353,6 +362,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isPdcChairman,
         isPdcSecretariat,
         employeeFullName,
+        employeeFullNameFirst,
         photoUrl: employeePortalDetails.photoUrl,
         salaryGradeAmount,
         salaryGrade,
@@ -415,7 +425,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .addSelect('pp._id', 'positionId')
         .addSelect('get_employee_assignment_id(emp._id)', 'id')
         .addSelect('get_employee_assignment(emp._id)', 'name')
-        .addSelect('get_employee_fullname(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
         .addSelect('get_user_role(emp._id)', 'userRole')
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .where('emp.company_id = :_companyId', { _companyId })
@@ -1138,7 +1149,110 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     (
       SELECT employeeId FROM officer_in_charge_view 
       WHERE oicOrgName = 'Human Resource Department' AND oicPosition = 'OIC-Department Manager'
-    )) hrdManagers LIMIT 1;`)
+    )) hrdManagers WHERE employeeId IS NOT NULL;`)
     )[0].employeeId;
+  }
+
+  async getTddManager() {
+    return (
+      await this.entityRepository.query(`
+    SELECT employeeId FROM 
+    ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp 
+      INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
+      INNER JOIN divisions d ON dp.division_id_fk = d._id 
+    WHERE pp.position_title = 'Division Manager A' AND d.name = 'Training and Development Division') 
+    UNION
+    (
+      SELECT employeeId FROM officer_in_charge_view 
+      WHERE oicOrgName = 'Training and Development Division' AND oicPosition = 'OIC-Division Manager'
+    )) hrdManagers WHERE employeeId IS NOT NULL;`)
+    )[0].employeeId;
+  }
+
+  async getGeneralManager() {
+    return (
+      await this.entityRepository.query(`
+    SELECT employeeId FROM 
+    ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp 
+      INNER JOIN office_positions op ON op.position_id_fk = pp._id 
+      INNER JOIN office o ON op.office_id_fk = o._id 
+    WHERE pp.position_title = 'General Manager' AND o.name = 'Office of the General Manager') 
+    UNION
+    (
+      SELECT employeeId FROM officer_in_charge_view 
+      WHERE oicOrgName = 'Office of the General Manager' AND oicPosition = 'OIC-General Manager'
+    )) hrdManagers WHERE employeeId IS NOT NULL;`)
+    )[0].employeeId;
+  }
+
+  /**
+   * @author RV
+   * @description Get Employee list by nature of appointment
+   * @returns array { employeeId: string, fullName: string }[]
+   */
+  async getEmployeesByNatureOfAppointment(natureOfAppointment: NatureOfAppointment) {
+    try {
+      return await this.entityRepository.query(
+        `
+        SELECT distinct employee_id_fk employeeId,get_employee_fullname2(employee_id_fk) fullName 
+          FROM plantilla_positions WHERE nature_of_appointment = ? AND employee_id_fk IS NOT NULL 
+        ORDER BY get_employee_fullname2(employee_id_fk) ASC;`,
+        [natureOfAppointment],
+      );
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  async getEmployeesByNatureOfAppointmentAndEmployeeIdRange(natureOfAppointment: NatureOfAppointment, employeeIds: string[]) {
+    try {
+      return await this.entityRepository.query(
+        `
+        SELECT distinct employee_id_fk employeeId,get_employee_fullname2(employee_id_fk) fullName 
+          FROM plantilla_positions WHERE nature_of_appointment = ? AND employee_id_fk IN (?) AND employee_id_fk IS NOT NULL 
+        ORDER BY get_employee_fullname2(employee_id_fk) ASC;`,
+        [natureOfAppointment, employeeIds],
+      );
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  /**
+   * @author RV
+   * @param includeGm boolean
+   * @description used for getting training certification signatories
+   */
+  async getSignatoriesForTrainingCertification(includeGm: boolean) {
+    const hrdManagerId = await this.getHrdManager();
+    const hrdDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(hrdManagerId);
+
+    const tddManagerId = await this.getTddManager();
+    const tddDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(tddManagerId);
+
+    const gmId = await this.getGeneralManager();
+    const gmDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(gmId);
+
+    console.log(tddDetails, gmDetails, hrdDetails);
+
+    return {
+      tddMgr: {
+        name: tddDetails.employeeFullName,
+        signature: tddDetails.signatureUrl,
+        position: tddDetails.assignment.positionTitle === 'OIC-Division Manager' ? 'Acting Division Manager' : tddDetails.assignment.positionTitle,
+      },
+      hrdMgr: {
+        name: hrdDetails.employeeFullName,
+        signature: hrdDetails.signatureUrl,
+        position: hrdDetails.assignment.positionTitle === 'OIC-Department Manager' ? 'Acting Department Manager' : hrdDetails.assignment.positionTitle,
+      },
+      gm: includeGm
+        ? {
+            name: gmDetails.employeeFullName,
+            signature: hrdDetails.signatureUrl,
+            position: gmDetails.assignment.positionTitle === 'OIC-General Manager' ? 'Acting General Manager' : gmDetails.assignment.positionTitle,
+          }
+        : null,
+    };
   }
 }
