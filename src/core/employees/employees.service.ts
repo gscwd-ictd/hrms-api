@@ -284,6 +284,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .getRawOne();
 
       const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
       const { id, name, userId, employeeFullName, employeeFullNameFirst, companyId, positionId, positionTitle, isHRMPSB, userRole, signatureUrl } = empPosition;
@@ -344,6 +345,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .getRawOne();
 
       const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole, employeeFullNameFirst } = empPosition;

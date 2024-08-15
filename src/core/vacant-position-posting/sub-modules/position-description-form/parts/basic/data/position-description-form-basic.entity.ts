@@ -29,11 +29,8 @@ export class PositionDescriptionFormBasic extends PositionDescriptionForm {
   @Column({ name: 'employment_period_to', nullable: true })
   employmentPeriodTo: Date;
 
-  @Column({ name: 'directly_supervised', nullable: true })
+  @Column({ name: 'directly_supervised', type: 'json', nullable: true })
   directlySupervised: string;
-
-  @Column({ name: 'directly_supervised_item_numbers', nullable: true })
-  directlySupervisedItemNumbers: string;
 
   @Column({ name: 'publication_mode', type: 'enum', enum: PublicationMode, nullable: false })
   publicationMode: PublicationMode;

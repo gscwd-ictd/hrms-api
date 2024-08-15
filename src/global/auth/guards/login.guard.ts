@@ -22,6 +22,7 @@ export class LogInGuard {
       console.log(request);
       request.bearerToken = user.accessToken;
       request.session.user = userFromLocal;
+
       request.userId = userFromLocal._id;
       return true;
     }

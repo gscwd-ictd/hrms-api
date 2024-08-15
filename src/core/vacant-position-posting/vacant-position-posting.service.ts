@@ -216,6 +216,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .addSelect('pp.position_title', 'positionTitle')
         .addSelect('get_plantilla_salary_grade(pp._id)', 'salaryGrade')
         .addSelect(`vp.declined_schedule`, 'declinedSchedule')
+        .addSelect(`get_position_assignment(pp._id)`, 'assignment')
         .innerJoin('vpp_psb', 'vp', 'vp.vacant_position_posting_id_fk = vpp._id')
         .innerJoin('vpp_schedule', 'vs', 'vs.vacant_position_posting_id_fk = vpp._id')
         .innerJoin('vpp_positions', 'vppp', 'vpp._id=vppp.vacant_position_posting_id_fk')
@@ -255,7 +256,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         itemNumber, numberOfPositions, salaryGradeLevel, salaryGrade, annualSalary,
         education, training, eligibility, experience, placeOfAssignment,occupationName, 
         prfNo, prfId, withExam, postingStatus FROM vacant_position_posting_view vppv
-       WHERE vppv.postingStatus = 'Appointing authority selection';
+        WHERE vppv.postingStatus = 'Appointing authority selection';
     `,
     );
     //console.table(publication);
