@@ -294,4 +294,19 @@ export class EmployeesMsController {
   async getHrdManager() {
     return await this.employeesService.getHrdManager();
   }
+
+  @MessagePattern('get_training_signatories')
+  async getTrainingSignatories(@Payload() includeGm: boolean) {
+    return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+  }
+
+  @MessagePattern('get_employees_by_nature_of_appointment')
+  async getEmployeesByNatureOfAppointment(@Payload() natureOfAppointment: NatureOfAppointment) {
+    return await this.employeesService.getEmployeesByNatureOfAppointment(natureOfAppointment);
+  }
+
+  @MessagePattern('get_employees_by_nature_of_appointment_and_employee_ids')
+  async getEmployeesByNatureOfAppointmentAndEmployeeIds(@Payload() data: { natureOfAppointment: NatureOfAppointment; employeeIds: string[] }) {
+    return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeIdRange(data.natureOfAppointment, data.employeeIds);
+  }
 }

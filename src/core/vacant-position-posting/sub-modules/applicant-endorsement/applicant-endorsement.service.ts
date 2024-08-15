@@ -388,18 +388,21 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         hprv.psbDate, 
         hprv.selected,positionId;`,
       );
-    } catch (error) {}
+    } catch (error) {
+      console.log('here');
+    }
   }
 
   async getHiringProcessResults(effectivityDate?: Date) {
     try {
-      if (effectivityDate.toString() === 'Invalid Date') {
+      console.log(effectivityDate);
+      if (typeof effectivityDate === 'undefined') {
         return await this.getHiringProcessResults12MonthRange();
       } else {
         return await this.getHiringProcessByEffectivityDate(effectivityDate);
       }
     } catch (error) {
-      throw new HttpException(error, 500);
+      throw new HttpException(error.message, 500);
     }
   }
 }

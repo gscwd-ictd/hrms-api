@@ -1,12 +1,15 @@
 import { CertifiedOfAppointmentDto, PositionDescriptionFormBasicDTO } from './../parts/basic/data/position-description-form-basic.dto';
 import { PositionDescriptionFormWorkingConditionDTO } from '../parts/working-condition/data/working-condition.dto';
 import { PositionDescriptionFormTypeContacts } from '../utils/types/position-description-form.type';
-import { IsBoolean, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { AppointmentType, PublicationMode, Supervisor, WorkStation } from '../utils/enums/position-description-form.enum';
+import { Type } from 'class-transformer';
 
 export class PositionDescriptionFormDTO {
-  @IsNotEmpty({ message: 'Basic should not be empty.' })
-  @IsObject({ message: 'Basic must be an object.' })
+  //@IsNotEmptyObject()
+  /*@IsObject()*/
+  @ValidateNested()
+  @Type(() => PositionDescriptionFormBasicDTO)
   basic: PositionDescriptionFormBasicDTO;
 
   @IsNotEmpty({ message: 'Working condition should not be empty.' })
