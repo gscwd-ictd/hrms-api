@@ -148,6 +148,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           //console.log('employee details', employeeDetails);
           const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
           //console.log('supervisor supervisor', supervisorDetails);
+          const hrdDetails = await this.getEmployeeDetailsByEmployeeId(await this.getHrdManager());
           return {
             employee: {
               _id: employeeDetails.userId,
@@ -156,10 +157,22 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
               assignment: employeeDetails.assignment.name,
             },
             supervisor: {
-              _id: supervisorDetails.userId,
-              name: supervisorDetails.employeeFullName,
-              positionTitle: supervisorDetails.assignment.positionTitle,
-              assignment: supervisorDetails.assignment.name,
+              _id:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.userId
+                  : supervisorDetails.userId,
+              name:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.employeeFullName
+                  : supervisorDetails.employeeFullName,
+              positionTitle:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.positionTitle
+                  : supervisorDetails.assignment.positionTitle,
+              assignment:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.name
+                  : supervisorDetails.assignment.name,
             },
           };
         }),
@@ -167,7 +180,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       return employees;
     } catch (error) {
-      console.log('asd zxc', error);
       throw new error(error);
     }
   }
@@ -318,6 +330,45 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
         scheduleBase: employeeSchedule.schedule.scheduleBase,
+        userRole,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.status, error.message);
+    }
+  }
+
+  async getBasicEmployeeDetailsByEmployeeId(employeeId: string) {
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp._id = :employeeId', { employeeId })
+        .getRawOne();
+
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+
+      return {
+        userId,
+        companyId,
+        employeeFullName,
+        employeeFullNameFirst,
+        photoUrl: employeePortalDetails.photoUrl,
+        assignment: { id, name, positionId, positionTitle },
+        orgStruct: { officeName, divisionName, departmentName },
         userRole,
       };
     } catch (error) {
