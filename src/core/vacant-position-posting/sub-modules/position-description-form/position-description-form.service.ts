@@ -153,9 +153,9 @@ export class PositionDescriptionFormService {
       const requestingEntity = (
         await this.positionDescriptionFormBasic.entityRepository.query(
           `
-        SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_employee_position_or_oic(vppp.employee_id_fk) positionTitle FROM vpp_psb vppp 
-        INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
-        AND pa._id = ? AND vppp.psb_no = 2;
+          SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_position_title_for_documents(get_employee_position_or_oic(vppp.employee_id_fk)) positionTitle FROM vpp_psb vppp 
+                INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
+          AND pa._id = ? AND vppp.psb_no = 2;
         `,
           [postingApplicantId],
         )
