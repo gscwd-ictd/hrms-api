@@ -73,6 +73,16 @@ export class EmployeesMsController {
     }
   }
 
+  @MessagePattern('get_basic_employee_details')
+  async getBasicEmployeeDetails(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getBasicEmployeeDetailsByEmployeeId(employeeId);
+    } catch (error) {
+      console.log(error);
+      throw new RpcException('Employee not found');
+    }
+  }
+
   @MessagePattern('get_employee_details')
   async getEmployeeDetailsByEmployeeId(@Payload() employeeId: string) {
     try {
