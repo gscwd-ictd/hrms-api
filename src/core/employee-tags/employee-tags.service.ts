@@ -44,8 +44,8 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
           get_employee_position_or_oic(emp._id) positionTitle,
           emp._id employeeId,
           get_employee_fullname2(emp._id) employeeFullName, 
-          get_employee_supervisor(emp._id) supervisorId, 
-          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+          get_employee_supervisor_without_bod(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor_without_bod(emp._id)) supervisorName FROM employees emp 
          INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo;
         `,
         [tagIds],
@@ -61,13 +61,13 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
           get_employee_position_or_oic(emp._id) positionTitle,
           emp._id employeeId,
           get_employee_fullname2(emp._id) employeeFullName, 
-          get_employee_supervisor(emp._id) supervisorId, 
-          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+          get_employee_supervisor_without_bod(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor_without_bod(emp._id)) supervisorName FROM employees emp 
          INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo WHERE supervisorInfo.supervisorId = ?;
          `,
             [tagIds, supervisorId],
           );
-
+          console.log({ supervisor: { supervisorId: supervisorId, name: supervisorName }, employees });
           return { supervisor: { supervisorId: supervisorId, name: supervisorName }, employees };
         }),
       );
