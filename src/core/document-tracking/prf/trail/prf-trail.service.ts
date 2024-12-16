@@ -389,7 +389,6 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         }
       }
     } catch (error) {
-      console.log('ASDASDASDASDSADSADSAD', error);
       throw new HttpException(error.message, error.status);
     }
   }

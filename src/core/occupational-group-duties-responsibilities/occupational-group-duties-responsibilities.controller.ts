@@ -4,7 +4,7 @@ import { OccupationalGroupDutiesResponsibilitiesService } from './occupational-g
 
 @Controller('occupational-group-duties-responsibilities')
 export class OccupationalGroupDutiesResponsibilitiesController {
-  constructor(private readonly ogdrService: OccupationalGroupDutiesResponsibilitiesService) {}
+  constructor(private readonly ogdrService: OccupationalGroupDutiesResponsibilitiesService) { }
 
   @Post()
   async createOgdr(@Body() ogdr: OgdrDto) {
@@ -13,7 +13,6 @@ export class OccupationalGroupDutiesResponsibilitiesController {
 
   @Patch(':emp_id/:position_id')
   async updateDRPercentagePerPosition(@Param('position_id') positionId: string, @Body() ogdrDTO: UpdateOgdrDto) {
-    console.log('test');
     return await this.ogdrService.updateDRPercentagePerPosition(positionId, ogdrDTO);
   }
 

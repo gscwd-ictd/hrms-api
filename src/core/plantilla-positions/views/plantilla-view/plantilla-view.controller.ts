@@ -1,20 +1,18 @@
-import { Controller, Get, HttpException, HttpStatus, Param, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus, Param, UseGuards, Headers, NotFoundException } from '@nestjs/common';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { PlantillaViewService } from './plantilla-view.service';
 
 @Controller('plantilla')
 export class PlantillaViewController {
-  constructor(private readonly plantillaViewService: PlantillaViewService) {}
+  constructor(private readonly plantillaViewService: PlantillaViewService) { }
 
   @Get('/')
   async findAllPermanentPlantillaPositions(@Headers('Authorization') auth: string) {
-    //console.log(auth);
     return await this.plantillaViewService.findAllPermanentPlantillaPositions();
   }
 
   @Get('/casual/')
   async findAllCasualPlantillaPositions(@Headers('Authorization') auth: string) {
-    //console.log(auth);
     return await this.plantillaViewService.entityRepository.find({ where: { natureOfAppointment: NatureOfAppointment.CASUAL } });
   }
 
@@ -46,6 +44,8 @@ export class PlantillaViewController {
     try {
       const jobDescription = await this.plantillaViewService.getJD(positionId);
       return jobDescription;
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }

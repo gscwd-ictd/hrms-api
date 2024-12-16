@@ -1,27 +1,44 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { EmployeeDTO } from './data/dtos/employee.dto';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
+import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter';
 
+@UseFilters(new MsExceptionFilter())
 @Controller('')
 export class EmployeesMsController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @MessagePattern('get_employee_under_supervisor')
   async getEmployeesUnderSupervisorMS(employeeId: string) {
-    return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
+    try {
+      return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_employees_by_name_match')
   async getEmployeesByNameMatchMS(@Payload() name: string) {
-    if (name === null || name === undefined) return await this.employeesService.getAllEmployeeNames();
-    return await this.employeesService.getEmployeesByNameMatch(name);
+    try {
+      if (name === null || name === undefined) return await this.employeesService.getAllEmployeeNames();
+      return await this.employeesService.getEmployeesByNameMatch(name);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern({ msg: 'find_all_employees' })
   async getAllEmployees() {
-    return await this.employeesService.findEntityAll();
+    try {
+      return await this.employeesService.findEntityAll();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('find_employee_by_id_lnd')
@@ -29,8 +46,7 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getEmployeeByIdForLND(employeeId);
     } catch (error) {
-      console.log(error);
-      throw new RpcException(error);
+      throw new RpcException(error.message);
     }
   }
 
@@ -39,29 +55,49 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getEmployeesForLND();
     } catch (error) {
-      console.log(error);
       throw new RpcException(error);
     }
   }
 
   @MessagePattern('find_all_employees_test')
   async getAllEmployeesTest() {
-    return await this.employeesService.findEntityAll();
+    try {
+      return await this.employeesService.findEntityAll();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_employees_by_org_id')
   async getEmployeesByOrgId(@Payload() orgId: string) {
-    return await this.employeesService.getEmployeesByOrgId(orgId);
+    try {
+      return await this.employeesService.getEmployeesByOrgId(orgId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employees_with_managers_by_org_id')
   async getEmployeesByOrgIdWithManagers(@Payload() orgId: string) {
-    return await this.employeesService.getEmployeesByOrgIdWithManagers(orgId);
+    try {
+      return await this.employeesService.getEmployeesByOrgIdWithManagers(orgId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_employees_by_org_id_alone')
   async getEmployeesByOrgIdAloneMS(orgId: string) {
-    return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+    try {
+      return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern({ msg: 'find_employee' })
@@ -78,7 +114,6 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getBasicEmployeeDetailsByEmployeeId(employeeId);
     } catch (error) {
-      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -88,7 +123,6 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getEmployeeDetailsByEmployeeId(employeeId);
     } catch (error) {
-      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -98,7 +132,6 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getEmployeeDetailsWithSignatureByEmployeeId(employeeId);
     } catch (error) {
-      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -115,7 +148,6 @@ export class EmployeesMsController {
   @MessagePattern({ msg: 'get_employee_name' })
   async getEmployeeNameById(_id: string) {
     try {
-      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
       throw new RpcException('Employee not found');
@@ -134,77 +166,147 @@ export class EmployeesMsController {
   @MessagePattern('get_employee_name')
   async getEmployeeNameByIdEmpMonitoring(@Payload() _id: string) {
     try {
-      console.log(_id);
       return await this.employeesService.getEmployeeNameById(_id);
     } catch (error) {
-      console.log('asd');
       throw new RpcException('Employee not found');
     }
   }
 
   @MessagePattern('get_employee_supervisor_names')
   async getEmployeeNameByIdForEmpMonitoring(ids: { employeeId: string; supervisorId: string }) {
-    return await this.employeesService.getEmployeeNameByIdForEmpMonitoring(ids);
+    try {
+      return await this.employeesService.getEmployeeNameByIdForEmpMonitoring(ids);
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('create_employee')
   async addEmployee(employeeDto: EmployeeDTO) {
-    return await this.employeesService.saveEntity(employeeDto);
+    try {
+      return await this.employeesService.saveEntity(employeeDto);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('update_employee')
   async updateEmployee(employeeDto: EmployeeDTO) {
-    return await this.employeesService.updateEntity(employeeDto);
+    try {
+      return await this.employeesService.updateEntity(employeeDto);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('delete_employee')
   async removeEmployee(_id: string) {
-    return await this.employeesService.removeEntity(_id);
+    try {
+      return await this.employeesService.removeEntity(_id);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_all_assignable_permanent_casual_employees')
   async getAllAssignablePermanentCasualEmployees(@Payload() employeeIds: string[]) {
-    return await this.employeesService.getAllAssignablePermanentCasualEmployees(employeeIds);
+    try {
+      return await this.employeesService.getAllAssignablePermanentCasualEmployees(employeeIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_all_permanent_casual_employees')
   async getAllPermanentCasualEmployeesMS() {
-    return await this.employeesService.getAllPermanentCasualEmployees();
+    try {
+      return await this.employeesService.getAllPermanentCasualEmployees();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_all_assignable_supervisory_employees')
   async getAllAssignableSupervisoryEmployees() {
-    return await this.employeesService.getAllAssignableSupervisoryEmployees();
+    try {
+      return await this.employeesService.getAllAssignableSupervisoryEmployees();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_all_assignable_supervisory_employees_by_id')
   async getAllAssignableSupervisoryEmployeesByEmployeeId(@Payload() employeeId: string) {
-    return await this.employeesService.getAllAssignableSupervisorEmployeesByEmployeeId(employeeId);
+    try {
+      return await this.employeesService.getAllAssignableSupervisorEmployeesByEmployeeId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_all_permanent_casual_employees2')
   async getAllPermanentCasualEmployees2MS() {
-    return await this.employeesService.getAllPermanentCasualEmployees2();
+    try {
+      return await this.employeesService.getAllPermanentCasualEmployees2();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisorMs(@Payload() employeeId: string) {
-    return await this.employeesService.getEmployeeSupervisor(employeeId);
+    try {
+      return await this.employeesService.getEmployeeSupervisor(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_all_employees_with_supervisor')
   async getAllEmployeesWithSupervisorMs() {
-    return await this.employeesService.getAllEmployeesWithSupervisor();
+    try {
+      return await this.employeesService.getAllEmployeesWithSupervisor();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employee_with_supervisor')
   async getEmployeeWithSupervisorMs(@Payload() employeeId: string) {
-    return await this.employeesService.getEmployeeWithSupervisor(employeeId);
+    try {
+      return await this.employeesService.getEmployeeWithSupervisor(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_company_id_by_employee_id')
   async getCompanyIdByEmployeeIdMs(@Payload() employeeId: string) {
-    return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
+    try {
+      return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employees_for_population')
@@ -216,107 +318,219 @@ export class EmployeesMsController {
       FROM employees INNER JOIN plantilla_positions pp ON pp.employee_id_fk = employees._id WHERE DATE_FORMAT(employees.created_at,'%Y-%m-%d') =  DATE_FORMAT(now(),'%Y-%m-%d')  AND employees.company_id IS NOT NULL ORDER BY last_name ASC;
           `);
     } catch (error) {
-      console.log(error);
+      throw new RpcException(error.message);
     }
   }
 
   @MessagePattern('get_salary_grade_or_daily_rate_by_employee_id')
   async getSalaryGradeIdOrDailyRateByEmployeeId(@Payload() employeeId: string) {
-    return await this.employeesService.getSalaryGradeIdOrDailyRateByEmployeeId(employeeId);
+    try {
+      return await this.employeesService.getSalaryGradeIdOrDailyRateByEmployeeId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employee_details_by_company_id')
   async getEmployeeDetailsByCompanyIdMS(@Payload() companyId: string) {
-    return await this.employeesService.getEmployeeDetailByCompanyIdMS(companyId);
+    try {
+      return await this.employeesService.getEmployeeDetailByCompanyIdMS(companyId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_custom_group_assigned_member')
   async getCustomGroupAssignedMember(@Payload() employeeIds: string[]) {
-    return await this.employeesService.getCustomGroupsAssignedMember(employeeIds);
+    try {
+      return await this.employeesService.getCustomGroupsAssignedMember(employeeIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_custom_group_unassigned_rank_file_member')
   async getCustomGroupUnassignedRankFileMember(@Payload() employeeIds: string[]) {
-    return await this.employeesService.getCustomGroupsUnassignedRankFileMember(employeeIds);
+    try {
+      return await this.employeesService.getCustomGroupsUnassignedRankFileMember(employeeIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_custom_group_unassigned_job_order_cos_member')
   async getCustomGroupUnassignedJobOrderCOSMember(@Payload() employeeIds: string[]) {
-    return await this.employeesService.getCustomGroupsUnassignedJobOrderCOSMember(employeeIds);
+    try {
+      return await this.employeesService.getCustomGroupsUnassignedJobOrderCOSMember(employeeIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_all_managers')
   async getAllManagers() {
-    return await this.employeesService.getAllManagers();
+    try {
+      return await this.employeesService.getAllManagers();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_all_managers_for_lnd')
   async getAllManagersForLnd() {
-    return await this.employeesService.getAllManagersForLnd();
+    try {
+      return await this.employeesService.getAllManagersForLnd();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_employees_under_manager')
   async getEmployeesUnderManager(@Payload() employeeId: string) {
-    return await this.employeesService.getSubordinates(employeeId);
+    try {
+      return await this.employeesService.getSubordinates(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_monthly_hourly_rate_by_employee_id')
   async getMonthHourlyRateByEmployeeId(@Payload() employeeId: string) {
-    return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
+    try {
+      return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employee_nature_of_appointment')
   async getEmployeeNatureOfAppointment(@Payload() employeeId: string) {
-    return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
+    try {
+      return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_subordinates_with_company_id')
   async getSubordinatesWithCompanyId(@Payload() employeeId: string) {
-    return await this.employeesService.getSubordinatesWithCompanyId(employeeId);
+    try {
+      return await this.employeesService.getSubordinatesWithCompanyId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('is_general_manager_or_oic')
   async isGeneralManager(@Payload() employeeId: string) {
-    return await this.employeesService.isGeneralManager(employeeId);
+    try {
+      return await this.employeesService.isGeneralManager(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_company_ids_by_org_id')
   async getCompanyIdsByOrgId(@Payload() orgId: string) {
-    return await this.employeesService.getCompanyIdsByOrgId(orgId);
+    try {
+      return await this.employeesService.getCompanyIdsByOrgId(orgId);
+    } catch (error) {
+      throw new RpcException(error.message)
+    }
+
   }
 
   @MessagePattern('get_all_regular_employee_ids')
   async getAllRegularEmployeeIds() {
-    return await this.employeesService.getAllRegularEmployeeIds();
+    try {
+      return await this.employeesService.getAllRegularEmployeeIds();
+    }
+    catch (error) {
+      throw new RpcException(error.message)
+    }
+
   }
 
   @MessagePattern('get_employee_position_by_id')
   async getEmployeePosition(@Payload() employeeId: string) {
-    return await this.employeesService.getEmployeePosition(employeeId);
+    try {
+      return await this.employeesService.getEmployeePosition(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employees_by_nature_of_appointment_employee_id')
   async getAllEmployeesByNatureOfAppointmentAndEmployeeId(@Payload() employeeDetailsFilter: { natureOfAppointment: NatureOfAppointment; employeeId: string }) {
-    return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeId(employeeDetailsFilter.natureOfAppointment, employeeDetailsFilter.employeeId);
+    try {
+      return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeId(employeeDetailsFilter.natureOfAppointment, employeeDetailsFilter.employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_hrd_manager')
   async getHrdManager() {
-    return await this.employeesService.getHrdManager();
+    try {
+      return await this.employeesService.getHrdManager();
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_training_signatories')
   async getTrainingSignatories(@Payload() includeGm: boolean) {
-    return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+    try {
+      return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('get_employees_by_nature_of_appointment')
   async getEmployeesByNatureOfAppointment(@Payload() natureOfAppointment: NatureOfAppointment) {
-    return await this.employeesService.getEmployeesByNatureOfAppointment(natureOfAppointment);
+    try {
+      return await this.employeesService.getEmployeesByNatureOfAppointment(natureOfAppointment);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('get_employees_by_nature_of_appointment_and_employee_ids')
   async getEmployeesByNatureOfAppointmentAndEmployeeIds(@Payload() data: { natureOfAppointment: NatureOfAppointment; employeeIds: string[] }) {
-    return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeIdRange(data.natureOfAppointment, data.employeeIds);
+    try {
+      return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeIdRange(data.natureOfAppointment, data.employeeIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 }

@@ -26,8 +26,6 @@ export class EmailService extends MicroserviceHelper {
   }
 
   async sendEmailForApplicant(email: string, details: ExternalApplicantsDTO, vppId: string) {
-    console.log(email);
-    console.log(details);
     return await this.sendRequest(
       { msg: 'email.applicant.send.message' },
       {

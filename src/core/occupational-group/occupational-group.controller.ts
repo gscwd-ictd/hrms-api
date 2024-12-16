@@ -4,7 +4,7 @@ import { OccupationalGroupService } from './occupational-group.service';
 
 @Controller('occupational-group')
 export class OccupationalGroupController {
-  constructor(private readonly occupationalGroupService: OccupationalGroupService) {}
+  constructor(private readonly occupationalGroupService: OccupationalGroupService) { }
 
   @Post()
   createOccupationalGroupSinglePosition(@Body() occGroupDto: OccupationalGroupDto) {
@@ -36,6 +36,4 @@ export class OccupationalGroupController {
     return await this.occupationalGroupService.getPositionsPerOccupation(occupationId);
   }
 
-  @Get('occupations')
-  async getCompetenciesPerOccupations() {}
 }

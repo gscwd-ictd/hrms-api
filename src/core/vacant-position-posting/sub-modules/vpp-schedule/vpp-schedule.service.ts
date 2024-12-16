@@ -3,6 +3,7 @@ import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service'
 import { Repository } from 'typeorm';
 import { VppScheduleDto } from './data/dtos/vpp-schedule.dto';
 import { VppSchedule } from './data/entities/vpp-schedule.entity';
+import { InternalServerErrorException } from '@nestjs/common';
 
 export class VppScheduleService extends BaseEntityCrudService<VppSchedule> {
   constructor(
@@ -21,10 +22,9 @@ export class VppScheduleService extends BaseEntityCrudService<VppSchedule> {
         status = 'Scheduled for examination';
       }
       const updatePosting = await this.entityRepository.query(`UPDATE vacant_position_posting SET posting_status=? WHERE _id = ?`, [status, vppId]);
-      console.log(updatePosting);
       return schedule;
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -34,7 +34,7 @@ export class VppScheduleService extends BaseEntityCrudService<VppSchedule> {
       const updateResult = await this.entityRepository.createQueryBuilder().update().set({ schedule }).where({ _id }).execute();
       if (updateResult.affected > 0) return { _id, ...vppScheduleDTO };
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

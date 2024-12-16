@@ -312,7 +312,6 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
           remarks: psbMember.remarks,
           examResult: parseFloat(psbMember.examResult),
           interviewed: psbMember.interviewed,
-          //psbMember: { name: psbMember.name, role: psbMember.role, id: psbMember.ID },
           competencies: { coreScores, coreAverage, functionalScores, functionalAverage, managerialScores, managerialAvg, totalAverage },
         };
       }),
@@ -330,7 +329,6 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
 
     const _applicantScores = await Promise.all(applicantsScores.sort((a, b) => (a.competencies.totalAverage > b.competencies.totalAverage ? -1 : 1)));
 
-    console.log(_applicantScores);
     return {
       psbMemberDetails,
       applicantsScores: _applicantScores,
@@ -346,7 +344,7 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
         order: { applicantName2: 'ASC' },
       });
     } catch (error) {
-      throw new HttpException('', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
