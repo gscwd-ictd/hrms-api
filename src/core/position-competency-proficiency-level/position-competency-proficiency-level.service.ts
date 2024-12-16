@@ -87,17 +87,16 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
 
       const addedCompetencies = await Promise.all(
         proficiencyIds.proficiencyIds.map(async (proficiency) => {
-          //check count competencycount if = 4
+
           const countPositionCompetency = await this.countAssignedCompetenciesPerPosition(positionId);
-          //console.log(countPositionCompetency);
+
           if (countPositionCompetency.currentCompetencyCount == '4') throw new HttpException('Four (4) competencies already assigned to this position', HttpStatus.FORBIDDEN);
           return await this.saveEntity({ occupationalGroupId, profId: proficiency });
         }),
       );
       return addedCompetencies;
     } catch (error) {
-      console.log(error.message);
-      throw new HttpException(error, 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -180,7 +179,6 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         functional: functional,
       };
     } catch (error) {
-      Logger.error(error);
       throw new HttpException('Not Found Competencies', HttpStatus.NOT_FOUND);
     }
   }
@@ -206,7 +204,6 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         managerial: await this.getCompetencyPerDomainPerPosition(posId, '13747e8b-8e3c-11ec-ae65-54ab3a99e60e'),
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException('Position not found', 404);
     }
   }
@@ -253,7 +250,6 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
         managerial: [...managerial],
       };
     } catch (error) {
-      console.log('test test', error);
       throw new HttpException('Position not found', 404);
     }
   }
@@ -270,9 +266,6 @@ export class PositionCompetencyProficiencyLevelService extends BaseEntityCrudSer
       //1. count competencies currently assigned to the position
       const countCurrentAssignedCompetencies = this.countAssignedCompetenciesPerPosition(positionId);
       //2. check if count reached 4
-      // if ((countCurrentAssignedCompetencies.currentCompetencyCount = 4)) {
-      //   throw new HttpException('Competencies already set for this positions.', HttpStatus.FORBIDDEN);
-      // }
       const occupationId = (
         await this.competencyService.entityRepository.query('SELECT occupation_id_fk as occupationId FROM occupational_group WHERE position_id_fk = ?', [positionId])
       )[0].occupationId;

@@ -2,7 +2,7 @@ import { PDSBasicPersonalInfoService } from './../applicants/external-applicants
 import { PDSBasicResidentialAddressService } from './../applicants/external-applicants/pds/parts/basic-info/address/pds-basic-residential-address/pds-basic-residential-address.service';
 import { ApplicantEndorsementService } from './../applicant-endorsement/applicant-endorsement.service';
 import { PostingApplicantsDetailedViewService } from './../applicants/data/views/posting-applicants-detailed-view/posting-applicants-detailed-view.service';
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
@@ -114,13 +114,13 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     )) signatory WHERE signatory.fullName IS NOT NULL)
     ;`);
 
-      console.log(signatories);
-
       let approvedByIndex = 1;
       if ((signatories.length = 3)) approvedByIndex = 2;
 
       return { resultsOfHiring, signatories: { certifiedCorrectBy: signatories[0], approvedBy: signatories[2] } };
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   //DOCUMENT: COMPARATIVE EVALUATION OF APPLICANTS PER PSB
@@ -154,7 +154,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { education, training, eligibility, experience } = await this.qualificationStandardsService.getQsByPositionId(positionDetails.positionId);
       return { schedule, positionDetails: { ...positionDetails, qualificationStandards: { education, training, eligibility, experience } }, criteria, applicantsRating };
     } catch (error) {
-      throw new HttpException('Occurred', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -200,13 +200,13 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
         )
       ).length > 0
         ? (
-            await this.entityRepository.query(
-              `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
+          await this.entityRepository.query(
+            `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
         FROM vpp_schedule 
        WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
-              [vppId],
-            )
-          )[0]
+            [vppId],
+          )
+        )[0]
         : { dateOfPanelInterview: null };
 
     const { allPsbSubmitted } = (
@@ -411,7 +411,7 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { employeeDetails, pdsPersonalInfo } = employeeInfo;
       applicantSex = employeeDetails.sex;
       applicantCivilStatus = pdsPersonalInfo.civilStatus;
-      console.log(applicantCivilStatus);
+
     } else {
       const { externalApplicantId } = (
         await this.entityRepository.query('SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id=?', [postingApplicantId])
@@ -421,7 +421,6 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { civilStatus, sex } = applicantDetails;
       applicantSex = sex;
       applicantCivilStatus = civilStatus;
-      console.log(applicantCivilStatus);
     }
     if (applicantSex === 'Female') {
       if (applicantCivilStatus === 'Married' || applicantCivilStatus === 'Widowed') salutation = 'Mrs.';

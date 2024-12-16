@@ -7,13 +7,11 @@ export class InternalApplicantGuard implements CanActivate {
       const { vppId, withRelevantExperience, workExperienceSheet } = request.body;
 
       if (withRelevantExperience) {
-        console.log(workExperienceSheet);
 
         workExperienceSheet.map((workExperienceSheetItem) => {
           const { basic, accomplishments, duties } = workExperienceSheetItem;
-          console.log('test', '', 'test');
+
           if (basic.office.trim() === '' || basic.supervisor.trim() === '' || basic.workExperienceId === '') {
-            console.log('tada');
 
             throw new HttpException('Fields should not be empty.', HttpStatus.NOT_ACCEPTABLE);
           }

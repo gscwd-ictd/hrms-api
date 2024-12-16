@@ -3,7 +3,6 @@ import { RpcError } from 'src/global/auth/utils/types/auth.types';
 import { RpcErrorTitle } from 'src/global/utils/enums/errors/rpc-errors.enum';
 
 export function handleRpcError(error: RpcError) {
-  console.log(error.message);
   switch (error.code) {
     case 'auth_n_01':
       throw new HttpException(RpcErrorTitle.AUTH_N_01, HttpStatus.UNAUTHORIZED);

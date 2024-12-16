@@ -3,7 +3,7 @@ import { GlobalJwtService } from 'src/global/auth/services/global-jwt.service';
 //** run this guard assuming its 2nd or 3rd party and JWT valid */
 @Injectable()
 export class ScopeGuard implements CanActivate {
-  constructor(private readonly jwtService: GlobalJwtService) {}
+  constructor(private readonly jwtService: GlobalJwtService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -16,7 +16,6 @@ export class ScopeGuard implements CanActivate {
 
         if (!verifiedApp) throw new UnauthorizedException();
         //1. decode jwt
-        //console.log(request);
         const jwtScopeKuno = [
           {
             path: '/api/occupations',
@@ -41,7 +40,6 @@ export class ScopeGuard implements CanActivate {
           path: request.route.path,
           method: request.method.toLowerCase(),
         };
-        console.log(requestedResource);
         //3. find if the client app has the scope { method: get, route:  }
         let found = false;
         jwtScopeKuno.map((jwtScopeEl) => {
@@ -49,12 +47,10 @@ export class ScopeGuard implements CanActivate {
         });
         //4. if found, allow access else throw unauthorizedexception error;
         if (!found) {
-          console.log("Out of the client's scope");
           throw new UnauthorizedException();
         }
       } catch (error) {
-        console.log(error);
-        throw new UnauthorizedException();
+        throw new UnauthorizedException(error.message);
       }
     }
     return true;

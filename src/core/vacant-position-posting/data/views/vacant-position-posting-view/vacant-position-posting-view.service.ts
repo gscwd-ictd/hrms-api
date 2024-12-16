@@ -18,15 +18,12 @@ export class VacantPositionPostingViewService extends BaseEntityCrudService<Vaca
 
   async getOpenPostingDetails(vppId: string) {
     try {
-      console.log(vppId);
       const result = await this.entityRepository.findOne({ where: { vppId, postingStatus: 'Open for application' } });
       if (!result) {
         throw new HttpException('Publication not found', 404);
       }
-      console.log(result);
       return result;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, 404);
     }
   }

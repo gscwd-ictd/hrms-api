@@ -50,7 +50,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
         `,
         [tagIds],
       );
-      //console.log(employeesWithTags);
+
       const employees = await Promise.all(
         supervisors.map(async (supervisor) => {
           const { supervisorId, supervisorName } = supervisor;
@@ -67,14 +67,10 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
          `,
             [tagIds, supervisorId],
           );
-          console.log({ supervisor: { supervisorId: supervisorId, name: supervisorName }, employees });
           return { supervisor: { supervisorId: supervisorId, name: supervisorName }, employees };
         }),
       );
-      console.log(employees);
       return employees;
-
-      //return employeesWithTags;
     } catch (error) {
       throw new RpcException(error);
     }
@@ -95,7 +91,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
         `,
         [tagId],
       );
-      //console.log(employeesWithTags);
+
       const employees = await Promise.all(
         supervisors.map(async (supervisor) => {
           const { supervisorId, supervisorName } = supervisor;
@@ -115,10 +111,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
           return { supervisor: { supervisorId, name: supervisorName }, employees };
         }),
       );
-      console.log(employees);
       return employees;
-
-      //return employeesWithTags;
     } catch (error) {
       throw new RpcException(error);
     }
@@ -140,19 +133,15 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
 
   async deleteEmployeeTag(deleteEmployeeTagsDto: DeleteEmployeeTagDto) {
     try {
-      console.log('delete here');
-      console.log(deleteEmployeeTagsDto);
       const { employeeId, tagId } = deleteEmployeeTagsDto;
       const deleteResult = await this.entityRepository.query(`DELETE FROM employee_tags WHERE tag_id_fk =?  AND employee_id_fk=?`, [tagId, employeeId]);
       if (deleteResult.affectedRows > 0) return deleteEmployeeTagsDto;
     } catch (error) {
-      console.log(error);
       throw new RpcException(error);
     }
   }
 
   async getEmployeeByTagId(tagId: string) {
-    //return await this.
     const employeeDetails = await this.entityRepository.query(
       `
         SELECT 
@@ -165,7 +154,6 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
     `,
       [tagId],
     );
-    console.log(employeeDetails);
     return employeeDetails;
   }
 

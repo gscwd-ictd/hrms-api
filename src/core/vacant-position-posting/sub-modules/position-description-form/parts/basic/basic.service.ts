@@ -1,6 +1,6 @@
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PositionDescriptionFormBasic } from './data/position-description-form-basic.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -34,7 +34,7 @@ export class PositionDescriptionFormBasicService extends BaseEntityCrudService<P
 
       return { positionDetails, positionDescriptionFormBasic: rest };
     } catch (error) {
-      console.log(error.message, error.status);
+      throw new NotFoundException(error.message);
     }
   }
 
@@ -46,7 +46,6 @@ export class PositionDescriptionFormBasicService extends BaseEntityCrudService<P
         },
       });
     } catch (error) {
-      Logger.error(error);
       throw new HttpException('Basic info not found.', HttpStatus.NOT_FOUND);
     }
   }

@@ -15,7 +15,7 @@ import { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private emailService: EmailService, private readonly authNService: AuthNService, private readonly usersService: UsersService) {}
+  constructor(private emailService: EmailService, private readonly authNService: AuthNService, private readonly usersService: UsersService) { }
 
   @UseGuards(LogInGuard)
   @Post('login')
@@ -40,19 +40,13 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
-    //console.log('logoutz');
-    //response.setHeader('Set-Cookie', 'ssid_hrms=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT');
     response.setHeader('Set-Cookie', [
       'ssid_hrms=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'userId=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'isSuperUser=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT',
     ]);
-    //response.redirect('http://192.168.137.249:3101/login');
-    // response.setHeader('Set-Cookie', 'isSuperUser=deleted; Max-Age=0; Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT');
-
     return {
       logout: 'success',
     };
-    //response.redirect('http://192.168.137.249:3001/login');
   }
 }

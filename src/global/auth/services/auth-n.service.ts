@@ -1,5 +1,5 @@
 import { session } from 'passport';
-import { ExecutionContext, HttpException, HttpStatus, Inject, Injectable, Req, Request, Res, Response, Session } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Req, Request, Res, Response, Session } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { MicroserviceHelper } from 'src/global/utils/helper/microservice.helper';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
@@ -14,10 +14,6 @@ export class AuthNService extends MicroserviceHelper {
   constructor(@Inject(MicroserviceType.AUTHN) public client: ClientProxy, private readonly jwtService: GlobalJwtService, private readonly superUserService: SuperUserService) {
     super(client);
   }
-
-  // async onApplicationBootstrap() {
-  //   await this.client.connect();
-  // }
 
   async verifyUser(token: string) {
     try {
@@ -35,27 +31,18 @@ export class AuthNService extends MicroserviceHelper {
     try {
       const { email, password, clientId, secret } = data;
       const superUser = await this.superUserService.findSuperUser({ username: email, password, clientId, secret });
-      console.log(superUser, 'loginremote');
       if (superUser) {
         return { isSuperUser: true, ...superUser };
       } else {
-        console.log('standard user');
-        //console.log(await this.sendRequest({ msg: 'oauth_login' }, data));
         const user = await this.sendRequest({ msg: 'oauth_login' }, data);
-
         return user;
       }
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
   async login(data: UserDto) {
     return await this.sendRequest({ msg: 'user.login' }, data);
-  }
-
-  async getSuperUserAccess() {
-    //
-    console.log();
   }
 }

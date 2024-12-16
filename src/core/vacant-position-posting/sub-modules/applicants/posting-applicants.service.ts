@@ -29,7 +29,7 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
     try {
       let applicantField = 'external_applicant_id_fk';
       const { internal, vacantPositionPostingId, applicantStatus, applicantId } = postingApplicantsDTOForUpdate;
-      console.log(applicantStatus);
+
       if (internal === true) applicantField = 'employee_id_fk';
       const executeQuery = await this.entityRepository
         .createQueryBuilder('pa')
@@ -47,7 +47,7 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
 
   async updateApplicantStatus2(postingApplicantId: string, applicantStatusDTO: ApplicantStatusDTO) {
     try {
-      console.log(applicantStatusDTO);
+
       const result = await this.entityRepository
         .createQueryBuilder()
         .update()
@@ -58,8 +58,7 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
         .execute();
       if (result.affected > 0) return applicantStatusDTO;
     } catch (error) {
-      console.log(error);
-      throw new HttpException('Error', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -78,7 +77,7 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
       );
       return result;
     } catch (error) {
-      throw new HttpException('error', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -90,7 +89,9 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
         applicantStatus: ApplicantStatus.FOR_REVIEW,
         examScore: 0,
       });
-    } catch (error) {}
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
   }
 
   async addInternalApplicant(vppId: string, employeeId: string, addEmployeePostingApplicantDTO: AddEmployeePostingApplicantDTO) {
@@ -104,8 +105,6 @@ export class ApplicantsService extends BaseEntityCrudService<PostingApplicants> 
         withRelevantExperience,
       });
       const payload = { postingApplicantId: internalApplicant._id, workExperienceSheetAddDTO: { workExperienceSheet, vppId } };
-      console.log('PAYLOAD ========================================== PAYLOAD ', payload);
-      console.log(withRelevantExperience);
       if (withRelevantExperience) {
         const workExperienceSheetResult = await lastValueFrom(this.client.send({ msg: 'add_employee_work_experience_sheet' }, payload));
         return { internalApplicant, workExperienceSheetResult };

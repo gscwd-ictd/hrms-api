@@ -3,10 +3,10 @@ import { HiringProcessResultsService } from './data/views/hiring-process-results
 import { ApplicantEndorsementDTO } from './data/applicant-endorsement.dto';
 import { ApplicantStatus } from './../applicants/utils/enums/applicant-status.enum';
 import { PostingApplicantsDetailedViewService } from './../applicants/data/views/posting-applicants-detailed-view/posting-applicants-detailed-view.service';
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { BaseEntity, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ApplicantEndorsement } from './data/applicant-endorsement.entity';
 import { ApplicantEndorsementStatus } from './utils/types/applicant-endorsement.enum';
 import { getDateTimeNow } from 'src/global/utils/helper/date.helper';
@@ -53,7 +53,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         [vppId],
       );
       return allApplicants;
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getQualifiedApplicants(vppId: string) {
@@ -81,7 +83,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         },
         postingApplicants,
       };
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async addEndorsedApplicants(vppId: string) {
@@ -110,7 +114,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
   }
 
   async selectApplicants(vppId: string, applicantEndorsementDTO: ApplicantEndorsementDTO) {
-    console.log(applicantEndorsementDTO);
+
     const requestingEntitySelection = await Promise.all(
       applicantEndorsementDTO.postingApplicantIds.map(async (selection) => {
         const updateResult = await this.updateEndorsementStatus(selection, ApplicantEndorsementStatus.SELECTED_BY_REQUESTING_ENTITY);
@@ -141,7 +145,6 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         .getRawMany();
       return selectedApplicants;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, 500);
     }
   }
@@ -154,7 +157,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
       else if (status === ApplicantEndorsementStatus.SELECTED_BY_APPOINTING_AUTHORITY)
         return await this.entityRepository.createQueryBuilder().update().set({ status, appointingAuthoritySelectionDate: dateTimeNow }).where({ postingApplicantId }).execute();
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -180,7 +183,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
       );
       if (appointingAuthoritySelectionList.length > 0) return appointingAuthoritySelectionList;
       return [{ postingApplicantId: null, name: null }];
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   private async getApplicantName(postingApplicantId: string) {
@@ -195,7 +200,6 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
   }
 
   async getAllPublicationsUnderRequestingEntity(employeeId: string) {
-    //
     try {
       return await this.entityRepository.query(
         ` 
@@ -224,7 +228,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     `,
         [employeeId],
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAllPublicationsUnderRequestingEntityByEndorsementStatus(employeeId: string, applicantEndorsementStatus: ApplicantEndorsementStatus, postingStatus: PostingStatus) {
@@ -256,7 +262,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     `,
         [employeeId, applicantEndorsementStatus, postingStatus],
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAppointingAuthoritySelectionCount() {
@@ -271,9 +279,10 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
       WHERE vpppv.postingStatus = 'Appointing authority selection';
       `)
       )[0].appointingAuthoritySelectionCount;
-      console.log(result);
       return parseInt(result);
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAllPublicationsUnderAppointingAuthority() {
@@ -305,7 +314,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
           WHERE vpppv.postingStatus = 'Appointing authority selection';
     `,
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAllPublicationsUnderAppointingAuthorityByEndorsementStatus(applicantEndorsementStatus: ApplicantEndorsementStatus, postingStatus: PostingStatus) {
@@ -338,7 +349,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     `,
         [applicantEndorsementStatus, postingStatus],
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getHiringProcessByEffectivityDate(effectivityDate: Date) {
@@ -364,7 +377,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
          hprv.selected,positionId;`,
         [effectivityDate],
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
   async getHiringProcessResults12MonthRange() {
     try {
@@ -389,13 +404,12 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         hprv.selected,positionId;`,
       );
     } catch (error) {
-      console.log('here');
+      throw new NotFoundException(error.message);
     }
   }
 
   async getHiringProcessResults(effectivityDate?: Date) {
     try {
-      console.log(effectivityDate);
       if (typeof effectivityDate === 'undefined') {
         return await this.getHiringProcessResults12MonthRange();
       } else {

@@ -73,14 +73,12 @@ export class PDSService {
     private pdsReferencesService: PDSReferencesService,
     private pdsGovernmentIssuedIdService: PDSGovernmentIssuedIdService,
     private workExperienceSheetService: WorkExperienceSheetService, //#endregion services
-  ) {}
+  ) { }
 
   async updatePDS(externalApplicantId: string, pdsDTO: PdsDTOUpdate) {
     try {
       await getManager().transaction(async (transactionEntityManager) => {
         //#region Basic
-        console.log('plakkkkkk ');
-        console.log(pdsDTO);
         const { email, firstName, lastName, middleName, mobileNumber, nameExtension, ...restPersonal } = pdsDTO.personalInfo;
         const { brgyCode, cityCode, provCode, ...restPermanentAddress } = pdsDTO.permanentAddress;
 
@@ -110,7 +108,6 @@ export class PDSService {
           .execute();
         //#endregion
 
-        console.log('plakkkkkk 2');
         //#region Family
         await transactionEntityManager.getRepository(PDSFamilySpouse).createQueryBuilder().update().set(pdsDTO.spouse).where({ externalApplicantId }).execute();
         await transactionEntityManager.getRepository(PDSFamilyParents).createQueryBuilder().update().set(pdsDTO.parents).where({ externalApplicantId }).execute();
@@ -172,8 +169,7 @@ export class PDSService {
         //#endregion
       });
     } catch (error) {
-      console.log(error);
-      throw new HttpException('An error has occured', 500);
+      throw new HttpException(error.message, 500);
     }
   }
   async savePDS(externalApplicantId: string, pdsDTO: PdsDTO) {
@@ -380,8 +376,7 @@ export class PDSService {
         ...otherInformation,
       };
     } catch (error) {
-      console.log(error.message);
-      throw new HttpException('Error saving PDS.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -399,7 +394,6 @@ export class PDSService {
     const externalApplicantId = (
       await this.pdsBasicPersonalInfoService.entityRepository.query(`SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id = ?`, [applicantId])
     )[0].externalApplicantId;
-    console.log(externalApplicantId);
     const pds = await this.getPDSEmp(externalApplicantId);
     const workExperienceSheet = await this.workExperienceSheetService.getWorkExperienceSheet(applicantId);
     return { ...pds, workExperienceSheet };

@@ -7,7 +7,7 @@ import { SalaryGrade } from '../salary-grade/data/entities/salary-grade.entity';
 
 @Controller('employees')
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @Get('/name/')
   async getEmployeesByNameMatch(@Query('value') name: string) {
@@ -75,7 +75,6 @@ export class EmployeesController {
     try {
       return await this.employeesService.getEmployeeDetails(_id);
     } catch (error) {
-      console.log(error);
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
     }
   }
@@ -88,11 +87,6 @@ export class EmployeesController {
   @Get('company-id/:company_id')
   async getEmployeeDetailsByCompanyId(@Param('company_id') companyId: string) {
     return await this.employeesService.getEmployeeDetailByCompanyId(companyId);
-  }
-
-  @Get(':id/test/test')
-  async getEmployeeDetails(@Param('id') _id: string) {
-    return await this.employeesService.getEmployeeDetails(_id);
   }
 
   @Get('supervisors/:employee_id/subordinates')
@@ -167,11 +161,5 @@ export class EmployeesController {
       salaryGrade,
       stepIncrement,
     });
-  }
-
-  @Get('reports/detailed/asd/asd/asd/asd')
-  async getTestTest() {
-    console.log('asd asd asd');
-    return await this.employeesService.getSignatoriesForTrainingCertification(true);
   }
 }

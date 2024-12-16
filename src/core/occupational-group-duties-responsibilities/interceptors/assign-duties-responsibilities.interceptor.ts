@@ -8,7 +8,7 @@ import { OccupationalGroupDutiesResponsibilitiesType } from '../utils/occupation
 
 @Injectable()
 export class AssignDutiesResponsibilitiesInterceptor implements NestInterceptor {
-  constructor(@InjectRepository(OccupationalGroupDutiesResponsibilities) private ogdrRepository: Repository<OccupationalGroupDutiesResponsibilities>) {}
+  constructor(@InjectRepository(OccupationalGroupDutiesResponsibilities) private ogdrRepository: Repository<OccupationalGroupDutiesResponsibilities>) { }
   async intercept(context: ExecutionContext, next: CallHandler<any>) {
     const request = context.switchToHttp().getRequest();
 
@@ -19,7 +19,6 @@ export class AssignDutiesResponsibilitiesInterceptor implements NestInterceptor 
     const core = await Promise.all(
       request.body.core.map(async (ogdr: OccupationalGroupDutiesResponsibilitiesType) => {
         const occupationId = await this.ogdrRepository.query(`SELECT occupation_id_fk FROM occupations_duties_responsibilities WHERE _id=?`, [ogdr.odrId]);
-        console.log(occupationId);
         //duty and responsibility must only be on the position's occupation;
         if (occupationId[0].occupation_id_fk !== og[0].occupation_id_fk) throw new HttpException('Occupation does not match', 403);
         //d&r must not be added if it already exists in the position;
@@ -58,7 +57,6 @@ export class AssignDutiesResponsibilitiesInterceptor implements NestInterceptor 
     );
     //position must only be under the managers orgstruct;
     const { isUnderManager } = (await this.ogdrRepository.query(`SELECT is_under_manager(?,?) isUnderManager`, [empPositionId, positionId]))[0];
-    console.log(isUnderManager);
 
     if (isUnderManager < 1) throw new HttpException('Position not is not under manager.', 403);
 

@@ -15,11 +15,9 @@ export class SuperUserService extends BaseEntityCrudService<SuperUser> {
     try {
       const { username, password } = superUserDto;
       const superUser = await this.superUserRepository.findOne({ where: { username, password } });
-      //console.log(superUser, 'asd');
       if (!superUser) return null;
       return superUser;
     } catch (error) {
-      console.log(error);
       return null;
     }
   }
