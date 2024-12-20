@@ -6,6 +6,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   SELECT _id,
     employee_id_fk employeeId,
     get_employee_fullname(employee_id_fk) employeeFullName,
+    get_employee_fullname2(employee_id_fk) employeeFullName2,
     get_org_name_by_org_position_id(COALESCE(oic.office_positions_id_fk, oic.department_positions_id_fk, oic.division_positions_id_fk)) oicOrgName,
     COALESCE(oic.office_positions_id_fk, oic.department_positions_id_fk, oic.division_positions_id_fk) orgPositionId,
     get_role_by_org_position_id(COALESCE(oic.office_positions_id_fk, oic.department_positions_id_fk, oic.division_positions_id_fk)) oicPosition,
@@ -23,6 +24,9 @@ export class OfficerInChargeView {
 
   @ViewColumn()
   employeeFullName: string;
+
+  @ViewColumn()
+  employeeFullName2: string;
 
   @ViewColumn()
   oicOrgName: string;
