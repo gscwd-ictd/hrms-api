@@ -304,6 +304,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
 
+      const dailyRate = salaryGradeDetails.dailyRate;
+
       return {
         userId,
         companyId,
@@ -317,6 +319,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         salaryGrade,
         salaryGradeLevel,
         salaryGradeStepIncrement,
+        dailyRate,
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
@@ -324,9 +327,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      throw new HttpException(error.status, error.message);
+      console.log(error);
+      throw new HttpException(error.message, error.status);
     }
   }
+
 
   async getBasicEmployeeDetailsByEmployeeId(employeeId: string) {
     try {
@@ -362,6 +367,47 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
+      throw new HttpException(error.status, error.message);
+    }
+  }
+
+  async getBasicEmployeeDetailsByEmployeeIdWithSignature(employeeId: string) {
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .addSelect('emp.signature_url', 'signatureUrl')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp._id = :employeeId', { employeeId })
+        .getRawOne();
+
+      const { id, name, userId, employeeFullName, companyId, signatureUrl, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+
+      return {
+        userId,
+        companyId,
+        employeeFullName,
+        employeeFullNameFirst,
+        signatureUrl,
+        photoUrl: employeePortalDetails.photoUrl,
+        assignment: { id, name, positionId, positionTitle },
+        orgStruct: { officeName, divisionName, departmentName },
+        userRole,
+      };
+    } catch (error) {
+      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -1017,9 +1063,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           amount, 
           concat(sg.salary_grade, '-',sg.step_increment) salaryGrade,
           sg.salary_grade salaryGradeLevel,
-          sg.step_increment stepIncrement 
+          sg.step_increment stepIncrement,
+          pp.daily_rate dailyRate
         FROM salary_grade sg 
-          INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
+          RIGHT JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
@@ -1032,11 +1079,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           salaryGrade: monthlyRate[0].salaryGrade,
           salaryGradeLevel: monthlyRate[0].salaryGradeLevel,
           stepIncrement: monthlyRate[0].stepIncrement,
+          dailyRate: monthlyRate[0].dailyRate,
         };
-      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
+      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null, dailyRate: null };
     } catch (error) {
-
-      return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
+      console.log(error);
+      return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null, dailyRate: null };
     }
   }
 
@@ -1152,7 +1200,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     division: boolean;
     positionTitle: boolean;
     salaryGrade: boolean;
-    stepIncrement: boolean;
+    amount: boolean;
   }) {
     return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
   }

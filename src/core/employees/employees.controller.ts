@@ -132,7 +132,7 @@ export class EmployeesController {
     @Query('position_title') positionTitle: boolean,
     @Query('assignment') assignment: boolean,
     @Query('salary_grade') salaryGrade: boolean,
-    @Query('step_increment') stepIncrement: boolean,
+    @Query('amount') amount: boolean,
   ) {
     return await this.employeesService.generateReportOnEmployeeDetails({
       companyId,
@@ -159,7 +159,7 @@ export class EmployeesController {
       division,
       office,
       salaryGrade,
-      stepIncrement,
+      amount,
     });
   }
 }
