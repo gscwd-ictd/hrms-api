@@ -22,7 +22,7 @@ export class PositionDescriptionFormService {
     private readonly positionDescriptionFormExternalContacts: PositionDescriptionFormExternalContactsService,
     private readonly positionDescriptionFormWorkingConditionService: PositionDescriptionFormWorkingConditionService,
     private readonly occupationalGroupDutiesResponsibilities: OccupationalGroupDutiesResponsibilitiesService,
-  ) {}
+  ) { }
 
   async savePositionDescriptionForm(positionDescriptionFormDTO: PositionDescriptionFormDTO) {
     try {
@@ -64,7 +64,7 @@ export class PositionDescriptionFormService {
           [postingApplicantId],
         )
       )[0];
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async getPositionDescriptionFormByPostingApplicantId(postingApplicantId: string) {
@@ -153,9 +153,9 @@ export class PositionDescriptionFormService {
       const requestingEntity = (
         await this.positionDescriptionFormBasic.entityRepository.query(
           `
-          SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_position_title_for_documents(get_employee_position_or_oic(vppp.employee_id_fk)) positionTitle FROM vpp_psb vppp 
-                INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
-          AND pa._id = ? AND vppp.psb_no = 2;
+        SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_position_title_for_documents(get_employee_position_or_oic(vppp.employee_id_fk)) positionTitle FROM vpp_psb vppp 
+              INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
+        AND pa._id = ? AND vppp.psb_no = 2;
         `,
           [postingApplicantId],
         )
@@ -187,7 +187,7 @@ export class PositionDescriptionFormService {
           requestingEntity,
         },
       };
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async listCertifiedBy() {
@@ -318,7 +318,6 @@ export class PositionDescriptionFormService {
           appointmentType: basicInfo.appointmentType,
           publicationMode: basicInfo.publicationMode,
           directlySupervised: basicInfo.directlySupervised,
-          directlySupervisedItemNumbers: basicInfo.directlySupervisedItemNumbers,
         },
         contacts: {
           internal: {

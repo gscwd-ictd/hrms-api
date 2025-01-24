@@ -6,7 +6,7 @@ import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointmen
 
 @Controller('')
 export class EmployeesMsController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @MessagePattern('get_employee_under_supervisor')
   async getEmployeesUnderSupervisorMS(employeeId: string) {
@@ -69,6 +69,26 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getEmployeeDetails(_id);
     } catch (error) {
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_basic_employee_details')
+  async getBasicEmployeeDetails(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getBasicEmployeeDetailsByEmployeeId(employeeId);
+    } catch (error) {
+      console.log(error);
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_basic_employee_details_with_signature')
+  async getBasicEmployeeDetailsWithSignature(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getBasicEmployeeDetailsByEmployeeIdWithSignature(employeeId);
+    } catch (error) {
+      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -293,5 +313,20 @@ export class EmployeesMsController {
   @MessagePattern('get_hrd_manager')
   async getHrdManager() {
     return await this.employeesService.getHrdManager();
+  }
+
+  @MessagePattern('get_training_signatories')
+  async getTrainingSignatories(@Payload() includeGm: boolean) {
+    return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+  }
+
+  @MessagePattern('get_employees_by_nature_of_appointment')
+  async getEmployeesByNatureOfAppointment(@Payload() natureOfAppointment: NatureOfAppointment) {
+    return await this.employeesService.getEmployeesByNatureOfAppointment(natureOfAppointment);
+  }
+
+  @MessagePattern('get_employees_by_nature_of_appointment_and_employee_ids')
+  async getEmployeesByNatureOfAppointmentAndEmployeeIds(@Payload() data: { natureOfAppointment: NatureOfAppointment; employeeIds: string[] }) {
+    return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeIdRange(data.natureOfAppointment, data.employeeIds);
   }
 }

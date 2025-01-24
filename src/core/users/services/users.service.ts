@@ -237,7 +237,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
        ;`,
         [app],
       );
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async asyncGetSuperUserAccess() {
@@ -286,6 +286,11 @@ export class UsersService extends BaseEntityCrudService<Users> {
 
   async getAuthorizedUserById(_id: string) {
     try {
+      /*
+      get_employee_assignment_or_oic()
+      get_employee_position_or_oic()
+      
+      */
       const user = await this.entityRepository.findOneOrFail({ where: { _id } });
       const userDetails = await this.entityRepository
         .createQueryBuilder('u')
@@ -294,6 +299,9 @@ export class UsersService extends BaseEntityCrudService<Users> {
         .addSelect('emp.first_name', 'firstName')
         .addSelect('emp.middle_name', 'middleName')
         .addSelect('emp.last_name', 'lastName')
+        .addSelect('get_employee_assignment_or_oic(emp._id)', 'assignment')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('signature_url', 'signatureUrl')
         .addSelect('emp.name_extension', 'nameExtension')
         .innerJoin('employees', 'emp', 'emp._id = u.employee_id_fk')
         .where('emp._id=:employeeId', { employeeId: _id })
@@ -302,7 +310,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
 
       const isLndUser = await this.isAppUser(_id, 'lnd');
       const isEmsUser = await this.isAppUser(_id, 'ems');
-      console.log('asdasdasdsa', isLndUser);
 
       const userAccessResult = await this.entityRepository.query(
         `SELECT 
@@ -330,7 +337,17 @@ export class UsersService extends BaseEntityCrudService<Users> {
       console.log('EMAIL ADDRESS ', email);
 
       console.log(userAccess);
-      return { ...user, isLndUser, isEmsUser, email, photoUrl, ...userDetails, userAccess, isSuperUser: false, salaryGradeAmount: salaryGrade.monthlyRate };
+      return {
+        ...user,
+        isLndUser,
+        isEmsUser,
+        email,
+        photoUrl,
+        ...userDetails,
+        userAccess,
+        isSuperUser: false,
+        salaryGradeAmount: salaryGrade.monthlyRate,
+      };
     } catch (error) {
       console.log(error);
       handleRpcError(error);

@@ -168,4 +168,10 @@ export class EmployeesController {
       stepIncrement,
     });
   }
+
+  @Get('reports/detailed/asd/asd/asd/asd')
+  async getTestTest() {
+    console.log('asd asd asd');
+    return await this.employeesService.getSignatoriesForTrainingCertification(true);
+  }
 }
