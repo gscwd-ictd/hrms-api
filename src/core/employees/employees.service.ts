@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { lastValueFrom } from 'rxjs';
@@ -865,51 +865,57 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllEmployees() {
-    const empPositions = await this.employeeRepository
-      .createQueryBuilder('emp')
-      .select('emp._id', 'employeeId')
-      .addSelect('emp.company_id', 'companyId')
-      .addSelect('get_employee_fullname2(emp._id)', 'fullName')
-      .addSelect('emp.first_name', 'firstName')
-      .addSelect('emp.middle_name', 'middleName')
-      .addSelect('emp.last_name', 'lastName')
-      .addSelect('emp.name_extension', 'nameExt')
-      .addSelect('pp.position_title', 'positionTitle')
-      .addSelect('pp._id', 'positionId')
-      .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
-      .addSelect('get_employee_assignment_id(emp._id)', 'id')
-      .addSelect('get_employee_assignment(emp._id)', 'name')
-      .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
-      .orderBy('get_employee_fullname2(emp._id)', 'ASC')
-      .where(`pp.position_title<>'Chairman'`, {})
-      .getRawMany();
+    try {
+      const empPositions = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'employeeId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+        .addSelect('emp.first_name', 'firstName')
+        .addSelect('emp.middle_name', 'middleName')
+        .addSelect('emp.last_name', 'lastName')
+        .addSelect('emp.name_extension', 'nameExt')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+        .where(`pp.position_title<>'Chairman'`, {})
+        .getRawMany();
 
-    const _empPositions = await Promise.all(
-      empPositions.map(async (empPosition) => {
-        const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+      const _empPositions = await Promise.all(
+        empPositions.map(async (empPosition) => {
+          const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
 
-        const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
-        const employeeSchedule = await this.getEmployeeSchedule(employeeId);
+          const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+          const employeeSchedule = await this.getEmployeeSchedule(employeeId);
 
-        const avatarUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
+          const avatarUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
-        return {
-          employmentDetails: {
-            employeeId,
-            userId,
-            companyId,
-            positionTitle,
-            assignment: { id, name, divisionName, departmentName, officeName },
-            positionId,
-            scheduleBase: employeeSchedule.schedule.scheduleBase,
-            natureOfAppointment,
-            avatarUrl,
-          },
-          personalDetails: { fullName, firstName, middleName, lastName, nameExt },
-        };
-      }),
-    );
-    return _empPositions;
+          return {
+            employmentDetails: {
+              employeeId,
+              userId,
+              companyId,
+              positionTitle,
+              assignment: { id, name, divisionName, departmentName, officeName },
+              positionId,
+              scheduleBase: employeeSchedule.scheduleBase,
+              natureOfAppointment,
+              avatarUrl,
+            },
+            personalDetails: { fullName, firstName, middleName, lastName, nameExt },
+          };
+        }),
+      );
+      return _empPositions;
+    }
+    catch (error) {
+      throw new NotFoundException(error.message);
+    }
+
   }
 
   async getAllPermanentCasualEmployees() {
