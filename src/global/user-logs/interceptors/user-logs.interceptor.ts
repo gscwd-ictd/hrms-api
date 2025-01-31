@@ -4,15 +4,12 @@ import { map } from 'rxjs';
 
 @Injectable()
 export class UserLogsInterceptor implements NestInterceptor {
-  constructor(private readonly userLogsService: UserLogsService) {}
+  constructor(private readonly userLogsService: UserLogsService) { }
 
   async intercept(context: ExecutionContext, next: CallHandler<any>) {
     const request = context.switchToHttp().getRequest();
-
     const user = request.session.user;
-
     let employeeId = '';
-    console.log(user);
     if (!user.isSuperUser) {
       employeeId = user.employeeId;
     }

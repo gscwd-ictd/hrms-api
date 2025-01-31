@@ -283,7 +283,6 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         const nullValuedPSBMembers = totalRequiredPSBMembers - assignedPSBMembers.length;
 
         //1.0 Add assigned psb members to the posting
-        console.log(nullValuedPSBMembers);
         const newPsbMembers = await Promise.all(
           assignedPSBMembers.map(async (psbMember) => {
             return await this.vppPsbService.saveEntity({
@@ -358,7 +357,6 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         ...postingDTO,
       };
     } catch (error) {
-      console.log(error);
       if (error.status !== 403) throw new HttpException(error, 500);
 
       throw new HttpException(error, 403);
@@ -418,7 +416,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       const { effectivityDate } = vppEffectivityDateDTO;
       //get vppIds;
       return await this.updateEntity({ _id: vppId, effectivityDate });
-    } catch (error) {}
+    } catch (error) { }
   }
 
   //! REFACTOR
@@ -462,7 +460,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       );
 
       return { core, functional, managerial };
-    } catch (error) {}
+    } catch (error) { }
   }
 
   /* ----- */
@@ -488,7 +486,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
      );`,
         [vppId],
       );
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async getPsbDetails(vppId: string) {

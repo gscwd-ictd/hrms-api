@@ -5,7 +5,7 @@ import { PositionDescriptionFormWorkingConditionService } from './parts/working-
 import { PositionDescriptionFormExternalContactsService } from './parts/contacts/external/external-contacts.service';
 import { PositionDescriptionFormInternalContactsService } from './parts/contacts/internal/internal-contacts.service';
 import { PositionDescriptionFormBasicService } from './parts/basic/basic.service';
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { getManager } from 'typeorm';
 import { DutyType } from 'src/core/occupational-group-duties-responsibilities/utils/enums/duty-type.enum';
 import { CertifiedList } from './utils/types/position-description-form.type';
@@ -69,11 +69,11 @@ export class PositionDescriptionFormService {
 
   async getPositionDescriptionFormByPostingApplicantId(postingApplicantId: string) {
     try {
-      console.log('asdasd');
+
       const { positionDetails, positionDescriptionFormBasic } = await this.positionDescriptionFormBasic.getPositionDescriptionFormBasicInfo(postingApplicantId);
-      console.log('here');
+
       const internal = await this.positionDescriptionFormInternalContacts.getInternalContactFrequency(postingApplicantId);
-      console.log(internal);
+
       const external = await this.positionDescriptionFormExternalContacts.getExternalContactFrequency(postingApplicantId);
       const workingCondition = await this.positionDescriptionFormWorkingConditionService.getWorkingConditionFrequency(postingApplicantId);
       const { generalFunctionOfUnit, jobSummary, education, experience, training, eligibility } = (
@@ -92,19 +92,6 @@ export class PositionDescriptionFormService {
           [positionDetails.positionId, positionDescriptionFormBasic.itemNumber, positionDetails.positionId],
         )
       )[0];
-
-      /* const functionalManagerial = await this.positionDescriptionFormBasic.entityRepository.query(
-        `
-          SELECT cm.name competencyName,cm.desc description, p.level 'level' FROM competency_model cm 
-          INNER JOIN domain d ON d._id = cm.domain_id_fk
-            INNER JOIN proficiency p ON p.competency_id_fk = cm._id
-            INNER JOIN position_competency_proficiency_level pcpl ON pcpl.proficiency_id_fk = p._id
-            INNER JOIN occupational_group og ON og._id = pcpl.occupational_group_id_fk
-            INNER JOIN plantilla_positions pp ON pp._id = og.position_id_fk 
-          WHERE pp._id = ? AND (d.type='Functional' OR d.type='Cross-Cutting Functional' OR d.type='Leadership/Managerial');
-      `,
-        [positionDetails.positionId],
-      ); */
 
       const functionalManagerial = await this.positionDescriptionFormBasic.entityRepository.query(
         `
@@ -187,7 +174,9 @@ export class PositionDescriptionFormService {
           requestingEntity,
         },
       };
-    } catch (error) { }
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async listCertifiedBy() {

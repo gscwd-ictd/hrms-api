@@ -1,52 +1,87 @@
-import { Controller, HttpStatus } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, UseFilters } from '@nestjs/common';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { CheckEmployeeTagsDto, CreateEmployeeTagsDto, DeleteEmployeeTagDto } from './data/employee-tags.dto';
 import { EmployeeTagsService } from './employee-tags.service';
-import { MESSAGES } from '@nestjs/core/constants';
+import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter';
 
 @Controller()
 export class EmployeeTagsController {
-  constructor(private readonly employeeTagsService: EmployeeTagsService) {}
+  constructor(private readonly employeeTagsService: EmployeeTagsService) { }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('add_employee_tags')
   async addEmployeeTags(@Payload() employeeTagsDto: CreateEmployeeTagsDto) {
-    return await this.employeeTagsService.addEmployeeTags(employeeTagsDto);
+    try {
+      return await this.employeeTagsService.addEmployeeTags(employeeTagsDto);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
-  // @MessagePattern('get_supervisors_by_employee_tags')
-  // async getSupervisorByEmployeeTags(data: { tagIds: [] }) {
-  //   return await this.employeeTagsService.getSupervisorByEmployeeTags(data);
-  //
-
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('get_tags_by_employee_id')
   async getTagsByEmployeeId(@Payload() employeeId: string) {
-    //console.log(await this.employeeTagsService.getTagsByEmployeeId(employeeId));
-    return await this.employeeTagsService.getTagsByEmployeeId(employeeId);
+    try {
+      return await this.employeeTagsService.getTagsByEmployeeId(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('get_employee_by_tag_id')
   async getEmployeeByTagId(@Payload() tagId: string) {
-    return await this.employeeTagsService.getSupervisorByEmployeeTags(tagId);
-    //return await this.employeeTagsService.getEmployeeByTagId(tagId);
+    try {
+      return await this.employeeTagsService.getSupervisorByEmployeeTags(tagId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('get_employees_by_tag_ids')
   async getEmployeesByTagIds(@Payload() tagIds: string[]) {
-    return await this.employeeTagsService.getSupervisorByEmployeeTagsV2(tagIds);
+    try {
+      return await this.employeeTagsService.getSupervisorByEmployeeTagsV2(tagIds);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('delete_employee_tags')
   async deleteEmployeeTag(@Payload() data: DeleteEmployeeTagDto) {
-    return await this.employeeTagsService.deleteEmployeeTag(data);
+    try {
+      return await this.employeeTagsService.deleteEmployeeTag(data);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 
   @MessagePattern('count_employee_tags')
   async countEmployeeTags(@Payload() tagId: string) {
-    return await this.employeeTagsService.countEmployeeTags(tagId);
+    try {
+      return await this.employeeTagsService.countEmployeeTags(tagId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('check_employee_tags')
   async checkEmployeeTags(@Payload() data: CheckEmployeeTagsDto) {
-    return await this.employeeTagsService.checkEmployeeTags(data);
+    try {
+      return await this.employeeTagsService.checkEmployeeTags(data);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 }

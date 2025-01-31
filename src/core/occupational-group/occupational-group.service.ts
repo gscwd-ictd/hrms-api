@@ -1,10 +1,10 @@
-import { HttpCode, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { Repository } from 'typeorm';
 import { OccupationalGroup } from './data/entities/occupational-group.entity';
-import { OccupationalGroupDto, OccupationalGroupDtoForMultiplePositions } from './data/dtos/occupational-group.dto';
-import { runInThisContext } from 'vm';
+import { OccupationalGroupDtoForMultiplePositions } from './data/dtos/occupational-group.dto';
+
 
 @Injectable()
 export class OccupationalGroupService extends BaseEntityCrudService<OccupationalGroup> {
@@ -38,11 +38,10 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
           return { occupationalGroup: { _id, occupationId, positionId }, pcpls };
         }),
       );
-      console.log(occupationalGroup);
       return occupationalGroup;
     } catch (error) {
-      console.log(error);
-      throw new HttpException('Error occured', 500);
+
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -67,7 +66,6 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
 
   async deletePositionsFromOccupationalGroup(occupationId: string, positionIds: OccupationalGroupDtoForMultiplePositions) {
     try {
-      console.log(positionIds);
       const result = await this.entityRepository.query('DELETE FROM occupational_group WHERE position_id_fk IN (?) AND occupation_id_fk = ?', [
         positionIds.positionIds,
         occupationId,
@@ -75,7 +73,7 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
       if (result.affectedRows != 0) return { occupationId, positionIds: positionIds.positionIds };
     } catch (error) {
       if ((error.code = 'ER_ROW_IS_REFERENCED_2')) throw new HttpException("Competency's Proficiencies already set.", HttpStatus.NOT_ACCEPTABLE);
-      throw new HttpException('Error', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -91,6 +89,8 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
         .innerJoin('plantilla_positions', 'pp', 'pp._id = occupational_group.position_id_fk')
         .innerJoin('occupations', 'occ', 'occ._id = occupational_group.occupation_id_fk')
         .getRawMany();
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }

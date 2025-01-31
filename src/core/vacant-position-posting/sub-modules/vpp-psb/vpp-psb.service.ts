@@ -66,7 +66,6 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
 
       if (updateResult.affected > 0) return vppPsbSwapDto;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.message, error.status);
     }
   }
@@ -96,7 +95,6 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
    */
   async psbAcknowledgeSchedule(vppId: string, employeeId: string, action: string, vppAcknowledgement: VppAcknowledgement) {
     try {
-      console.log(getDateTimeNow());
       const acknowledgedSchedule = true;
       if (action === 'accept') {
         const updateVppPsb = await this.entityRepository
@@ -195,6 +193,6 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
          FROM vpp_psb WHERE vacant_position_posting_id_fk = ? AND acknowledged_schedule = 1`,
         [vppId],
       );
-    } catch (error) {}
+    } catch (error) { }
   }
 }

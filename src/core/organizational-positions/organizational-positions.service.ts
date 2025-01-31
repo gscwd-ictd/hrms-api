@@ -9,7 +9,7 @@ export class OrganizationalPositionsService {
     private readonly officePositionsService: OfficePositionsService,
     private readonly departmentPositionsService: DepartmentPositionService,
     private readonly divisionPositionsService: DivisionPositionsService,
-  ) {}
+  ) { }
 
   async getAssignmentPositions(_assignmentId: string, employeeId: string) {
     let organization: string;
@@ -22,13 +22,11 @@ export class OrganizationalPositionsService {
       assignmentId = oicDetails[0][0].oicOrgId;
       organization = oicDetails[0][0].oicAssignedOrg;
       positionId = oicDetails[0][0].oicPositionId;
-      console.log(positionId, ' asdadsadsaasdsad oic');
     } else {
       assignmentId = _assignmentId;
       organization = (await this.officePositionsService.entityRepository.query('SELECT get_assignment_organization(?) AS organization;', [assignmentId]))[0].organization;
       positionId = (await this.officePositionsService.entityRepository.query(`SELECT _id positionId FROM plantilla_positions pp WHERE employee_id_fk = ?`, [employeeId]))[0]
         .positionId;
-      console.log(positionId, ' asdadsadsaasdsad');
     }
     if (organization) {
       let positions = [];
@@ -46,7 +44,7 @@ export class OrganizationalPositionsService {
               .where('o._id = :assignmentId', { assignmentId })
               .getRawOne()
           ).name;
-          console.log(name);
+
           if (name === 'Office of the General Manager') {
             office = await this.officePositionsService.entityRepository
               .createQueryBuilder('op')

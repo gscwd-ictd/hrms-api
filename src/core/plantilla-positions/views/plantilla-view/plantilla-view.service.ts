@@ -145,7 +145,6 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
         division = new Divisions();
         department = new Departments();
         const { positionTitle } = (await this.officeService.entityRepository.query(`SELECT position_title positionTitle FROM plantilla_positions WHERE _id = ?`, [_id]))[0];
-        console.log(positionTitle);
         if (positionTitle === 'Assistant General Manager') reportsTo = { reportsTo: 'General Manager A' };
         else if (positionTitle === 'General Manager A') {
           reportsTo = { reportsTo: 'N/A' };
@@ -294,7 +293,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
         qualificationStandards,
         competencies,
       };
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async getPositionDutiesAndResponsibilities(positionId: string) {
@@ -333,7 +332,6 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
 
       return { core, support };
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.message, error.status);
     }
   }

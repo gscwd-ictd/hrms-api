@@ -1,12 +1,13 @@
-import { Controller, Post, Body, Get, Param, Put, Delete, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Delete, UseGuards, ParseUUIDPipe, UseFilters } from '@nestjs/common';
 import { CommitteeMembersDTO } from 'src/core/committee-members/data/dtos/committee-members.dto';
 import { CommitteeMembersType } from 'src/core/committee-members/utils/types/committee-members.type';
 import { CommitteeMembersService } from './committee-members.service';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
+import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter';
 
 @Controller('committee-members')
 export class CommitteeMembersController {
-  constructor(private committeeMembersService: CommitteeMembersService) {}
+  constructor(private committeeMembersService: CommitteeMembersService) { }
 
   @Post()
   async addCommitteeMembers(@Body() committeeMembers: CommitteeMembersType) {
@@ -38,13 +39,25 @@ export class CommitteeMembersController {
     return await this.committeeMembersService.removeCommitteeMembers(committeeMembers);
   }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('is_pdc_chairman')
   async isPdcChairman(@Payload() employeeId: string) {
-    return await this.committeeMembersService.isPdcChairman(employeeId);
+    try {
+      return await this.committeeMembersService.isPdcChairman(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 
   @MessagePattern('is_pdc_secretariat')
   async isPdcSecretary(@Payload() employeeId: string) {
-    return await this.committeeMembersService.isPdcSecretariat(employeeId);
+    try {
+      return await this.committeeMembersService.isPdcSecretariat(employeeId);
+    }
+    catch (error) {
+      throw new RpcException(error.message);
+    }
   }
 }

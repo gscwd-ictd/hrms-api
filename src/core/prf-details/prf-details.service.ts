@@ -60,8 +60,6 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
         const positionId = await this.plantillaPositionsService.entityRepository.findOne({ select: ['_id'], where: { employeeId: prfDetails.employeeId } });
 
         const prfTrailObject = (await this.entityRepository.query('CALL sp_set_prf_trail_init_status2(?)', [prfDetails.employeeId]))[0][0];
-        console.log(prfTrailObject);
-        //call get_prf_trail_signatories('');
 
         const { divisionStatus, departmentStatus, agmStatus, adminStatus, gmStatus, boardStatus } = prfTrailObject;
 
@@ -75,7 +73,6 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
       });
       return { prf, prfTrail };
     } catch (error) {
-      console.log(error);
       if (error.code == 'ER_DUP_ENTRY') throw new HttpException('One or more positions were already been requested.', HttpStatus.NOT_ACCEPTABLE);
       throw new HttpException('Error adding PRF', HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -112,7 +109,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
 
       return prf;
     } catch (error) {
-      throw new HttpException('Error', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 

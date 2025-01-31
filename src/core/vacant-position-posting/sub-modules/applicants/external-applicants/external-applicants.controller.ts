@@ -5,11 +5,11 @@ import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/co
 import { ExternalApplicantsService } from './external-applicants.service';
 import { ExternalApplicantsLogin } from './decorators/external-applicants.decorator';
 import { ExternalApplicantsPDSGuard } from './guards/external-applicants-pds.guard';
-import { ExternalApplicantsDTO, JobPortalDTO } from './data/dtos/external-applicants.dto';
+import { JobPortalDTO } from './data/dtos/external-applicants.dto';
 
 @Controller('external-applicants')
 export class ExternalApplicantsController {
-  constructor(private readonly externalApplicantsService: ExternalApplicantsService, private readonly pdsService: PDSService) {}
+  constructor(private readonly externalApplicantsService: ExternalApplicantsService, private readonly pdsService: PDSService) { }
 
   @UseGuards(ExternalApplicantLoginGuard)
   @Post('/login')
@@ -20,8 +20,6 @@ export class ExternalApplicantsController {
 
   @Post('/new/:vpp_id')
   async addExternalApplicant(@Param('vpp_id') vppId: string, @Body() jobPortalDTO: JobPortalDTO) {
-    console.log(vppId);
-    console.log(jobPortalDTO);
     return await this.externalApplicantsService.addExternalApplicant(vppId, jobPortalDTO);
   }
 

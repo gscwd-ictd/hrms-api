@@ -42,7 +42,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       return await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, _id));
     } catch (error) {
-      console.log(error, error);
       return {
         email: null,
         photoUrl: null,
@@ -89,19 +88,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeesByOrgId(orgId: string) {
     const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id(?);`, [orgId]))[0];
-    console.log(employees);
     return employees;
   }
 
   async getEmployeesByOrgIdWithManagers(orgId: string) {
     const employees = (await this.entityRepository.query(`CALL sp_get_employees_with_manager_under_org_id(?);`, [orgId]))[0];
-    console.log(employees);
     return employees;
   }
 
   async getEmployeesByOrgId2(orgId: string) {
     const employees = (await this.entityRepository.query(`CALL sp_get_employees_under_org_id2(?);`, [orgId]))[0];
-    console.log(employees);
     return employees;
   }
 
@@ -118,7 +114,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       const employeeDetails = await this.getEmployeeDetailsByEmployeeId(employeeId);
       const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(employeeId, false));
-      console.log(supervisorDetails);
       return {
         employee: {
           _id: employeeDetails.userId,
@@ -144,11 +139,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const employees = await Promise.all(
         employeeList.map(async (emp) => {
           const { value } = emp;
-          const employeeDetails = await this.getBasicEmployeeDetailsByEmployeeId(value);
-          //console.log('employee details', employeeDetails);
-          const supervisorDetails = await this.getBasicEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
-          //console.log('supervisor supervisor', supervisorDetails);
-          const hrdDetails = await this.getBasicEmployeeDetailsByEmployeeId(await this.getHrdManager());
+          const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+          const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
+          const hrdDetails = await this.getEmployeeDetailsByEmployeeId(await this.getHrdManager());
           return {
             employee: {
               _id: employeeDetails.userId,
@@ -212,7 +205,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       divisionName: string;
     };
     const { departmentName, divisionName, officeName } = orgStruct;
-    //console.log(employeePortalDetails);
     return {
       id: employeeId,
       companyId,
@@ -272,7 +264,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         };
       }),
     );
-    console.log(employees);
     return employees;
   }
 
@@ -314,6 +305,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
 
+      const dailyRate = salaryGradeDetails.dailyRate;
+
       return {
         userId,
         companyId,
@@ -327,6 +320,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         salaryGrade,
         salaryGradeLevel,
         salaryGradeStepIncrement,
+        dailyRate,
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
@@ -335,6 +329,45 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       };
     } catch (error) {
       console.log(error);
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+
+  async getBasicEmployeeDetailsByEmployeeId(employeeId: string) {
+    try {
+      const empPosition = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'userId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
+        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
+        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
+        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
+        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
+        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
+        .addSelect('get_user_role(emp._id)', 'userRole')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .where('emp._id = :employeeId', { employeeId })
+        .getRawOne();
+
+      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
+      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+
+      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+
+      return {
+        userId,
+        companyId,
+        employeeFullName,
+        employeeFullNameFirst,
+        photoUrl: employeePortalDetails.photoUrl,
+        assignment: { id, name, positionId, positionTitle },
+        orgStruct: { officeName, divisionName, departmentName },
+        userRole,
+      };
+    } catch (error) {
       throw new HttpException(error.status, error.message);
     }
   }
@@ -369,45 +402,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         employeeFullName,
         employeeFullNameFirst,
         signatureUrl,
-        photoUrl: employeePortalDetails.photoUrl,
-        assignment: { id, name, positionId, positionTitle },
-        orgStruct: { officeName, divisionName, departmentName },
-        userRole,
-      };
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(error.status, error.message);
-    }
-  }
-
-  async getBasicEmployeeDetailsByEmployeeId(employeeId: string) {
-    try {
-      const empPosition = await this.employeeRepository
-        .createQueryBuilder('emp')
-        .select('emp._id', 'userId')
-        .addSelect('emp.company_id', 'companyId')
-        .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
-        .addSelect('get_employee_position_id_or_oic(emp._id)', 'positionId')
-        .addSelect('get_position_assignment_id(get_employee_position_id_or_oic(emp._id))', 'id')
-        .addSelect('get_position_assignment(get_employee_position_id_or_oic(emp._id))', 'name')
-        .addSelect('is_hrm_psb(emp._id)', 'isHRMPSB')
-        .addSelect('get_employee_fullname2(emp._id)', 'employeeFullName')
-        .addSelect('get_employee_fullname(emp._id)', 'employeeFullNameFirst')
-        .addSelect('get_user_role(emp._id)', 'userRole')
-        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
-        .where('emp._id = :employeeId', { employeeId })
-        .getRawOne();
-
-      const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
-      const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
-
-      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
-
-      return {
-        userId,
-        companyId,
-        employeeFullName,
-        employeeFullNameFirst,
         photoUrl: employeePortalDetails.photoUrl,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
@@ -468,7 +462,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -505,8 +498,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      console.log(error);
-      //throw new RpcException(error);
+
     }
   }
 
@@ -529,8 +521,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
 
       const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
-
-      console.log(employeePortalDetails);
       return {
         userId,
         companyId,
@@ -682,20 +672,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       const { employeeId, supervisorId } = ids;
       const employeeSignature = await this.getEmployeeSignature(employeeId);
-      console.log('emp signature: ', employeeSignature);
-
       const supervisorSignature = await this.getEmployeeSignature(supervisorId);
-      console.log('supervisor signature: ', supervisorSignature);
-
       const employeeName = (await this.getEmployeeNameById(employeeId)).fullName;
-      console.log(employeeName);
-
       const supervisorName = (await this.getEmployeeNameById(supervisorId)).fullName;
-      console.log(supervisorName);
-
       return { employeeName, employeeSignature, supervisorName, supervisorSignature };
     } catch (error) {
-      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -746,9 +727,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeesByNatureOfAppointmentAndEmployeeId(natureOfAppointment: string, employeeId: string) {
     let empPositions;
-    // console.log('asd asd asd', natureOfAppointment);
     if (employeeId !== null && employeeId !== '' && typeof employeeId !== 'undefined') {
-      console.log('as', employeeId);
       empPositions = await this.employeeRepository
         .createQueryBuilder('emp')
         .select('emp._id', 'employeeId')
@@ -768,7 +747,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where(`pp.position_title<>'Chairman' AND emp._id= :employeeId`, { employeeId })
         .getRawMany();
     } else if (typeof employeeId === 'undefined' && natureOfAppointment !== null && natureOfAppointment !== '') {
-      console.log('asd asd asd asd');
+
       empPositions = await this.employeeRepository
         .createQueryBuilder('emp')
         .select('emp._id', 'employeeId')
@@ -955,7 +934,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     try {
       return await lastValueFrom(this.clientAuthn.send({ msg: 'find_email_by_employee_id' }, employeeId));
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException();
     }
   }
@@ -984,7 +962,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const position = await this.plantillaPositionsService.entityRepository.findOne({
         where: { _id: employeeDto.positionId },
       });
-      console.log(position);
       if (!position) throw new HttpException('Position does not exists.', HttpStatus.BAD_REQUEST);
 
       const { email, restDays, applicantId, scheduleId, ...restOfEmployeeDTO } = employeeDto;
@@ -1038,7 +1015,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         ])
       )[0].supervisorId;
     } catch (error) {
-      console.log('asdasdasd', error);
       if (isRpc) throw new RpcException(error);
       throw new HttpException(error.message, error.status);
     }
@@ -1053,7 +1029,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         ])
       )[0].supervisorId;
     } catch (error) {
-      console.log('asdasdasd', error);
+
       if (isRpc) throw new RpcException(error);
       throw new HttpException(error.message, error.status);
     }
@@ -1075,7 +1051,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const employeeIds = await this.entityRepository.query(
         `SELECT emp._id employeeId,emp.company_id companyId FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE user_role IN ('rank_and_file','division_manager','department_manager','general_manager','assistant_general_manager') AND company_id IS NOT NULL AND company_id <> '';`,
       );
-      console.log(employeeIds);
+
       return employeeIds;
     } catch (error) {
       throw new RpcException(error);
@@ -1090,13 +1066,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           amount, 
           concat(sg.salary_grade, '-',sg.step_increment) salaryGrade,
           sg.salary_grade salaryGradeLevel,
-          sg.step_increment stepIncrement 
+          sg.step_increment stepIncrement,
+          pp.daily_rate dailyRate
         FROM salary_grade sg 
-          INNER JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
+          RIGHT JOIN plantilla_positions pp ON pp.salary_grade_id_fk = sg._id
           INNER JOIN employees e ON e._id = pp.employee_id_fk WHERE e._id = ?;`,
         [employeeId],
       );
-      console.log('salary z: ', monthlyRate[0]);
+
       if (typeof monthlyRate[0] !== 'undefined') {
         const hourlyRate = parseFloat((monthlyRate[0].amount / 22 / 8).toFixed(2));
         return {
@@ -1105,11 +1082,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           salaryGrade: monthlyRate[0].salaryGrade,
           salaryGradeLevel: monthlyRate[0].salaryGradeLevel,
           stepIncrement: monthlyRate[0].stepIncrement,
+          dailyRate: monthlyRate[0].dailyRate,
         };
-      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
+      } else return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null, dailyRate: null };
     } catch (error) {
       console.log(error);
-      return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null };
+      return { monthlyRate: null, hourlyRate: null, salaryGrade: null, salaryGradeLevel: null, stepIncrement: null, dailyRate: null };
     }
   }
 
@@ -1127,7 +1105,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeeNatureOfAppointment(employeeId: string) {
     try {
-      console.log('asd asd asd');
       return (
         await this.entityRepository.query(
           `
@@ -1153,7 +1130,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async isGeneralManager(employeeId: string) {
     try {
       const { isGeneralManager } = (await this.entityRepository.query(`SELECT is_general_manager(?) isGeneralManager;`, [employeeId]))[0];
-      console.log(isGeneralManager);
       if (isGeneralManager === 1) return true;
       return false;
     } catch (error) {
@@ -1194,9 +1170,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getEmployeePosition(employeeId: string) {
     try {
-      //return 'haha';
       const result = await this.entityRepository.query(`SELECT _id id, position_title positionTitle FROM plantilla_positions WHERE employee_id_fk = ?;`, [employeeId]);
-      console.log(result);
       if (result.length === 0) return null;
       return result[0];
     } catch (error) {
@@ -1229,7 +1203,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     division: boolean;
     positionTitle: boolean;
     salaryGrade: boolean;
-    stepIncrement: boolean;
+    amount: boolean;
   }) {
     return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
   }
@@ -1329,8 +1303,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
     const gmId = await this.getGeneralManager();
     const gmDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(gmId);
-
-    console.log(tddDetails, gmDetails, hrdDetails);
 
     return {
       tddMgr: {

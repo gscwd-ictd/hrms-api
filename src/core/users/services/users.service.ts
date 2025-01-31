@@ -1,13 +1,10 @@
-import { Injectable, HttpException, Logger } from '@nestjs/common';
+import { Injectable, HttpException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SuperUserDTO } from 'src/core/users/data/dtos/superuser.dto';
-import { UserDto } from 'src/core/users/data/dtos/users.dto';
 import { handleRpcError } from 'src/global/utils/helper/error/rpc/rpc-error-handler';
 import { Repository } from 'typeorm';
 import { Users } from 'src/core/users/data/entities/users.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { EmployeesService } from 'src/core/employees/employees.service';
-import { RestDays } from 'src/core/employees/utils/employee.type';
 
 @Injectable()
 export class UsersService extends BaseEntityCrudService<Users> {
@@ -17,15 +14,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
     private readonly employeesService: EmployeesService,
   ) {
     super(userRepository);
-  }
-
-  async createUser(user: UserDto) {
-    //
-  }
-
-  async superUserLogin(superUser: SuperUserDTO) {
-    //
-    console.log();
   }
 
   async getAssignableEMSUsers() {
@@ -197,7 +185,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
     try {
       const { page, limit } = pagination;
       const _items = (await this.entityRepository.query(`CALL sp_get_hrms_users(?,?,?);`, [page, limit, 'lnd']))[0];
-      console.log(_items);
       let totalItems = 0;
       let items = [];
       if (_items.length > 0) {
@@ -218,12 +205,11 @@ export class UsersService extends BaseEntityCrudService<Users> {
       };
       return { items, meta };
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 
   async getHRMSUsersByApp(app: string) {
-    //
     try {
       return await this.entityRepository.query(
         `
@@ -237,7 +223,9 @@ export class UsersService extends BaseEntityCrudService<Users> {
        ;`,
         [app],
       );
-    } catch (error) { }
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async asyncGetSuperUserAccess() {
@@ -275,10 +263,8 @@ export class UsersService extends BaseEntityCrudService<Users> {
           [userId, app],
         )
       )[0].isAppUser;
-      console.log('lnd ', isAppUser);
       return isAppUser > 0 ? true : false;
     } catch (error) {
-      console.log('here');
       Logger.log(error);
       return null;
     }
@@ -334,9 +320,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
 
       const salaryGrade = await this.employeesService.getMonthHourlyRateByEmployeeId(_id);
 
-      console.log('EMAIL ADDRESS ', email);
-
-      console.log(userAccess);
       return {
         ...user,
         isLndUser,
@@ -349,7 +332,6 @@ export class UsersService extends BaseEntityCrudService<Users> {
         salaryGradeAmount: salaryGrade.monthlyRate,
       };
     } catch (error) {
-      console.log(error);
       handleRpcError(error);
     }
   }

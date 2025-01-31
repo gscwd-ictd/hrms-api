@@ -30,7 +30,6 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
   }
 
   async updateSalaryGrade(salaryGradeUpdateDTO: SalaryGradeUpdateDTO) {
-    console.log(salaryGradeUpdateDTO);
     const updatedSalaryGrade = await Promise.all(
       salaryGradeUpdateDTO.salaryGradeList.map(async (salaryGradeItem) => {
         const { _id, salaryGrade, stepIncrement, amount } = salaryGradeItem;

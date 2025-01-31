@@ -17,7 +17,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
   }
 
   async createPositionDutiesResponsibilities(data: CreatePositionDutiesResponsibilitiesDto) {
-    console.log(data);
     try {
       return await this.positionDutiesResponsibilitiesRepository.manager.transaction(async (transactionManager) => {
         const { positionId, core, support } = data;
@@ -330,7 +329,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
     const positions = await this.getPermanentPositionsUnderManager(supervisorPositionId);
     const positionIds = await Promise.all(
       positions.map((position) => {
-        console.log(position.positionId + 'aaaaaaaaaaaaaaaaaaaaaaaaaa');
         return position.positionId;
       }),
     );
@@ -375,7 +373,6 @@ export class PositionDutiesResponsibilitiesService extends BaseEntityCrudService
   /* find duties and responsibilities by plantilla position id */
   async getDutiesAndResponsibilities(positionId: string, dutyType: DutyType) {
     try {
-      console.log(positionId);
       const duties = await this.entityRepository
         .createQueryBuilder('pdr')
         .select('pdr._id', 'pdrId')

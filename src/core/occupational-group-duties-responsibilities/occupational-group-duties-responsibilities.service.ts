@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { EntityManager, getManager, Repository } from 'typeorm';
@@ -207,7 +207,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       );
       return drs;
     } catch (error) {
-      throw new HttpException('', 500);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -236,7 +236,6 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       .set({ dutyType: dutyType, percentage, pcplId })
       .where({ _id: ogdrId })
       .execute();
-    //.update([ogdrId], { dutyType: dutyType, percentage });
   }
   private async deleteOgdrTransaction(entityManager: EntityManager, ogdrIds: string[]) {
     if (ogdrIds.length > 0) return await entityManager.query(`DELETE FROM occupational_group_duties_responsibilities WHERE _id IN (?)`, [ogdrIds]);
@@ -247,9 +246,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     try {
       console.log('PERCENTAGE', updateOgdrDTO);
       const { add, update } = updateOgdrDTO;
-      console.log('PERCENTAGEZ', updateOgdrDTO);
       const updateResult = await getManager().transaction(async (transactionEntityManager) => {
-        //return transactionEntityManager;
         let addCoreResult = [];
         if (add.core.length > 0) {
           addCoreResult = await Promise.all(
@@ -272,7 +269,6 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
         if (update.core.length > 0) {
           updateCoreResult = await Promise.all(
             update.core.map(async (coreDuty) => {
-              console.log('CORE DUTYZ', coreDuty);
               if ((await this.updateOgdrTransaction(transactionEntityManager, coreDuty, DutyType.CORE)).affected > 0) return coreDuty;
             }),
           );
@@ -313,8 +309,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       });
       return updateResult;
     } catch (error) {
-      console.log(updateOgdrDTO);
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -419,6 +414,8 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       `,
         [positionId, dutyType],
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }

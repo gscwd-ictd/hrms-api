@@ -4,7 +4,7 @@ import { GlobalJwtService } from 'src/global/auth/services/global-jwt.service';
 
 @Injectable()
 export class AuthenticatedGuard implements CanActivate {
-  constructor(private readonly jwtService: GlobalJwtService) {}
+  constructor(private readonly jwtService: GlobalJwtService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     /*
