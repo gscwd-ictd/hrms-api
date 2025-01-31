@@ -820,6 +820,50 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return _empPositions;
   }
 
+
+  async getEmployeeSchedule(employeeId: string) {
+    try {
+      const employeeSchedule = await this.entityRepository.query(`
+        SELECT 
+           s.schedule_id id,
+           s.name scheduleName, 
+           s.schedule_type scheduleType, 
+           s.time_in timeIn,
+           s.lunch_out lunchOut,
+           s.lunch_in lunchIn, 
+           s.time_out timeOut, 
+           s.shift shift,
+           s.schedule_base scheduleBase,
+           DATE_FORMAT(emr.date_from,'%Y-%m-%d') dateFrom,
+           DATE_FORMAT(emr.date_to,'%Y-%m-%d') dateTo,
+           GROUP_CONCAT(emrs.rest_day SEPARATOR ', ') restDaysNumbers,
+           GROUP_CONCAT(employee_monitoring.get_weekday((emrs.rest_day - 1)) SEPARATOR ', ') restDaysNames 
+       FROM employee_monitoring.employee_schedule es 
+       INNER JOIN employee_monitoring.schedule s ON s.schedule_id = es.schedule_id_fk 
+       LEFT JOIN employee_monitoring.employee_rest_day emr ON emr.employee_id_fk = es.employee_id_fk 
+       INNER JOIN employee_monitoring.employee_rest_days emrs ON emr.employee_rest_day_id = emrs.employee_rest_day_id_fk  
+       WHERE emr.employee_id_fk = ? GROUP BY s.schedule_id,es.created_at,dateFrom,dateTo ORDER BY DATE_FORMAT(emr.date_from,'%Y-%m-%d') 
+       DESC LIMIT 1
+ `, [employeeId]);
+      return employeeSchedule.length > 0 ? employeeSchedule[0] : null;
+    }
+    catch (error) {
+      return null;
+    }
+  }
+
+  async getEmployeePhotoUrlFromPortal(employeeId: string) {
+    try {
+      const photoUrl = await this.entityRepository.query(`
+        SELECT photo_url photoUrl FROM ${process.env.PORTAL_DB_NAME}employees WHERE user_id_fk = ?;
+        `, [employeeId]);
+      return photoUrl.length > 0 ? photoUrl[0].photoUrl : null;
+    }
+    catch (error) {
+      return null;
+    }
+  }
+
   async getAllEmployees() {
     const empPositions = await this.employeeRepository
       .createQueryBuilder('emp')
@@ -843,18 +887,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     const _empPositions = await Promise.all(
       empPositions.map(async (empPosition) => {
         const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
-        let avatarUrl = null;
+
         const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+        const employeeSchedule = await this.getEmployeeSchedule(employeeId);
 
-        const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+        const avatarUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
-        try {
-          const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, employeeId));
-          const { photoUrl } = employeePortalDetails;
-          avatarUrl = photoUrl;
-        } catch {
-          avatarUrl = null;
-        }
         return {
           employmentDetails: {
             employeeId,
