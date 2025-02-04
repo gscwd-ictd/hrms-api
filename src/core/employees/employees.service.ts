@@ -286,7 +286,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where('emp._id = :employeeId', { employeeId })
         .getRawOne();
 
-      const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+      const employeeSchedule = await this.getEmployeeSchedule(employeeId);
 
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
@@ -302,7 +302,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const salaryGradeStepIncrement = salaryGradeDetails.stepIncrement;
 
-      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+      const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
       const dailyRate = salaryGradeDetails.dailyRate;
 
@@ -313,7 +313,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isPdcSecretariat,
         employeeFullName,
         employeeFullNameFirst,
-        photoUrl: employeePortalDetails.photoUrl,
+        photoUrl,
         signatureUrl,
         salaryGradeAmount,
         salaryGrade,
@@ -354,14 +354,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
       const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
 
-      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+      const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
       return {
         userId,
         companyId,
         employeeFullName,
         employeeFullNameFirst,
-        photoUrl: employeePortalDetails.photoUrl,
+        photoUrl,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
         userRole,
@@ -393,7 +393,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const { id, name, userId, employeeFullName, companyId, signatureUrl, positionId, positionTitle, userRole, employeeFullNameFirst } = empPosition;
       const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
 
-      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+      const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
       return {
         userId,
@@ -401,7 +401,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         employeeFullName,
         employeeFullNameFirst,
         signatureUrl,
-        photoUrl: employeePortalDetails.photoUrl,
+        photoUrl,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
         userRole,
@@ -430,7 +430,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where('emp._id = :employeeId', { employeeId })
         .getRawOne();
 
-      const employeeSchedule = await lastValueFrom(this.clientEms.send('get_employee_schedule', employeeId));
+      const employeeSchedule = await this.getEmployeeSchedule(employeeId);
 
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
@@ -442,7 +442,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const salaryGrade = salaryGradeDetails.salaryGrade;
 
-      const employeePortalDetails = await this.getEmployeePortalDetails(employeeId);
+      const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
       return {
         userId,
@@ -519,12 +519,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .getRawOne();
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, userRole } = empPosition;
 
-      const employeePortalDetails = await lastValueFrom(this.clientAuthn.send({ msg: 'get_employee_portal_details' }, userId));
+      const photoUrl = await this.getEmployeePhotoUrlFromPortal(userId);
       return {
         userId,
         companyId,
         employeeFullName,
-        photoUrl: employeePortalDetails.photoUrl,
+        photoUrl: photoUrl,
         assignment: { id, name, positionId, positionTitle },
         userRole,
       };
@@ -915,7 +915,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     catch (error) {
       throw new NotFoundException(error.message);
     }
-
   }
 
   async getAllPermanentCasualEmployees() {
