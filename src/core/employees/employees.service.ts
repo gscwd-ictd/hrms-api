@@ -323,7 +323,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule.schedule.scheduleBase,
+        scheduleBase: employeeSchedule.scheduleBase,
         userRole,
       };
     } catch (error) {
@@ -451,13 +451,13 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isPdcSecretariat,
         employeeFullName,
         employeeFullNameFirst,
-        photoUrl: employeePortalDetails.photoUrl,
+        photoUrl,
         salaryGradeAmount,
         salaryGrade,
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule.schedule.scheduleBase,
+        scheduleBase: employeeSchedule.scheduleBase,
         userRole,
       };
     } catch (error) {
@@ -524,7 +524,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userId,
         companyId,
         employeeFullName,
-        photoUrl: photoUrl,
+        photoUrl,
         assignment: { id, name, positionId, positionTitle },
         userRole,
       };
