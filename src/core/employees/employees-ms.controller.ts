@@ -54,6 +54,11 @@ export class EmployeesMsController {
     return await this.employeesService.getEmployeesByOrgId(orgId);
   }
 
+  @MessagePattern('get_employees_by_org_id_for_ot')
+  async getEmployeesByOrgIdForOt(@Payload() orgId: string) {
+    return await this.employeesService.getEmployeesByOrgIdForOt(orgId);
+  }
+
   @MessagePattern('get_employees_with_managers_by_org_id')
   async getEmployeesByOrgIdWithManagers(@Payload() orgId: string) {
     return await this.employeesService.getEmployeesByOrgIdWithManagers(orgId);
@@ -77,6 +82,16 @@ export class EmployeesMsController {
   async getBasicEmployeeDetails(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getBasicEmployeeDetailsByEmployeeId(employeeId);
+    } catch (error) {
+      console.log(error);
+      throw new RpcException('Employee not found');
+    }
+  }
+
+  @MessagePattern('get_basic_employee_details_with_signature')
+  async getBasicEmployeeDetailsWithSignature(@Payload() employeeId: string) {
+    try {
+      return await this.employeesService.getBasicEmployeeDetailsByEmployeeIdWithSignature(employeeId);
     } catch (error) {
       console.log(error);
       throw new RpcException('Employee not found');

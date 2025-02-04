@@ -7,6 +7,8 @@ import * as redis from 'redis';
 import * as connectRedis from 'connect-redis';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as helmet from 'helmet';
+import { fstat, readFileSync } from 'fs';
+import { join } from 'path';
 
 const whitelist = [
   'http://172.20.10.57:3109',
@@ -40,11 +42,19 @@ const whitelist = [
   'http://172.20.10.57:3003',
   'http://172.20.10.57:3004',
   'http://172.20.10.57:3006',
+  'http://172.20.110.60:3001',
+  'http://172.20.110.60:3002',
+  'http://172.20.110.60:3003',
+  'http://172.20.110.60:3004',
+  'http://172.20.110.60:3005',
+  'http://172.20.110.60:3006',
+  'http://172.20.110.60:3007',
   'http://localhost:3000',
 ];
 
 const redisClient = redis.createClient({
-  url: `redis://${process.env.MS_HOST_LOCAL}:6479`,
+  url: `redis://${process.env.MS_HOST_LOCAL}:${process.env.RSP_AUTH_PORT}`,
+  password: process.env.MS_PASSWORD,
 });
 console.log('-----------', redisClient);
 //redisClient.get
@@ -53,8 +63,16 @@ const Redis = connectRedis(session);
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  /*
+   httpsOptions: {
+      key: readFileSync(join(__dirname, '../dist/ssl/localhost.key'), 'utf-8'),
+      cert: readFileSync(join(__dirname, '../dist/ssl/localhost.crt'), 'utf-8'),
+    },
+  
+  
+  */
 
-  app.use(helmet());
+  //app.use(helmet());
 
   app.use(
     '/',
@@ -63,7 +81,7 @@ async function bootstrap() {
         client: redisClient,
       }),
       name: 'ssid_hrms',
-      secret: '1234',
+      secret: process.env.RSP_COOKIE_PASS,
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -81,12 +99,21 @@ async function bootstrap() {
     transport: Transport.REDIS,
     options: {
       url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
+      password: process.env.MS_PASSWORD,
     },
   });
 
   app.startAllMicroservices();
   app.set('trust proxy', 1);
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // app.useGlobalPipes(
+  //   new ValidationPipe({
+  //     transform: true,
+  //     forbidUnknownValues: false,
+  //     whitelist: true,
+  //     forbidNonWhitelisted: true,
+  //     skipMissingProperties: false,
+  //   }),
+  // );
   //app.useGlobalPipes(new ParseUUIDPipe());
   app.setGlobalPrefix('api');
 

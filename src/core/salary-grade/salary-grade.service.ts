@@ -16,12 +16,18 @@ export class SalaryGradeService extends BaseEntityCrudService<SalaryGrade> {
   async createSalaryGrade(dto: CreateSalaryGradeDto) {
     try {
       const effectivityYear = new Date().getFullYear();
-      return await Promise.all(
+
+      // sp_update_plantill_salary_grade()
+      const result = await Promise.all(
         dto.salaryGradeList.map(async (salaryGradeItem) => {
           const { salaryGrade, stepIncrement, amount } = salaryGradeItem;
           return await this.entityRepository.createQueryBuilder().insert().values({ salaryGrade, stepIncrement, amount, effectivityYear: effectivityYear }).execute();
         }),
       );
+
+      await this.entityRepository.query(`CALL sp_update_plantilla_salary_grade()`);
+
+      return result;
     } catch (error) {
       Logger.log(error);
       if (error.errno === 1062) throw new HttpException('Duplicate Entry', HttpStatus.CONFLICT);

@@ -45,6 +45,7 @@ export class RedisConfigForEmployeesMS implements ClientsModuleOptionsFactory {
       transport: Transport.REDIS,
       options: {
         url: `redis://${process.env.MS_HOST_LOCAL}:${process.env.MS_EMPLOYEE_PORT}`,
+        password: process.env.EMP_MONITORING_MS_PASSWORD,
       },
     };
   }
@@ -68,6 +69,7 @@ export class RedisConfigForEmployeeMonitoring implements ClientsModuleOptionsFac
       transport: Transport.REDIS,
       options: {
         url: `redis://${process.env.EMP_MONITORING_MS_HOST}:${process.env.EMP_MONITORING_MS_PORT}`,
+        password: process.env.EMP_MONITORING_MS_PASSWORD,
       },
     };
   }
