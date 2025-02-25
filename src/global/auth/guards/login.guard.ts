@@ -4,7 +4,7 @@ import { AuthNService } from '../services/auth-n.service';
 
 @Injectable()
 export class LogInGuard {
-  constructor(private authNService: AuthNService, private userService: UsersService) {}
+  constructor(private authNService: AuthNService, private userService: UsersService) { }
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
     //1. verify app through the microservice
@@ -12,14 +12,11 @@ export class LogInGuard {
     //if (!token) throw new UnauthorizedException();
     //2. get _id from microservice
     const user = await this.authNService.loginRemote(request.body);
-    console.log(user);
+
     if (!user) throw new UnauthorizedException();
     if (!user.isSuperUser) {
-      console.log(user);
       const userFromLocal = await this.userService.getAuthorizedUserById(user._id);
-      console.log(userFromLocal);
       //4. set token, user session and userId in request object
-      console.log(request);
       request.bearerToken = user.accessToken;
       request.session.user = userFromLocal;
 

@@ -2,7 +2,7 @@ import { ApplicantsService } from './../posting-applicants.service';
 import { PDSService } from './pds/pds.service';
 import { JwtService } from '@nestjs/jwt';
 import { ExternalApplicantsDTO, JobPortalDTO } from './data/dtos/external-applicants.dto';
-import { Injectable, HttpException, HttpCode } from '@nestjs/common';
+import { Injectable, HttpException, HttpCode, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
@@ -27,11 +27,9 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
     try {
       const details = await this.entityRepository.findOne({ select: ['firstName', 'middleName', 'lastName', 'nameExtension'], where: { email: email.email } });
       const vpp = (await this.entityRepository.query(`SELECT COUNT(_id) \`count\` FROM vacant_position_posting WHERE _id = ?`, [vppId]))[0];
-      console.log(vpp);
       if (vpp.count === '0') throw new HttpException('Invalid Posting ID', 404);
       if (details) {
         const applicantEmailResult = await this.emailService.sendEmailForApplicant(email.email, details, vppId);
-        console.log('TOKEN EMAIL', applicantEmailResult);
         return {
           email,
           details,
@@ -40,19 +38,13 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
       }
       return null;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.response, error.status);
     }
   }
 
   async addExternalApplicant(vppId: string, jobPortalDTO: JobPortalDTO) {
     try {
-      // console.log('via');
-      // console.log(jobPortalDTO);
-      // console.table(jobPortalDTO);
-      // console.log(jobPortalDTO.pds);
       const externalApplicant = await this.saveEntity(jobPortalDTO.personalInfo);
-      console.log('External Applicant Id: ', externalApplicant._id);
       const pds = await this.pdsService.savePDS(externalApplicant._id, jobPortalDTO.pds);
       const postingApplicant = await this.applicantService.saveEntity({
         vacantPositionPostingId: vppId,
@@ -60,24 +52,19 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
         applicantStatus: 'For review',
         examScore: 0,
       });
-      // const result = await this.applicantService.entityRepository
-      // .createQueryBuilder()
-      // .update()
-      // .set({ withRelevantExperience: postingApplicantRelevantExperienceUpdateDTO.withRelevantExperience })
-      // .where(`external_applicant_id_fk = :externalApplicantId AND vacant_position_posting_id_fk =:vppId`, { externalApplicantId, vppId })
-      // .execute();
 
       return {
         externalApplicant,
         pds,
         postingApplicant,
       };
-    } catch (error) {}
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async verifyExternalApplicantByToken(token: string) {
     const verifiedApplicant = await this.verifyExternalApplicantToken(token);
-    console.log('asdasdasdas: ', verifiedApplicant.email);
     const applicantId = await this.entityRepository.findOne({ select: ['_id'], where: { email: verifiedApplicant.email } });
 
     return {
@@ -97,7 +84,6 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
   }
 
   async checkRelevantWorkExperience(externalApplicantsLogin: { externalApplicantId: string; vppId: string }) {
-    //return await this.applicantser;
     const { externalApplicantId, vppId } = externalApplicantsLogin;
     const hasRelevantWorkExperience = await this.applicantService.entityRepository.findOne({
       select: ['withRelevantExperience'],
@@ -129,10 +115,9 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
           [externalApplicantId],
         )
       )[0];
-      console.log(name);
       return name;
     } catch (error) {
-      console.log(error);
+
       throw new HttpException(error.message, error.status);
     }
   }

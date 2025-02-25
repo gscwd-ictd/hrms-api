@@ -96,8 +96,7 @@ export class CommitteeMembersService extends BaseEntityCrudService<CommitteeMemb
       if (isPdcSecretariat === '1') return true;
       return false;
     } catch (error) {
-      console.log(error);
-      throw new RpcException('500');
+      throw new RpcException(error.message);
     }
   }
 

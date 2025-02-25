@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DepartmentPositionService } from '../organizational-positions/department-positions/department-positions.service';
 import { DivisionPositionsService } from '../organizational-positions/division-positions/division-positions.service';
 import { OfficePositionsService } from '../organizational-positions/office-positions/office-positions.service';
@@ -17,7 +17,7 @@ export class OrganizationService {
 
     private readonly divisionService: DivisionService,
     private readonly divisionPositionsService: DivisionPositionsService,
-  ) {}
+  ) { }
 
   async getOrganizationById(orgId: string) {
     try {
@@ -29,7 +29,9 @@ export class OrganizationService {
           [orgId],
         )
       )[0][0];
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAllOrganizationByGroup() {
@@ -104,7 +106,9 @@ export class OrganizationService {
           positionId,
         })
         .getRawMany();
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getDepartments(officeId: string) {
@@ -112,7 +116,9 @@ export class OrganizationService {
       return await this.departmentService.entityRepository.find({
         where: { officeId },
       });
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getDepartmentByOfficeIdandDepartmentId(officeId: string, _id: string) {
@@ -120,7 +126,9 @@ export class OrganizationService {
       return await this.departmentService.entityRepository.findOne({
         where: { officeId, _id },
       });
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getPositionsPerDepartment(officeId: string, departmentId: string, positionId?: string) {
@@ -147,7 +155,9 @@ export class OrganizationService {
           positionId,
         })
         .getRawMany();
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getDivisions(officeId: string, departmentId: string, _id?: string) {
@@ -170,7 +180,9 @@ export class OrganizationService {
           _id,
         })
         .getRawMany();
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getDivisionPositions(officeId: string, departmentId: string, divisionId: string, _id?: string) {
@@ -199,7 +211,9 @@ export class OrganizationService {
           _id,
         })
         .getRawMany();
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   async getAllOrgStructs() {
@@ -221,7 +235,7 @@ export class OrganizationService {
         .getRawMany();
 
       return { offices, departments, divisions };
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async getAllOrgStructsLabelValue() {
@@ -250,7 +264,7 @@ export class OrganizationService {
         .getRawMany();
 
       return [...offices, ...departments, ...divisions];
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async getAllOrgStructsMixed() {
@@ -282,7 +296,7 @@ export class OrganizationService {
         name = 'Office of the General Manager';`,
       );
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 }

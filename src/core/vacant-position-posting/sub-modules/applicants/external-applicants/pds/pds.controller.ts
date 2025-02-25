@@ -4,7 +4,7 @@ import { PDSService } from './pds.service';
 
 @Controller('pds')
 export class PDSController {
-  constructor(private pdsService: PDSService) {}
+  constructor(private pdsService: PDSService) { }
 
   @Post(':applicant_id')
   async savePDS(@Param('applicant_id') externalApplicantId: string, @Body() pdsDTO: PdsDTO) {
@@ -23,7 +23,6 @@ export class PDSController {
 
   @Get('/psb/:applicant_id')
   async getApplicantPdsWithWorkExperience(@Param('applicant_id') applicantId: string) {
-    console.log('asdasdasd');
     return await this.pdsService.getApplicantPdsWithWorkExperience(applicantId);
   }
 

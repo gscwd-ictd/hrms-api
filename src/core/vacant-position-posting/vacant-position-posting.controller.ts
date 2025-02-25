@@ -1,16 +1,17 @@
 import { VppEffectivityDateDTO } from './data/dtos/vacant-positions-posting.dto';
-import { Controller, Get, Post, Put, Delete, Body, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Patch, UseGuards, UseFilters } from '@nestjs/common';
 import { VacantPositionPostingDTO } from 'src/core/vacant-position-posting/data/dtos/vacant-positions-posting.dto';
 import { VacantPositionPostingViewService } from './data/views/vacant-position-posting-view/vacant-position-posting-view.service';
 import { VppPsbDTO } from './sub-modules/vpp-psb/data/dtos/vpp-psb.dto';
 import { VppScheduleDto } from './sub-modules/vpp-schedule/data/dtos/vpp-schedule.dto';
 import { VacantPositionPostingService } from './vacant-position-posting.service';
 import { ExternalApplicantsPDSGuard } from './sub-modules/applicants/external-applicants/guards/external-applicants-pds.guard';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
+import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter';
 
 @Controller('vacant-position-postings')
 export class VacantPositionPostingController {
-  constructor(private vacantPositionPostingService: VacantPositionPostingService, private vppViewService: VacantPositionPostingViewService) {}
+  constructor(private vacantPositionPostingService: VacantPositionPostingService, private vppViewService: VacantPositionPostingViewService) { }
 
   //#region vacant position posting=
   //@UseGuards(AuthenticatedGuard)
@@ -151,8 +152,14 @@ export class VacantPositionPostingController {
     return await this.vacantPositionPostingService.entityRepository.query(`CALL sp_reset_appointing_authority_procedure(?);`, [vppId]);
   }
 
+  @UseFilters(new MsExceptionFilter())
   @MessagePattern('get_employee_id_by_posting_applicant_id')
   async getEmployeeIdByPostingApplicantId(@Payload() postingApplicantId: string) {
-    return await this.vacantPositionPostingService.getEmployeeIdByPostingApplicantId(postingApplicantId);
+    try {
+      return await this.vacantPositionPostingService.getEmployeeIdByPostingApplicantId(postingApplicantId);
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+
   }
 }

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository, getManager } from 'typeorm';
@@ -67,7 +67,6 @@ export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudServ
         return { deleted: odrDto };
       }
     } catch (error) {
-      console.log(error);
       if (error.code === 'ER_ROW_IS_REFERENCED_2') throw new HttpException('Duty is already assigned to a position', HttpStatus.FORBIDDEN);
     }
   }
@@ -97,7 +96,9 @@ export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudServ
         }),
       );
       return [{ options: optionItems }];
-    } catch (error) {}
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   /* insert duty and responsibility, then assign them to the occupation group. */
@@ -134,8 +135,7 @@ export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudServ
           .getRawOne();
       });
     } catch (error) {
-      Logger.error(error);
-      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -162,9 +162,8 @@ export class OccupationsDutiesResponsibilitiesService extends BaseEntityCrudServ
 
       return deleteDrId;
     } catch (error) {
-      Logger.error(error);
       if (error instanceof HttpException) throw error;
-      throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 }

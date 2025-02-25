@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { ClientProvider, ClientsModuleOptionsFactory, TcpClientOptions, Transport } from '@nestjs/microservices';
 
 export class TcpConfig implements ClientsModuleOptionsFactory {
@@ -11,7 +12,7 @@ export class TcpConfig implements ClientsModuleOptionsFactory {
         },
       };
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

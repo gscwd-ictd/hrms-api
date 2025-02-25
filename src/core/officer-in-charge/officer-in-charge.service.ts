@@ -3,7 +3,7 @@ import { OfficerInChargeDTO } from './data/officer-incharge.dto';
 import { OfficerInChargeViewService } from './data/officer-in-charge-view/officer-in-charge-view.service';
 import { OfficerInCharge } from './data/officer-in-charge.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -51,7 +51,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
 
       return [{ options }];
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 
@@ -110,7 +110,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
 
       return [{ options }];
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 
@@ -118,7 +118,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
     try {
       return await this.officerInChargeViewService.findEntityAll();
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 
@@ -129,7 +129,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
       if (orgType === 'department') return await this.saveEntity({ employeeId, departmentPositionId: orgPositionId });
       if (orgType === 'division') return await this.saveEntity({ employeeId, divisionPositionId: orgPositionId });
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -137,7 +137,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
     try {
       return await this.removeEntity(_id);
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

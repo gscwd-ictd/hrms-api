@@ -5,7 +5,7 @@ import { PostingApplicants } from 'src/core/vacant-position-posting/sub-modules/
 import { ApplicantsService } from './../../../../posting-applicants.service';
 import { getManager } from 'typeorm';
 import { WorkExperienceSheetAddDTO, WorkExperienceSheetDTO } from './data/work-experience-sheet.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { WorkExperienceSheetAccomplishmentsService } from './contents/accomplishments/accomplishments.service';
 import { WorkExperienceSheetBasicService } from './contents/basic/basic.service';
 import { WorkExperienceSheetDutiesService } from './contents/duties/duties.service';
@@ -18,7 +18,7 @@ export class WorkExperienceSheetService {
     private readonly basicService: WorkExperienceSheetBasicService,
     private readonly postingApplicantService: ApplicantsService,
     private readonly workExperienceService: PDSWorkExperienceService,
-  ) {}
+  ) { }
 
   async getWorkExperienceSheet(postingApplicantId: string) {
     try {
@@ -42,23 +42,18 @@ export class WorkExperienceSheetService {
       
       */
       const _id = postingApplicantId;
-      console.log(_id);
       const postingApplicant = await this.postingApplicantService.entityRepository.findOne({
         select: ['vacantPositionPostingId'],
         where: { _id },
       });
 
-      console.log('APPLICANT: ', postingApplicant);
-
       const basic = await this.basicService.entityRepository.find({ where: { postingApplicantId } });
 
       const result = await Promise.all(
         basic.map(async (basicItem) => {
-          console.log(basicItem);
           const workExperience = await this.workExperienceService.entityRepository.findOne({
             where: { _id: basicItem.workExperienceId._id },
           });
-          //console.log(workExperience);
           const accomplishments = await this.accomplishmentsService.entityRepository.find({ where: { workExperienceSheetBasicId: basicItem._id } });
           const duties = await this.dutiesService.entityRepository.find({ where: { workExperienceSheetBasicId: basicItem._id } });
           const { workExperienceId, _id, ...rest } = basicItem;
@@ -68,13 +63,12 @@ export class WorkExperienceSheetService {
 
       return result;
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 
   async addWorkExperienceSheet(externalApplicantId: string, workExperienceSheetDTO: WorkExperienceSheetAddDTO) {
     try {
-      console.log(workExperienceSheetDTO);
       const { vppId, withRelevantExperience, ...rest } = workExperienceSheetDTO;
       const _withRelevantWorkExperience = withRelevantExperience;
 
@@ -84,8 +78,6 @@ export class WorkExperienceSheetService {
           [externalApplicantId, vppId],
         )
       )[0];
-      //let postingApplicant = null;
-      //console.log('count!!!!:   ', applicantCount);
       if (applicantCount === '0') {
         await this.postingApplicantService.saveEntity({ vacantPositionPostingId: vppId, externalApplicantId, examScore: 0, applicantStatus: ApplicantStatus.FOR_REVIEW });
       }
@@ -101,7 +93,6 @@ export class WorkExperienceSheetService {
 
       const postingApplicant = await this.postingApplicantService.entityRepository.findOne({ select: ['_id'], where: { externalApplicantId, vacantPositionPostingId: vppId } });
 
-      //console.log(updatePostingApplicantId);
       if (updatePostingApplicantId.affected > 0) {
         if (withRelevantExperience) {
           const result = await getManager().transaction(async (transactionEntityManager) => {
@@ -135,7 +126,6 @@ export class WorkExperienceSheetService {
 
                 const _duties = await Promise.all(
                   workExperienceSheet.duties.map(async (duty) => {
-                    console.log(duty);
                     return await transactionEntityManager.save(
                       this.dutiesService.createEntity({
                         postingApplicantId: postingApplicant._id,
@@ -152,7 +142,7 @@ export class WorkExperienceSheetService {
         } else return { withRelevantExperience };
       }
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

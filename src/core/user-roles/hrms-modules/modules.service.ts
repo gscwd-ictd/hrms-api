@@ -1,6 +1,6 @@
 import { Modules } from './data/modules.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getManager, Repository } from 'typeorm';
 import { ModulesType } from './data/modules.dto';
@@ -16,7 +16,7 @@ export class ModulesService extends BaseEntityCrudService<Modules> {
     try {
       const module = await this.saveEntity(modulesDTO);
       const users = await this.entityRepository.query(`SELECT _id FROM users;`);
-      console.log(users);
+
       const updateResult = await getManager().transaction(async (transactionEntityManager) => {
         const userRoles = await Promise.all(
           users.map(async (user) => {
@@ -33,7 +33,7 @@ export class ModulesService extends BaseEntityCrudService<Modules> {
       });
       return updateResult;
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -48,6 +48,6 @@ export class ModulesService extends BaseEntityCrudService<Modules> {
   async deleteModuleById(_id: string) {
     try {
       await this.removeEntity(_id);
-    } catch (error) {}
+    } catch (error) { }
   }
 }

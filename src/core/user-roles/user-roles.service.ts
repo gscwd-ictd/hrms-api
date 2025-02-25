@@ -2,9 +2,10 @@ import { UserRolesDTO, UserRolesAddUpdateDTO } from './data/user-roles.dto';
 import { UsersService } from 'src/core/users/services/users.service';
 import { UserRoles } from './data/user-roles.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class UserRolesService extends BaseEntityCrudService<UserRoles> {
@@ -15,7 +16,6 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
   async deleteUserAndRoles(userId: string) {
     try {
       const deleteResult = await this.entityRepository.query(`DELETE FROM user_roles WHERE user_id_fk = ?`, [userId]);
-      //console.log(deleteResult);
 
       const deletedUser = await this.usersService.removeEntity(userId);
       const deletedUserName = (await this.entityRepository.query(`SELECT get_employee_fullname(_id) fullName FROM users WHERE _id=?;`, [userId]))[0];
@@ -43,7 +43,6 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
       const { employeeId, userRoles } = userRolesAddUpdateDTO;
 
       const user = await this.usersService.saveEntity({ _id: employeeId, employeeId, photoUrl: null });
-      console.log(user);
       const result = await Promise.all(
         userRoles.map(async (userRole) => {
           const { module, slug, url, ...rest } = userRole;
@@ -52,7 +51,6 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
       );
       return result;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.message, error.status);
     }
   }
@@ -73,10 +71,9 @@ export class UserRolesService extends BaseEntityCrudService<UserRoles> {
       `,
         [userId, app],
       );
-      console.log(userRoles);
       return userRoles;
     } catch (error) {
-      console.log(error);
+      throw new NotFoundException(error.message);
     }
   }
 

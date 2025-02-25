@@ -1,5 +1,5 @@
 import { ExternalApplicantsService } from './../applicants/external-applicants/external-applicants.service';
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Repository } from 'typeorm';
@@ -25,16 +25,11 @@ export class ApplicantSelectionService extends BaseEntityCrudService<ApplicantSe
     }
   }
 
-  async getSelectedApplicant(vppId: string) {
-    try {
-    } catch (error) {}
-  }
-
   async selectApplicants(applicantSelectionDTO: ApplicantSelectionDTO) {
     try {
       return await this.saveEntity({ ...applicantSelectionDTO });
     } catch (error) {
-      console.log(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }
