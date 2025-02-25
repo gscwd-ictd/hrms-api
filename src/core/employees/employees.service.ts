@@ -3,7 +3,7 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { lastValueFrom } from 'rxjs';
 import { EmailService } from 'src/global/auth/services/email.service';
-import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
+import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
 import { Repository } from 'typeorm';
@@ -1363,5 +1363,49 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         }
         : null,
     };
+  }
+
+
+  /**
+  * @dateCreated 2025-02-25
+  * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+  * @param updateBasicEmployeeInfoDto 
+  * @author RV
+  * @returns Promise<BasicEmployeeInfo>
+  */
+  async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
+    // update employees where(rsp) 
+    // update employees where user_id_fk (portal)
+    // update users (portal);
+    return updateBasicEmployeeInfoDto;
+  }
+
+
+  /**
+   * @dateCreated 2025-02-25
+   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @param updateBasicEmployeeInfoDto 
+   * @author RV
+   * @returns Promise<BasicEmployeeInfo>
+   */
+  async getBasicEmployeeInfo(employeeId: string) {
+    const employee = await this.employeeRepository.query(`
+      SELECT 
+          h_emp._id employeeId, 
+          h_emp.first_name firstName, 
+          h_emp.middle_name middleName, 
+          h_emp.last_name lastName, 
+          h_emp.name_extension nameExtension, 
+          h_emp.title_prefix titlePrefix,
+          h_emp.title_suffix titleSuffix,
+          p_emp.sex sex,
+          p_emp.mobile_number phoneNumber,
+          p_emp.email_address email,
+          pp.daily_rate dailyRate
+      FROM employees h_emp 
+        INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
+      WHERE h_emp._id = ?;`, [employeeId]);
+    return employee.length > 0 ? employee[0] : null;
   }
 }
