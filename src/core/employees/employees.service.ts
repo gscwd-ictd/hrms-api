@@ -1397,7 +1397,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           .createQueryBuilder()
           .update(PlantillaPositions)
           .set({
-            dailyRate,
+            dailyRate: dailyRate.toString() === '' ? null : dailyRate,
           })
           .where('employee_id_fk = :employeeId', { employeeId })
           .execute();
