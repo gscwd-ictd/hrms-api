@@ -35,4 +35,6 @@ export class UpdateBasicEmployeeInfoDto extends PickType(EmployeeDTO, ['firstNam
   dailyRate: number;
 
   birthday: Date;
+
+  natureOfAppointment: string;
 }
