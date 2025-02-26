@@ -13,6 +13,7 @@ import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
+import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -1365,7 +1366,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     };
   }
 
-
   /**
   * @dateCreated 2025-02-25
   * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
@@ -1374,73 +1374,84 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   * @returns Promise<BasicEmployeeInfo>
   */
   async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
-    // update employees where(rsp) 
-    const {
-      dailyRate,
-      email,
-      employeeId,
-      firstName,
-      lastName,
-      middleName,
-      nameExtension,
-      phoneNumber,
-      sex,
-      birthday,
-      titlePrefix,
-      titleSuffix
-    } = updateBasicEmployeeInfoDto;
-    const updateHrmsEmployee = await this.entityRepository.createQueryBuilder().update().set({
-      firstName, middleName, lastName, nameExtension, titlePrefix, titleSuffix
-    }).where('_id=:employeeId', { employeeId }).execute();
+    try {
+      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
+      await this.entityRepository.manager.transaction(async (transactionalEntityManager) => {
+        //Update Employee details in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(Employees)
+          .set({
+            firstName,
+            middleName,
+            lastName,
+            nameExtension,
+            titlePrefix,
+            titleSuffix,
+          })
+          .where('_id=:employeeId', { employeeId })
+          .execute();
 
-    // update employees where user_id_fk (portal)
-    if (updateHrmsEmployee.affected > 0) {
+        //Update Employee daily rate in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(PlantillaPositions)
+          .set({
+            dailyRate,
+          })
+          .where('employee_id_fk = :employeeId', { employeeId })
+          .execute();
 
-      const updateHrmsEmployeeDailyRate = await this.plantillaPositionsService.entityRepository.createQueryBuilder().update().set({
-        dailyRate
-      }).where('employee_id_fk = :employeeId', { employeeId }).execute();
+        //Update Employee Details in Portal
+        await transactionalEntityManager.query(
+          `
+          UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
+            first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
+          user_id_fk=?;
+        `,
+          [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId],
+        );
 
-      const updatePortalEmployees = await this.entityRepository.query(`
-        UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
-          first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
-        user_id_fk=?;
-      `, [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId]);
-
-      const updatePortalUsers = await this.entityRepository.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
-
-      console.log('!@#$%^&*( ', updateHrmsEmployee, ' ', updatePortalEmployees, ' ', updatePortalUsers);
-
+        //Update Employee Username(email) in Portal
+        await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+      });
+      return updateBasicEmployeeInfoDto;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
-    // update users (portal);
-    return updateBasicEmployeeInfoDto;
   }
 
   /**
    * @dateCreated 2025-02-25
    * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
-   * @param updateBasicEmployeeInfoDto 
+   * @param employeeId
    * @author RV
    * @returns Promise<BasicEmployeeInfo>
    */
   async getBasicEmployeeInfo(employeeId: string) {
-    const employee = await this.employeeRepository.query(`
-      SELECT 
-          h_emp._id employeeId, 
-          h_emp.first_name firstName, 
-          h_emp.middle_name middleName, 
-          h_emp.last_name lastName, 
-          h_emp.name_extension nameExtension, 
-          h_emp.title_prefix titlePrefix,
-          h_emp.title_suffix titleSuffix,
-          p_emp.sex sex,
-          p_emp.mobile_number phoneNumber,
-          p_emp.email_address email,
-          DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
-          pp.daily_rate dailyRate
-      FROM employees h_emp 
-        INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
-        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
-      WHERE h_emp._id = ?;`, [employeeId]);
-    return employee.length > 0 ? employee[0] : null;
+    try {
+      const employee = await this.employeeRepository.query(`
+        SELECT 
+            h_emp._id employeeId, 
+            h_emp.first_name firstName, 
+            h_emp.middle_name middleName, 
+            h_emp.last_name lastName, 
+            h_emp.name_extension nameExtension, 
+            h_emp.title_prefix titlePrefix,
+            h_emp.title_suffix titleSuffix,
+            p_emp.sex sex,
+            p_emp.mobile_number phoneNumber,
+            p_emp.email_address email,
+            DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
+            pp.daily_rate dailyRate
+        FROM employees h_emp 
+          INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
+          INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
+        WHERE h_emp._id = ?;`, [employeeId]);
+      return employee.length > 0 ? employee[0] : null;
+    }
+    catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }
