@@ -119,6 +119,13 @@ export class EmployeesController {
     return result;
   }
 
+  /**
+   * @dateCreated 2025-02-25
+   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @param employeeId
+   * @author RV
+   * @returns Promise<BasicEmployeeInfo>
+   */
   @Get('details/basic/:employee_id')
   async getBasicEmployeeInfo(@Param('employee_id') employeeId: string) {
     const result = await this.employeesService.getBasicEmployeeInfo(employeeId);
