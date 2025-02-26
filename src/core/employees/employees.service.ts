@@ -1424,32 +1424,36 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   /**
    * @dateCreated 2025-02-25
    * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
-   * @param updateBasicEmployeeInfoDto
+   * @param employeeId
    * @author RV
    * @returns Promise<BasicEmployeeInfo>
    */
   async getBasicEmployeeInfo(employeeId: string) {
-    const employee = await this.employeeRepository.query(
-      `
-      SELECT 
-          h_emp._id employeeId, 
-          h_emp.first_name firstName, 
-          h_emp.middle_name middleName, 
-          h_emp.last_name lastName, 
-          h_emp.name_extension nameExtension, 
-          h_emp.title_prefix titlePrefix,
-          h_emp.title_suffix titleSuffix,
-          p_emp.sex sex,
-          p_emp.mobile_number phoneNumber,
-          p_emp.email_address email,
-          DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
-          pp.daily_rate dailyRate
-      FROM employees h_emp 
-        INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
-        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
-      WHERE h_emp._id = ?;`,
-      [employeeId],
-    );
-    return employee.length > 0 ? employee[0] : null;
+    try {
+      const employee = await this.employeeRepository.query(
+        `
+        SELECT 
+            h_emp._id employeeId, 
+            h_emp.first_name firstName, 
+            h_emp.middle_name middleName, 
+            h_emp.last_name lastName, 
+            h_emp.name_extension nameExtension, 
+            h_emp.title_prefix titlePrefix,
+            h_emp.title_suffix titleSuffix,
+            p_emp.sex sex,
+            p_emp.mobile_number phoneNumber,
+            p_emp.email_address email,
+            DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
+            pp.daily_rate dailyRate
+        FROM employees h_emp 
+          INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
+          INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
+        WHERE h_emp._id = ?;`,
+        [employeeId],
+      );
+      return employee.length > 0 ? employee[0] : null;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }
