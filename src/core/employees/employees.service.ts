@@ -13,6 +13,7 @@ import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
+import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -1373,48 +1374,51 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    * @returns Promise<BasicEmployeeInfo>
    */
   async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
-    // update employees where(rsp)
-    const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
-    const updateHrmsEmployee = await this.entityRepository
-      .createQueryBuilder()
-      .update()
-      .set({
-        firstName,
-        middleName,
-        lastName,
-        nameExtension,
-        titlePrefix,
-        titleSuffix,
-      })
-      .where('_id=:employeeId', { employeeId })
-      .execute();
+    try {
+      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
+      await this.entityRepository.manager.transaction(async (transactionalEntityManager) => {
+        //Update Employee details in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(Employees)
+          .set({
+            firstName,
+            middleName,
+            lastName,
+            nameExtension,
+            titlePrefix,
+            titleSuffix,
+          })
+          .where('_id=:employeeId', { employeeId })
+          .execute();
 
-    // update employees where user_id_fk (portal)
-    if (updateHrmsEmployee.affected > 0) {
-      const updateHrmsEmployeeDailyRate = await this.plantillaPositionsService.entityRepository
-        .createQueryBuilder()
-        .update()
-        .set({
-          dailyRate,
-        })
-        .where('employee_id_fk = :employeeId', { employeeId })
-        .execute();
+        //Update Employee daily rate in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(PlantillaPositions)
+          .set({
+            dailyRate,
+          })
+          .where('employee_id_fk = :employeeId', { employeeId })
+          .execute();
 
-      const updatePortalEmployees = await this.entityRepository.query(
-        `
-        UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
-          first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
-        user_id_fk=?;
-      `,
-        [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId],
-      );
+        //Update Employee Details in Portal
+        await transactionalEntityManager.query(
+          `
+          UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
+            first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
+          user_id_fk=?;
+        `,
+          [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId],
+        );
 
-      const updatePortalUsers = await this.entityRepository.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
-
-      console.log('!@#$%^&*( ', updateHrmsEmployee, ' ', updatePortalEmployees, ' ', updatePortalUsers);
+        //Update Employee Username(email) in Portal
+        await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+      });
+      return updateBasicEmployeeInfoDto;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
-    // update users (portal);
-    return updateBasicEmployeeInfoDto;
   }
 
   /**
