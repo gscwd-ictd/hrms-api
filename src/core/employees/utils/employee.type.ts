@@ -35,4 +35,5 @@ export type BasicEmployeeInfo = {
   phoneNumber: number;
   email: string;
   dailyRate: number;
+  birthday: Date;
 }

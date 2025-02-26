@@ -33,4 +33,6 @@ export class UpdateBasicEmployeeInfoDto extends PickType(EmployeeDTO, ['firstNam
   email: string;
 
   dailyRate: number;
+
+  birthday: Date;
 }

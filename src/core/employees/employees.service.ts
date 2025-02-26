@@ -1375,11 +1375,45 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   */
   async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
     // update employees where(rsp) 
+    const {
+      dailyRate,
+      email,
+      employeeId,
+      firstName,
+      lastName,
+      middleName,
+      nameExtension,
+      phoneNumber,
+      sex,
+      birthday,
+      titlePrefix,
+      titleSuffix
+    } = updateBasicEmployeeInfoDto;
+    const updateHrmsEmployee = await this.entityRepository.createQueryBuilder().update().set({
+      firstName, middleName, lastName, nameExtension, titlePrefix, titleSuffix
+    }).where('_id=:employeeId', { employeeId }).execute();
+
     // update employees where user_id_fk (portal)
+    if (updateHrmsEmployee.affected > 0) {
+
+      const updateHrmsEmployeeDailyRate = await this.plantillaPositionsService.entityRepository.createQueryBuilder().update().set({
+        dailyRate
+      }).where('employee_id_fk = :employeeId', { employeeId }).execute();
+
+      const updatePortalEmployees = await this.entityRepository.query(`
+        UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
+          first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
+        user_id_fk=?;
+      `, [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId]);
+
+      const updatePortalUsers = await this.entityRepository.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+
+      console.log('!@#$%^&*( ', updateHrmsEmployee, ' ', updatePortalEmployees, ' ', updatePortalUsers);
+
+    }
     // update users (portal);
     return updateBasicEmployeeInfoDto;
   }
-
 
   /**
    * @dateCreated 2025-02-25
@@ -1401,6 +1435,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           p_emp.sex sex,
           p_emp.mobile_number phoneNumber,
           p_emp.email_address email,
+          DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
           pp.daily_rate dailyRate
       FROM employees h_emp 
         INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
