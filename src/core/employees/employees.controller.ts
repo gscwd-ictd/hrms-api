@@ -121,7 +121,7 @@ export class EmployeesController {
 
   /**
    * @dateCreated 2025-02-25
-   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex,CivilStatus)
    * @param employeeId
    * @author RV
    * @returns Promise<BasicEmployeeInfo>

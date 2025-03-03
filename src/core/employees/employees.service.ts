@@ -14,6 +14,7 @@ import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
+import { BasicEmployeeInfo } from './utils/employee.type';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -1428,7 +1429,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    * @author RV
    * @returns Promise<BasicEmployeeInfo>
    */
-  async getBasicEmployeeInfo(employeeId: string) {
+  async getBasicEmployeeInfo(employeeId: string): Promise<BasicEmployeeInfo> | null {
     try {
       const employee = await this.employeeRepository.query(`
         SELECT 
@@ -1443,10 +1444,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
             p_emp.mobile_number phoneNumber,
             p_emp.email_address email,
             DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
+            pbpi.civil_status civilStatus,
             pp.daily_rate dailyRate
         FROM employees h_emp 
           INNER JOIN portal.employees p_emp ON h_emp._id = p_emp.user_id_fk
           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
+          INNER JOIN portal.pds_basic_personal_info pbpi ON pbpi.user_id_fk = h_emp._id 
         WHERE h_emp._id = ?;`, [employeeId]);
       return employee.length > 0 ? employee[0] : null;
     }

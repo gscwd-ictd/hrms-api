@@ -2,7 +2,7 @@ import { IsEmail } from 'class-validator';
 import { UserRole } from 'src/core/users/utils/enums/role.enum';
 import { RestDays } from '../../utils/employee.type';
 import { PickType } from '@nestjs/swagger';
-import { Sex } from 'src/core/vacant-position-posting/sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum';
+import { CivilStatus, Sex } from 'src/core/vacant-position-posting/sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum';
 
 export class EmployeeDTO {
   _id?: string;
@@ -37,4 +37,6 @@ export class UpdateBasicEmployeeInfoDto extends PickType(EmployeeDTO, ['firstNam
   birthday: Date;
 
   natureOfAppointment: string;
+
+  civilStatus: CivilStatus;
 }
