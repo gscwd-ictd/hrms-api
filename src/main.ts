@@ -88,7 +88,9 @@ async function bootstrap() {
     transport: Transport.REDIS,
     options: {
       url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
+      retryAttempts: 10,
     },
+
   });
 
   app.startAllMicroservices();

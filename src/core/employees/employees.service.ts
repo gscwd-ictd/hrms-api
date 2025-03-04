@@ -134,12 +134,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllEmployeesWithSupervisor() {
+    let _employeeId;
+    let _employeeDetails;
     try {
       const employeeList = await this.getAllPermanentCasualEmployees();
       const employees = await Promise.all(
         employeeList.map(async (emp) => {
           const { value } = emp;
+          _employeeId = value;
           const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+          _employeeDetails = employeeDetails;
           const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
           const hrdDetails = await this.getEmployeeDetailsByEmployeeId(await this.getHrdManager());
           return {
@@ -170,10 +174,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
-
       return employees;
     } catch (error) {
-      throw new error(error);
+      console.log('asd', _employeeId, ' ', _employeeDetails, error);
+      throw new Error(error);
     }
   }
 
@@ -431,7 +435,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .getRawOne();
 
       const employeeSchedule = await this.getEmployeeSchedule(employeeId);
-
       const isPdcChairman = await this.committeeMembersService.isPdcChairman(employeeId);
       const isPdcSecretariat = await this.committeeMembersService.isPdcSecretariat(employeeId);
       const { id, name, userId, employeeFullName, companyId, positionId, positionTitle, isHRMPSB, userRole, employeeFullNameFirst } = empPosition;
@@ -457,10 +460,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule.scheduleBase,
+        scheduleBase: employeeSchedule === null ? null : employeeSchedule.scheduleBase,
         userRole,
       };
     } catch (error) {
+      console.log(error.message);
       throw new HttpException(error.status, error.message);
     }
   }

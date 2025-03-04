@@ -290,12 +290,13 @@ export class EmployeesMsController {
   @MessagePattern('get_all_employees_with_supervisor')
   async getAllEmployeesWithSupervisorMs() {
     try {
-      return await this.employeesService.getAllEmployeesWithSupervisor();
+      const result = await this.employeesService.getAllEmployeesWithSupervisor();
+      return result;
     }
     catch (error) {
+      console.log(error.message);
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employee_with_supervisor')
