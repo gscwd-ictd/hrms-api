@@ -1,9 +1,8 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query } from '@nestjs/common';
-import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
-import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put, Query } from '@nestjs/common';
+import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data/dtos/employee.dto';
 import { EmployeesService } from './employees.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
-import { SalaryGrade } from '../salary-grade/data/entities/salary-grade.entity';
+import { BasicEmployeeInfo } from './utils/employee.type';
 
 @Controller('employees')
 export class EmployeesController {
@@ -100,10 +99,37 @@ export class EmployeesController {
     return await this.employeesService.getEmployeeDetailsByPlantillaId(plantillaId);
   }
 
+
   @Get('plantilla-positions/get-everything/:employee_id')
   async getEmployeePosition(@Param('employee_id') employeeId: string) {
     //return employeeId;
     return await this.employeesService.getEmployeePosition(employeeId);
+  }
+
+  /**
+   * @dateCreated 2025-02-25
+   * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @author RV
+   * @param updateBasicEmployeeInfoDto 
+   * @returns Promise<BasicEmployeeInfo>
+   */
+  @Put('details/basic')
+  async updateBasicEmployeeInfo(@Body() updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto): Promise<BasicEmployeeInfo> {
+    const result = await this.employeesService.updateBasicEmployeeInfo(updateBasicEmployeeInfoDto);
+    return result;
+  }
+
+  /**
+   * @dateCreated 2025-02-25
+   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex,CivilStatus)
+   * @param employeeId
+   * @author RV
+   * @returns Promise<BasicEmployeeInfo>
+   */
+  @Get('details/basic/:employee_id')
+  async getBasicEmployeeInfo(@Param('employee_id') employeeId: string) {
+    const result = await this.employeesService.getBasicEmployeeInfo(employeeId);
+    return result;
   }
 
   @Get('reports/detailed/')

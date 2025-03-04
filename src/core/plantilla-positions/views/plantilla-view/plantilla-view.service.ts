@@ -31,9 +31,13 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
   }
 
   async findAllPermanentPlantillaPositions() {
-    return await this.plantillaViewRepository.find({
+    const result = await this.plantillaViewRepository.find({
       order: { itemNumber: 'ASC' },
     });
+    const positions = result.map((item) => {
+      return { ...item, isFilled: item.isFilled.toString() === '0' ? false : true };
+    });
+    return positions;
   }
 
   async getJD(_id: string) {

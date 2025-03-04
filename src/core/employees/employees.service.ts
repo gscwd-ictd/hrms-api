@@ -3,7 +3,7 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { lastValueFrom } from 'rxjs';
 import { EmailService } from 'src/global/auth/services/email.service';
-import { EmployeeDTO } from 'src/core/employees/data/dtos/employee.dto';
+import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
 import { Repository } from 'typeorm';
@@ -13,6 +13,8 @@ import { UserRole } from '../users/utils/enums/role.enum';
 import { OfficerInChargeViewService } from '../officer-in-charge/data/officer-in-charge-view/officer-in-charge-view.service';
 import { CommitteeMembersService } from '../committee-members/committee-members.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
+import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
+import { BasicEmployeeInfo } from './utils/employee.type';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -1369,5 +1371,96 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         }
         : null,
     };
+  }
+
+  /**
+  * @dateCreated 2025-02-25
+  * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+  * @param updateBasicEmployeeInfoDto 
+  * @author RV
+  * @returns Promise<BasicEmployeeInfo>
+  */
+  async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
+    try {
+      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
+      await this.entityRepository.manager.transaction(async (transactionalEntityManager) => {
+        //Update Employee details in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(Employees)
+          .set({
+            firstName,
+            middleName,
+            lastName,
+            nameExtension,
+            titlePrefix,
+            titleSuffix,
+          })
+          .where('_id=:employeeId', { employeeId })
+          .execute();
+
+        //Update Employee daily rate in RSP
+        await transactionalEntityManager
+          .createQueryBuilder()
+          .update(PlantillaPositions)
+          .set({
+            dailyRate: dailyRate.toString() === '' ? null : dailyRate,
+          })
+          .where('employee_id_fk = :employeeId', { employeeId })
+          .execute();
+
+        //Update Employee Details in Portal
+        await transactionalEntityManager.query(
+          `
+          UPDATE ${process.env.PORTAL_DB_NAME}employees SET 
+            first_name=?, middle_name=?, last_name=?, name_ext=?, sex=?, birth_date=?,mobile_number=?,email_address=? WHERE 
+          user_id_fk=?;
+        `,
+          [firstName, middleName, lastName, nameExtension, sex, birthday, phoneNumber, email, employeeId],
+        );
+
+        //Update Employee Username(email) in Portal
+        await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+      });
+      return updateBasicEmployeeInfoDto;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  /**
+   * @dateCreated 2025-02-25
+   * @description this function is used for fetching Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @param employeeId
+   * @author RV
+   * @returns Promise<BasicEmployeeInfo>
+   */
+  async getBasicEmployeeInfo(employeeId: string): Promise<BasicEmployeeInfo> | null {
+    try {
+      const employee = await this.employeeRepository.query(`
+        SELECT 
+            h_emp._id employeeId, 
+            h_emp.first_name firstName, 
+            h_emp.middle_name middleName, 
+            h_emp.last_name lastName, 
+            h_emp.name_extension nameExtension, 
+            h_emp.title_prefix titlePrefix,
+            h_emp.title_suffix titleSuffix,
+            p_emp.sex sex,
+            p_emp.mobile_number phoneNumber,
+            p_emp.email_address email,
+            DATE_FORMAT(p_emp.birth_date,'%Y-%m-%d') birthday,
+            pbpi.civil_status civilStatus,
+            pp.daily_rate dailyRate
+        FROM employees h_emp 
+          INNER JOIN ${process.env.PORTAL_DB_NAME}employees p_emp ON h_emp._id = p_emp.user_id_fk
+          INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
+          LEFT JOIN ${process.env.PORTAL_DB_NAME}pds_basic_personal_info pbpi ON pbpi.user_id_fk = h_emp._id 
+        WHERE h_emp._id = ?;`, [employeeId]);
+      return employee.length > 0 ? employee[0] : null;
+    }
+    catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }
