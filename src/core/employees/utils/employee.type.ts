@@ -1,3 +1,5 @@
+import { CivilStatus, Sex } from "src/core/vacant-position-posting/sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum";
+
 export type EmployeeEmailPayload = {
   companyId: string;
   firstName: string;
@@ -19,4 +21,20 @@ export enum RestDays {
   THURSDAY = 4,
   FRIDAY = 5,
   SATURDAY = 6,
+}
+
+export type BasicEmployeeInfo = {
+  employeeId: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  nameExtension?: string;
+  titlePrefix?: string;
+  titleSuffix?: string;
+  sex: Sex;
+  phoneNumber: number;
+  email: string;
+  dailyRate: number;
+  civilStatus: CivilStatus;
+  birthday: Date;
 }
