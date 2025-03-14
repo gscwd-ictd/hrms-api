@@ -6,7 +6,7 @@ import * as session from 'express-session';
 import * as redis from 'redis';
 import * as connectRedis from 'connect-redis';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import * as helmet from 'helmet';
+import helmet from 'helmet';
 
 const whitelist = [
   'http://172.20.10.57:3109',
@@ -90,7 +90,6 @@ async function bootstrap() {
       url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
       retryAttempts: 10,
     },
-
   });
 
   app.startAllMicroservices();
@@ -98,6 +97,23 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   //app.useGlobalPipes(new ParseUUIDPipe());
   app.setGlobalPrefix('api');
+
+  app.use(
+    helmet({
+      xContentTypeOptions: true,
+      xXssProtection: true,
+      hsts: {
+        maxAge: 31536000, // 1 year (in seconds)
+        includeSubDomains: true, // Apply to all subdomains
+        preload: true, // Allow browser preloading
+      },
+    }),
+  );
+
+  app.use((req: any, res: { setHeader: (arg0: string, arg1: string) => void }, next: () => void) => {
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
 
   // const config = new DocumentBuilder().setTitle('HRIS API').setDescription('The cats API description').setVersion('1.0').addTag('cats').build();
   // const document = SwaggerModule.createDocument(app, config);
