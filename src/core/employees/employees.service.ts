@@ -334,7 +334,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
-
   async getBasicEmployeeDetailsByEmployeeId(employeeId: string) {
     try {
       const empPosition = await this.employeeRepository
@@ -498,9 +497,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         assignment: { id, name, positionId, positionTitle },
         userRole,
       };
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   async getEmployeeDetailByCompanyIdMS(_companyId: string) {
@@ -748,7 +745,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .where(`pp.position_title<>'Chairman' AND emp._id= :employeeId`, { employeeId })
         .getRawMany();
     } else if (typeof employeeId === 'undefined' && natureOfAppointment !== null && natureOfAppointment !== '') {
-
       empPositions = await this.employeeRepository
         .createQueryBuilder('emp')
         .select('emp._id', 'employeeId')
@@ -822,10 +818,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     return _empPositions;
   }
 
-
   async getEmployeeSchedule(employeeId: string) {
     try {
-      const employeeSchedule = await this.entityRepository.query(`
+      const employeeSchedule = await this.entityRepository.query(
+        `
         SELECT 
            s.schedule_id id,
            s.name scheduleName, 
@@ -846,22 +842,25 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
        INNER JOIN employee_monitoring.employee_rest_days emrs ON emr.employee_rest_day_id = emrs.employee_rest_day_id_fk  
        WHERE emr.employee_id_fk = ? GROUP BY s.schedule_id,es.created_at,dateFrom,dateTo ORDER BY DATE_FORMAT(emr.date_from,'%Y-%m-%d') 
        DESC LIMIT 1
- `, [employeeId]);
+ `,
+        [employeeId],
+      );
       return employeeSchedule.length > 0 ? employeeSchedule[0] : null;
-    }
-    catch (error) {
+    } catch (error) {
       return null;
     }
   }
 
   async getEmployeePhotoUrlFromPortal(employeeId: string) {
     try {
-      const photoUrl = await this.entityRepository.query(`
+      const photoUrl = await this.entityRepository.query(
+        `
         SELECT photo_url photoUrl FROM ${process.env.PORTAL_DB_NAME}employees WHERE user_id_fk = ?;
-        `, [employeeId]);
+        `,
+        [employeeId],
+      );
       return photoUrl.length > 0 ? photoUrl[0].photoUrl : null;
-    }
-    catch (error) {
+    } catch (error) {
       return null;
     }
   }
@@ -913,8 +912,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         }),
       );
       return _empPositions;
-    }
-    catch (error) {
+    } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
@@ -1071,7 +1069,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         ])
       )[0].supervisorId;
     } catch (error) {
-
       if (isRpc) throw new RpcException(error);
       throw new HttpException(error.message, error.status);
     }
@@ -1359,24 +1356,25 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       },
       gm: includeGm
         ? {
-          name: gmDetails.employeeFullName,
-          signature: hrdDetails.signatureUrl,
-          position: gmDetails.assignment.positionTitle === 'OIC-General Manager' ? 'Acting General Manager' : gmDetails.assignment.positionTitle,
-        }
+            name: gmDetails.employeeFullName,
+            signature: hrdDetails.signatureUrl,
+            position: gmDetails.assignment.positionTitle === 'OIC-General Manager' ? 'Acting General Manager' : gmDetails.assignment.positionTitle,
+          }
         : null,
     };
   }
 
   /**
-  * @dateCreated 2025-02-25
-  * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
-  * @param updateBasicEmployeeInfoDto 
-  * @author RV
-  * @returns Promise<BasicEmployeeInfo>
-  */
+   * @dateCreated 2025-02-25
+   * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
+   * @param updateBasicEmployeeInfoDto
+   * @author RV
+   * @returns Promise<BasicEmployeeInfo>
+   */
   async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
     try {
-      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
+      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix, civilStatus } =
+        updateBasicEmployeeInfoDto;
       await this.entityRepository.manager.transaction(async (transactionalEntityManager) => {
         //Update Employee details in RSP
         await transactionalEntityManager
@@ -1415,6 +1413,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
         //Update Employee Username(email) in Portal
         await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+        //Update Civil Status  in Portal
+        if (civilStatus.toString() !== '')
+          await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}pds_basic_personal_info SET civil_status = ? WHERE user_id_fk = ?;`, [
+            civilStatus,
+            employeeId,
+          ]);
       });
       return updateBasicEmployeeInfoDto;
     } catch (error) {
@@ -1431,7 +1435,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    */
   async getBasicEmployeeInfo(employeeId: string): Promise<BasicEmployeeInfo> | null {
     try {
-      const employee = await this.employeeRepository.query(`
+      const employee = await this.employeeRepository.query(
+        `
         SELECT 
             h_emp._id employeeId, 
             h_emp.first_name firstName, 
@@ -1450,10 +1455,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           INNER JOIN ${process.env.PORTAL_DB_NAME}employees p_emp ON h_emp._id = p_emp.user_id_fk
           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
           LEFT JOIN ${process.env.PORTAL_DB_NAME}pds_basic_personal_info pbpi ON pbpi.user_id_fk = h_emp._id 
-        WHERE h_emp._id = ?;`, [employeeId]);
+        WHERE h_emp._id = ?;`,
+        [employeeId],
+      );
       return employee.length > 0 ? employee[0] : null;
-    }
-    catch (error) {
+    } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
