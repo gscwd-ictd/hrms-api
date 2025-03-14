@@ -39,7 +39,7 @@
     "cookie-parser": "^1.4.6",
     "exceljs": "^4.3.0",
     "express-session": "^1.17.2",
-    "helmet": "^7.1.0",
+    "helmet": "^7.2.0",
     "ioredis": "^4.28.5",
     "mysql2": "^2.3.3",
     "nestjs-typeorm-paginate": "^3.1.3",

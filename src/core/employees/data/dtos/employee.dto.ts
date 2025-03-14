@@ -21,9 +21,7 @@ export class EmployeeDTO {
   restDays: RestDays[];
 }
 
-export class UpdateBasicEmployeeInfoDto extends PickType(EmployeeDTO, ['firstName', 'middleName', 'lastName', 'nameExtension', 'titlePrefix', 'titleSuffix'
-]) {
-
+export class UpdateBasicEmployeeInfoDto extends PickType(EmployeeDTO, ['firstName', 'middleName', 'lastName', 'nameExtension', 'titlePrefix', 'titleSuffix']) {
   employeeId: string;
 
   sex: Sex;

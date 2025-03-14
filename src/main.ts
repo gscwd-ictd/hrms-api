@@ -6,7 +6,7 @@ import * as session from 'express-session';
 import * as redis from 'redis';
 import * as connectRedis from 'connect-redis';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import * as helmet from 'helmet';
+import helmet from 'helmet';
 import { fstat, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -72,7 +72,22 @@ async function bootstrap() {
   
   */
 
-  //app.use(helmet());
+  app.use(
+    helmet({
+      xContentTypeOptions: true,
+      xXssProtection: true,
+      hsts: {
+        maxAge: 31536000, // 1 year (in seconds)
+        includeSubDomains: true, // Apply to all subdomains
+        preload: true, // Allow browser preloading
+      },
+    }),
+  );
+
+  app.use((req: any, res: { setHeader: (arg0: string, arg1: string) => void }, next: () => void) => {
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
 
   app.use(
     '/',

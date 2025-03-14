@@ -1450,7 +1450,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         FROM employees h_emp 
           INNER JOIN ${process.env.PORTAL_DB_NAME}employees p_emp ON h_emp._id = p_emp.user_id_fk
           INNER JOIN plantilla_positions pp ON pp.employee_id_fk = h_emp._id
-          INNER JOIN ${process.env.PORTAL_DB_NAME}pds_basic_personal_info pbpi ON pbpi.user_id_fk = h_emp._id 
+          LEFT JOIN ${process.env.PORTAL_DB_NAME}pds_basic_personal_info pbpi ON pbpi.user_id_fk = h_emp._id 
         WHERE h_emp._id = ?;`,
         [employeeId],
       );
