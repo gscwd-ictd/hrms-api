@@ -861,7 +861,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         `,
         [employeeId],
       );
-      console.log(photoUrl);
       return photoUrl.length > 0 ? photoUrl[0].photoUrl : null;
     } catch (error) {
       return null;
@@ -949,7 +948,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 
-       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
+       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
+       AND company_id NOT IN ('2008-005','2021-002') 
+       ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
 
@@ -1376,7 +1377,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    */
   async updateBasicEmployeeInfo(updateBasicEmployeeInfoDto: UpdateBasicEmployeeInfoDto) {
     try {
-      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix } = updateBasicEmployeeInfoDto;
+      const { dailyRate, email, employeeId, firstName, lastName, middleName, nameExtension, phoneNumber, sex, birthday, titlePrefix, titleSuffix, civilStatus } =
+        updateBasicEmployeeInfoDto;
       await this.entityRepository.manager.transaction(async (transactionalEntityManager) => {
         //Update Employee details in RSP
         await transactionalEntityManager
@@ -1415,6 +1417,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
         //Update Employee Username(email) in Portal
         await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}users SET email=? WHERE user_id=?`, [email, employeeId]);
+        //Update Civil Status  in Portal
+        if (civilStatus.toString() !== '')
+          await transactionalEntityManager.query(`UPDATE ${process.env.PORTAL_DB_NAME}pds_basic_personal_info SET civil_status = ? WHERE user_id_fk = ?;`, [
+            civilStatus,
+            employeeId,
+          ]);
       });
       return updateBasicEmployeeInfoDto;
     } catch (error) {
