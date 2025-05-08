@@ -7,11 +7,13 @@ export class Employee201Dto {
 
   positionTitle: string;
 
-  salaryGradeId: string;
+  salaryGradeId?: string;
 
   natureOfAppointment: NatureOfAppointment;
 
   dateFrom: Date;
 
   dateTo: Date;
+
+  monthlySalary?: number;
 }
