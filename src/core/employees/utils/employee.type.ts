@@ -1,4 +1,4 @@
-import { CivilStatus, Sex } from "src/core/vacant-position-posting/sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum";
+import { CivilStatus, Sex } from 'src/core/vacant-position-posting/sub-modules/applicants/external-applicants/pds/utils/enums/pds.enum';
 
 export type EmployeeEmailPayload = {
   companyId: string;
@@ -37,4 +37,12 @@ export type BasicEmployeeInfo = {
   dailyRate: number;
   civilStatus: CivilStatus;
   birthday: Date;
+};
+
+export enum InactiveStatus {
+  RESIGNED = 'resigned',
+  RETIRED = 'retired',
+  TERMINATED = 'terminated',
+  DECEASED = 'deceased',
+  END_OF_CONTRACT = 'end_of_contract',
 }
