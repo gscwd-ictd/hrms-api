@@ -59,6 +59,7 @@ import { OrgStructView } from 'src/core/organization/data/views/organization.vie
 import { EmployeeTags } from 'src/core/employee-tags/data/employee-tags.entity';
 import { PositionDutiesResponsibilities } from 'src/core/position-duties-responsibilities/data/entities/position-duties-responsibilities.entity';
 import { EmployeeTemporaryAssignment } from 'src/core/employee-temporary-assignment/data';
+import { Employee201 } from 'src/core/employees/201/entities/employee201.entity';
 
 export const typeormEntities = [
   ...PrfEntities,
@@ -123,7 +124,7 @@ export const typeormEntities = [
   UserLogs,
   OrgStructView,
   EmployeeTags,
-
   PositionDutiesResponsibilities,
   EmployeeTemporaryAssignment,
+  Employee201,
 ];
