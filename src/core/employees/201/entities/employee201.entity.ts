@@ -15,14 +15,14 @@ export class Employee201 extends DefaultTable {
   @JoinColumn({ name: 'position_id_fk' })
   positionId: string;
 
-  @Column({ name: 'name' })
+  @Column({ name: 'position_title' })
   positionTitle: string;
 
   @ManyToOne(() => SalaryGrade, (sg) => sg._id)
   @JoinColumn({ name: 'salary_grade_id' })
   salaryGradeId: string;
 
-  @Column({ name: 'nature_of_appointment', enum: NatureOfAppointment })
+  @Column({ name: 'nature_of_appointment', type: 'enum', enum: NatureOfAppointment })
   natureOfAppointment: NatureOfAppointment;
 
   @Column({ name: 'date_from', type: 'date' })
@@ -30,4 +30,7 @@ export class Employee201 extends DefaultTable {
 
   @Column({ name: 'date_to', type: 'date', nullable: true })
   dateTo: Date;
+
+  @Column({ name: 'monthly_salary', precision: 8, scale: 2, type: 'decimal', default: null, nullable: true })
+  monthlySalary: number;
 }
