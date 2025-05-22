@@ -952,7 +952,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 
        FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id 
        WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-       AND company_id NOT IN ('2008-005') ORDER BY get_employee_fullname2(emp._id) ASC;`,
+       AND company_id NOT IN ('2008-005','2021-002') ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
 

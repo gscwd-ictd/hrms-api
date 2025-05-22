@@ -134,9 +134,9 @@ export class CompetencyModelService extends BaseEntityCrudService<CompetencyMode
       .distinct(true)
       .innerJoin('domain', 'domain', 'domain._id=competency_model.domain_id_fk')
       .innerJoin('proficiency', 'prof', 'prof.competency_id_fk = competency_model._id')
-      .innerJoin('position_competency_proficiency_level', 'pcpl', 'pcpl.proficiency_id_fk = prof._id')
-      .innerJoin('occupational_group', 'og', 'og._id = pcpl.occupational_group_id_fk')
-      .innerJoin('occupations', 'occ', 'occ._id = og.occupation_id_fk')
+      // .innerJoin('position_competency_proficiency_level', 'pcpl', 'pcpl.proficiency_id_fk = prof._id')
+      // .innerJoin('occupational_group', 'og', 'og._id = pcpl.occupational_group_id_fk')
+      // .innerJoin('occupations', 'occ', 'occ._id = og.occupation_id_fk')
       .where("domain.type = 'Functional'")
       .orderBy('code', 'ASC')
       .getRawMany();
