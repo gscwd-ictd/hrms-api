@@ -270,6 +270,15 @@ export class EmployeesMsController {
   }
 
   @MessagePattern('get_all_employees_with_supervisor')
+  async getAllCasualPermanentEmployeesWithSupervisorMs() {
+    try {
+      return await this.employeesService.getAllPermanentCasualEmployeesWithSupervisor();
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+  }
+
+  @MessagePattern('get_permanent_casual_jo_employees_with_supervisor')
   async getAllEmployeesWithSupervisorMs() {
     try {
       return await this.employeesService.getAllEmployeesWithSupervisor();

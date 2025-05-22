@@ -137,6 +137,49 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getAllEmployeesWithSupervisor() {
     try {
+      const employeeList = await this.getAllEmployeesForMS();
+      const employees = await Promise.all(
+        employeeList.map(async (emp) => {
+          const { value } = emp;
+          const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+          const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
+          const hrdDetails = await this.getEmployeeDetailsByEmployeeId(await this.getHrdManager());
+          return {
+            employee: {
+              _id: employeeDetails.userId,
+              name: employeeDetails.employeeFullName,
+              positionTitle: employeeDetails.assignment.positionTitle,
+              assignment: employeeDetails.assignment.name,
+            },
+            supervisor: {
+              _id:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.userId
+                  : supervisorDetails.userId,
+              name:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.employeeFullName
+                  : supervisorDetails.employeeFullName,
+              positionTitle:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.positionTitle
+                  : supervisorDetails.assignment.positionTitle,
+              assignment:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.name
+                  : supervisorDetails.assignment.name,
+            },
+          };
+        }),
+      );
+      return employees;
+    } catch (error) {
+      throw new error(error);
+    }
+  }
+
+  async getAllPermanentCasualEmployeesWithSupervisor() {
+    try {
       const employeeList = await this.getAllPermanentCasualEmployees();
       const employees = await Promise.all(
         employeeList.map(async (emp) => {
@@ -250,6 +293,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           divisionId: string;
           divisionName: string;
         };
+
         const { departmentName, divisionName, officeName } = orgStruct;
 
         return {
@@ -928,6 +972,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
        AND sg.salary_grade <= 27
        ORDER BY get_employee_fullname(emp._id) ASC;`,
     );
+  }
+
+  async getAllEmployeesForMS() {
+    return await this.entityRepository.query(`
+      SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+      WHERE 
+      pp.nature_of_appointment = 'casual' 
+      OR pp.nature_of_appointment = 'permanent' 
+      OR pp.nature_of_appointment = 'job order'
+      ORDER BY get_employee_fullname(emp._id) ASC;`);
   }
 
   async getAllAssignableSupervisorEmployeesByEmployeeId(employeeId: string) {

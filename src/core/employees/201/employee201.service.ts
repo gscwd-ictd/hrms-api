@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
 import { Employee201 } from './entities/employee201.entity';
 import { Repository } from 'typeorm';
-import { Employee201Dto, UpdateEmployee201Dto } from './dtos/employee201.dto';
+import { Employee201Dto } from './dtos/employee201.dto';
 
 @Injectable()
 export class Employee201Service extends BaseEntityCrudService<Employee201> {
@@ -17,7 +17,6 @@ export class Employee201Service extends BaseEntityCrudService<Employee201> {
   async getEmployee201(employeeId: string) {
     return await this.employee201Repository.query(
       `SELECT 
-          _id,
     	    DATE_FORMAT(date_from,'%Y-%m-%d') dateFrom,
           DATE_FORMAT(date_to,'%Y-%m-%d') dateTo,
           position_title positionTitle, 
@@ -35,14 +34,5 @@ export class Employee201Service extends BaseEntityCrudService<Employee201> {
     } catch (error) {
       throw new HttpException(error, error.status);
     }
-  }
-
-  async updateEmployee201Record(updateEmployee201Record: UpdateEmployee201Dto) {
-    const result = await this.updateEntity(updateEmployee201Record);
-    return result;
-  }
-
-  async deleteEmployee201Record(_id: string) {
-    return await this.removeEntity(_id);
   }
 }
