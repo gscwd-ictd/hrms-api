@@ -17,3 +17,7 @@ export class Employee201Dto {
 
   monthlySalary?: number;
 }
+
+export class UpdateEmployee201Dto extends Employee201Dto {
+  _id: string;
+}

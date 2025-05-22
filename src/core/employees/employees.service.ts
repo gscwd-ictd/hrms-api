@@ -131,7 +131,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         },
       };
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -172,9 +172,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
+      console.log(employees);
       return employees;
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -215,10 +216,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
-
+      console.log(employees);
       return employees;
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -401,6 +402,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
+      console.log(photoUrl);
+
       return {
         userId,
         companyId,
@@ -452,7 +455,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -502,7 +504,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule.scheduleBase,
+        scheduleBase: employeeSchedule ? employeeSchedule.scheduleBase : null,
         userRole,
       };
     } catch (error) {
@@ -1001,7 +1003,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 
-       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' ORDER BY get_employee_fullname2(emp._id) ASC;`,
+       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
+       AND company_id NOT IN ('2008-005','2021-002') 
+       ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
 

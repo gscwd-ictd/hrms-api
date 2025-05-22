@@ -287,6 +287,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
         .addSelect('emp.last_name', 'lastName')
         .addSelect('get_employee_assignment_or_oic(emp._id)', 'assignment')
         .addSelect('get_employee_position_or_oic(emp._id)', 'positionTitle')
+        .addSelect('signature_url', 'signatureUrl')
         .addSelect('emp.name_extension', 'nameExtension')
         .innerJoin('employees', 'emp', 'emp._id = u.employee_id_fk')
         .where('emp._id=:employeeId', { employeeId: _id })

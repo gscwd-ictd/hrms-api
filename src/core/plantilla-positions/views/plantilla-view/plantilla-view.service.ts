@@ -297,7 +297,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
         qualificationStandards,
         competencies,
       };
-    } catch (error) { }
+    } catch (error) {}
   }
 
   async getPositionDutiesAndResponsibilities(positionId: string) {
