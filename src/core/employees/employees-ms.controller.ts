@@ -274,6 +274,7 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getAllPermanentCasualEmployeesWithSupervisor();
     } catch (error) {
+      console.log(error);
       throw new RpcException(error.message);
     }
   }

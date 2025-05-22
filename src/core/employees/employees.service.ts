@@ -131,7 +131,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         },
       };
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -172,9 +172,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
+      console.log(employees);
       return employees;
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, 500);
     }
   }
 
@@ -215,10 +216,10 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
-
+      console.log(employees);
       return employees;
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -454,7 +455,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -504,7 +504,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule.scheduleBase,
+        scheduleBase: employeeSchedule ? employeeSchedule.scheduleBase : null,
         userRole,
       };
     } catch (error) {
