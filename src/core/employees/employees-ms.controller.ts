@@ -8,14 +8,13 @@ import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter
 @UseFilters(new MsExceptionFilter())
 @Controller('')
 export class EmployeesMsController {
-  constructor(private readonly employeesService: EmployeesService) { }
+  constructor(private readonly employeesService: EmployeesService) {}
 
   @MessagePattern('get_employee_under_supervisor')
   async getEmployeesUnderSupervisorMS(employeeId: string) {
     try {
       return await this.employeesService.getEmployeesUnderSupervisor(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -25,8 +24,7 @@ export class EmployeesMsController {
     try {
       if (name === null || name === undefined) return await this.employeesService.getAllEmployeeNames();
       return await this.employeesService.getEmployeesByNameMatch(name);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -35,8 +33,7 @@ export class EmployeesMsController {
   async getAllEmployees() {
     try {
       return await this.employeesService.findEntityAll();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -63,8 +60,7 @@ export class EmployeesMsController {
   async getAllEmployeesTest() {
     try {
       return await this.employeesService.findEntityAll();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -73,19 +69,21 @@ export class EmployeesMsController {
   async getEmployeesByOrgId(@Payload() orgId: string) {
     try {
       return await this.employeesService.getEmployeesByOrgId(orgId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
+
+  // @MessagePattern('get_employees_by_org_id_for_ot')
+  // async getEmployeesByOrgIdForOt(@Payload() orgId: string) {
+  //   return await this.employeesService.getEmployeesByOrgIdForOt(orgId);
+  // }
 
   @MessagePattern('get_employees_with_managers_by_org_id')
   async getEmployeesByOrgIdWithManagers(@Payload() orgId: string) {
     try {
       return await this.employeesService.getEmployeesByOrgIdWithManagers(orgId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -94,8 +92,7 @@ export class EmployeesMsController {
   async getEmployeesByOrgIdAloneMS(orgId: string) {
     try {
       return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -189,15 +186,13 @@ export class EmployeesMsController {
     } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('create_employee')
   async addEmployee(employeeDto: EmployeeDTO) {
     try {
       return await this.employeesService.saveEntity(employeeDto);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -206,8 +201,7 @@ export class EmployeesMsController {
   async updateEmployee(employeeDto: EmployeeDTO) {
     try {
       return await this.employeesService.updateEntity(employeeDto);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -216,19 +210,16 @@ export class EmployeesMsController {
   async removeEmployee(_id: string) {
     try {
       return await this.employeesService.removeEntity(_id);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_assignable_permanent_casual_employees')
   async getAllAssignablePermanentCasualEmployees(@Payload() employeeIds: string[]) {
     try {
       return await this.employeesService.getAllAssignablePermanentCasualEmployees(employeeIds);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -237,8 +228,7 @@ export class EmployeesMsController {
   async getAllPermanentCasualEmployeesMS() {
     try {
       return await this.employeesService.getAllPermanentCasualEmployees();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -247,54 +237,53 @@ export class EmployeesMsController {
   async getAllAssignableSupervisoryEmployees() {
     try {
       return await this.employeesService.getAllAssignableSupervisoryEmployees();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_assignable_supervisory_employees_by_id')
   async getAllAssignableSupervisoryEmployeesByEmployeeId(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getAllAssignableSupervisorEmployeesByEmployeeId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_permanent_casual_employees2')
   async getAllPermanentCasualEmployees2MS() {
     try {
       return await this.employeesService.getAllPermanentCasualEmployees2();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employee_supervisor_id')
   async getEmployeeSupervisorMs(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getEmployeeSupervisor(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_employees_with_supervisor')
+  async getAllCasualPermanentEmployeesWithSupervisorMs() {
+    try {
+      return await this.employeesService.getAllPermanentCasualEmployeesWithSupervisor();
+    } catch (error) {
+      console.log(error);
+      throw new RpcException(error.message);
+    }
+  }
+
+  @MessagePattern('get_permanent_casual_jo_employees_with_supervisor')
   async getAllEmployeesWithSupervisorMs() {
     try {
-      const result = await this.employeesService.getAllEmployeesWithSupervisor();
-      return result;
-    }
-    catch (error) {
-      console.log(error.message);
+      return await this.employeesService.getAllEmployeesWithSupervisor();
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -303,8 +292,7 @@ export class EmployeesMsController {
   async getEmployeeWithSupervisorMs(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getEmployeeWithSupervisor(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -313,11 +301,9 @@ export class EmployeesMsController {
   async getCompanyIdByEmployeeIdMs(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getCompanyIdByEmployeeId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employees_for_population')
@@ -337,52 +323,43 @@ export class EmployeesMsController {
   async getSalaryGradeIdOrDailyRateByEmployeeId(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getSalaryGradeIdOrDailyRateByEmployeeId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employee_details_by_company_id')
   async getEmployeeDetailsByCompanyIdMS(@Payload() companyId: string) {
     try {
       return await this.employeesService.getEmployeeDetailByCompanyIdMS(companyId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_custom_group_assigned_member')
   async getCustomGroupAssignedMember(@Payload() employeeIds: string[]) {
     try {
       return await this.employeesService.getCustomGroupsAssignedMember(employeeIds);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_custom_group_unassigned_rank_file_member')
   async getCustomGroupUnassignedRankFileMember(@Payload() employeeIds: string[]) {
     try {
       return await this.employeesService.getCustomGroupsUnassignedRankFileMember(employeeIds);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_custom_group_unassigned_job_order_cos_member')
   async getCustomGroupUnassignedJobOrderCOSMember(@Payload() employeeIds: string[]) {
     try {
       return await this.employeesService.getCustomGroupsUnassignedJobOrderCOSMember(employeeIds);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -391,19 +368,16 @@ export class EmployeesMsController {
   async getAllManagers() {
     try {
       return await this.employeesService.getAllManagers();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_managers_for_lnd')
   async getAllManagersForLnd() {
     try {
       return await this.employeesService.getAllManagersForLnd();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -412,8 +386,7 @@ export class EmployeesMsController {
   async getEmployeesUnderManager(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getSubordinates(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -422,19 +395,16 @@ export class EmployeesMsController {
   async getMonthHourlyRateByEmployeeId(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getMonthHourlyRateByEmployeeId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employee_nature_of_appointment')
   async getEmployeeNatureOfAppointment(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getEmployeeNatureOfAppointment(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -443,8 +413,7 @@ export class EmployeesMsController {
   async getSubordinatesWithCompanyId(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getSubordinatesWithCompanyId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -453,8 +422,7 @@ export class EmployeesMsController {
   async isGeneralManager(@Payload() employeeId: string) {
     try {
       return await this.employeesService.isGeneralManager(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -464,61 +432,51 @@ export class EmployeesMsController {
     try {
       return await this.employeesService.getCompanyIdsByOrgId(orgId);
     } catch (error) {
-      throw new RpcException(error.message)
+      throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_all_regular_employee_ids')
   async getAllRegularEmployeeIds() {
     try {
       return await this.employeesService.getAllRegularEmployeeIds();
+    } catch (error) {
+      throw new RpcException(error.message);
     }
-    catch (error) {
-      throw new RpcException(error.message)
-    }
-
   }
 
   @MessagePattern('get_employee_position_by_id')
   async getEmployeePosition(@Payload() employeeId: string) {
     try {
       return await this.employeesService.getEmployeePosition(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employees_by_nature_of_appointment_employee_id')
   async getAllEmployeesByNatureOfAppointmentAndEmployeeId(@Payload() employeeDetailsFilter: { natureOfAppointment: NatureOfAppointment; employeeId: string }) {
     try {
       return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeId(employeeDetailsFilter.natureOfAppointment, employeeDetailsFilter.employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_hrd_manager')
   async getHrdManager() {
     try {
       return await this.employeesService.getHrdManager();
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_training_signatories')
   async getTrainingSignatories(@Payload() includeGm: boolean) {
     try {
       return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -527,21 +485,17 @@ export class EmployeesMsController {
   async getEmployeesByNatureOfAppointment(@Payload() natureOfAppointment: NatureOfAppointment) {
     try {
       return await this.employeesService.getEmployeesByNatureOfAppointment(natureOfAppointment);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('get_employees_by_nature_of_appointment_and_employee_ids')
   async getEmployeesByNatureOfAppointmentAndEmployeeIds(@Payload() data: { natureOfAppointment: NatureOfAppointment; employeeIds: string[] }) {
     try {
       return await this.employeesService.getEmployeesByNatureOfAppointmentAndEmployeeIdRange(data.natureOfAppointment, data.employeeIds);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 }

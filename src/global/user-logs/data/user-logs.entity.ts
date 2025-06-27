@@ -1,4 +1,3 @@
-import { Users } from './../../../core/users/data/entities/users.entity';
 import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 

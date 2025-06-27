@@ -84,6 +84,8 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         gmId,
       } = (await this.entityRepository.query('CALL sp_get_prf_trail_signatories(?);', [prfDetailsId]))[0][0];
 
+      const gmOverride = '';
+
       return {
         division: {
           status: divisionStatus,

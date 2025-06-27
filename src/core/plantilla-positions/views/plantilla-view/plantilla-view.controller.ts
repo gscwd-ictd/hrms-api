@@ -4,7 +4,7 @@ import { PlantillaViewService } from './plantilla-view.service';
 
 @Controller('plantilla')
 export class PlantillaViewController {
-  constructor(private readonly plantillaViewService: PlantillaViewService) { }
+  constructor(private readonly plantillaViewService: PlantillaViewService) {}
 
   @Get('/')
   async findAllPermanentPlantillaPositions(@Headers('Authorization') auth: string) {
@@ -35,6 +35,7 @@ export class PlantillaViewController {
     try {
       return await this.plantillaViewService.getJD(_id);
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, 500);
     }
   }

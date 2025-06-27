@@ -45,6 +45,7 @@ import { StatsModule } from 'src/core/stats/stats.module';
 import { PositionDutiesResponsibilitiesModule } from 'src/core/position-duties-responsibilities/data/core/position-duties-responsibilities.module';
 import { EmployeeTemporaryAssignmentModule } from 'src/core/employee-temporary-assignment/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { Employee201Module } from 'src/core/employees/201/employee201.module';
 
 export const modules = [
   AuthModule,
@@ -95,5 +96,6 @@ export const modules = [
 
   PositionDutiesResponsibilitiesModule,
   EmployeeTemporaryAssignmentModule,
+  Employee201Module,
   ScheduleModule.forRoot(),
 ];

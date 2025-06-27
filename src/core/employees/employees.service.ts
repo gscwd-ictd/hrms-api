@@ -131,7 +131,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         },
       };
     } catch (error) {
-      throw new error(error);
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -139,7 +139,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     let _employeeId;
     let _employeeDetails;
     try {
-      const employeeList = await this.getAllPermanentCasualEmployees();
+      const employeeList = await this.getAllEmployeesForMS();
       const employees = await Promise.all(
         employeeList.map(async (emp) => {
           const { value } = emp;
@@ -176,10 +176,54 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           };
         }),
       );
+      console.log(employees);
       return employees;
     } catch (error) {
-      console.log('asd', _employeeId, ' ', _employeeDetails, error);
-      throw new Error(error);
+      throw new HttpException(error.message, 500);
+    }
+  }
+
+  async getAllPermanentCasualEmployeesWithSupervisor() {
+    try {
+      const employeeList = await this.getAllPermanentCasualEmployees();
+      const employees = await Promise.all(
+        employeeList.map(async (emp) => {
+          const { value } = emp;
+          const employeeDetails = await this.getEmployeeDetailsByEmployeeId(value);
+          const supervisorDetails = await this.getEmployeeDetailsByEmployeeId(await this.getEmployeeSupervisor(value, false));
+          const hrdDetails = await this.getEmployeeDetailsByEmployeeId(await this.getHrdManager());
+          return {
+            employee: {
+              _id: employeeDetails.userId,
+              name: employeeDetails.employeeFullName,
+              positionTitle: employeeDetails.assignment.positionTitle,
+              assignment: employeeDetails.assignment.name,
+            },
+            supervisor: {
+              _id:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.userId
+                  : supervisorDetails.userId,
+              name:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.employeeFullName
+                  : supervisorDetails.employeeFullName,
+              positionTitle:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.positionTitle
+                  : supervisorDetails.assignment.positionTitle,
+              assignment:
+                employeeDetails.assignment.positionTitle === 'OIC-General Manager' || employeeDetails.assignment.positionTitle === 'General Manager A'
+                  ? hrdDetails.assignment.name
+                  : supervisorDetails.assignment.name,
+            },
+          };
+        }),
+      );
+      console.log(employees);
+      return employees;
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
     }
   }
 
@@ -254,6 +298,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           divisionId: string;
           divisionName: string;
         };
+
         const { departmentName, divisionName, officeName } = orgStruct;
 
         return {
@@ -361,6 +406,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
 
+      console.log(photoUrl);
+
       return {
         userId,
         companyId,
@@ -412,7 +459,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         userRole,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(error.status, error.message);
     }
   }
@@ -461,7 +507,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         isHRMPSB,
         assignment: { id, name, positionId, positionTitle },
         orgStruct: { officeName, divisionName, departmentName },
-        scheduleBase: employeeSchedule === null ? null : employeeSchedule.scheduleBase,
+        scheduleBase: employeeSchedule ? employeeSchedule.scheduleBase : null,
         userRole,
       };
     } catch (error) {
@@ -932,6 +978,17 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     );
   }
 
+  async getAllEmployeesForMS() {
+    return await this.entityRepository.query(`
+      SELECT get_employee_fullname(emp._id) label,emp._id value FROM employees emp
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+      WHERE 
+      pp.nature_of_appointment = 'casual' 
+      OR pp.nature_of_appointment = 'permanent' 
+      OR pp.nature_of_appointment = 'job order'
+      ORDER BY get_employee_fullname(emp._id) ASC;`);
+  }
+
   async getAllAssignableSupervisorEmployeesByEmployeeId(employeeId: string) {
     return (await this.entityRepository.query(`CALL sp_get_assignable_supervisors(?);`, [employeeId]))[0];
   }
@@ -950,9 +1007,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
       `SELECT get_employee_fullname2(emp._id) label,emp._id value 
-       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id 
-       WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-       AND company_id NOT IN ('2008-005','2021-002') ORDER BY get_employee_fullname2(emp._id) ASC;`,
+       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
+       AND company_id NOT IN ('2008-005','2021-002') 
+       ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
 

@@ -46,8 +46,9 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
     let description: string;
     let reportsTo: any;
 
+    console.log(_id);
     const result = await this.plantillaViewRepository.findOne({ where: { positionId: _id } });
-
+    console.log(result);
     //#region JD
     let division = await this.divisionService.divisionRepository.findOne({
       where: {
@@ -97,7 +98,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
             .from('plantilla_positions', 'pp')
             .innerJoin('office_positions', 'orgpos', 'orgpos.position_id_fk = pp._id')
             .innerJoin('salary_grade', 'sg', 'sg._id = pp.salary_grade_id_fk')
-            .where('sg.salary_grade = 27  AND orgpos.office_id_fk = :office_id_fk AND pp._id <> :posId', {
+            .where("(sg.salary_grade = 27 or pp.position_title='Chairman') AND orgpos.office_id_fk = :office_id_fk AND pp._id <> :posId", {
               office_id_fk: office._id,
               posId: _id,
             })
@@ -131,6 +132,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
           .getRawOne();
         if (!reportsTo) {
           //check sa office
+          console.log('haha asdasdasd');
           reportsTo = await this.posService.plantillaPositionsRepository
             .createQueryBuilder('plantilla_positions')
             .select('pp.position_title', 'reportsTo')
@@ -153,6 +155,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
         else if (positionTitle === 'General Manager A') {
           reportsTo = { reportsTo: 'N/A' };
         } else {
+          console.log('haha');
           reportsTo = await this.posService.plantillaPositionsRepository
             .createQueryBuilder('plantilla_positions')
             .select('pp.position_title', 'reportsTo')
@@ -164,6 +167,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
               posId: _id,
             })
             .getRawOne();
+          if (!reportsTo) reportsTo = { reportsTo: 'General Manager A' };
         }
       }
     }
@@ -297,7 +301,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
         qualificationStandards,
         competencies,
       };
-    } catch (error) { }
+    } catch (error) {}
   }
 
   async getPositionDutiesAndResponsibilities(positionId: string) {

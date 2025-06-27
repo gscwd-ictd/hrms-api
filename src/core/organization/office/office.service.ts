@@ -21,7 +21,7 @@ export class OfficeService extends BaseEntityCrudService<Office> {
         .orderBy('office.name', 'ASC')
         .getRawMany();
     } catch (error) {
-      throw new HttpException(error.status, error.message);
+      throw new HttpException(error.message, error.status);
     }
   }
 
