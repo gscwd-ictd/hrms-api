@@ -164,7 +164,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
         .addSelect('prf.prf_no', 'prfNo')
         .addSelect('prf.for', 'prfFor')
         .addSelect('get_gm_or_oic()', 'forPositionName')
-        .addSelect('get_gm_signature_url()', 'forSignatureUrl')
+        .addSelect('get_prf_emp_signature_by_name(prf.for)', 'forSignatureUrl')
         .addSelect('prf.with_exam', 'withExam')
         .addSelect('prf.status', 'status')
         .addSelect('prft.remarks', 'disapprovedRemarks')
