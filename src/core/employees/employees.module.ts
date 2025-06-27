@@ -12,10 +12,11 @@ import { EmployeesService } from './employees.service';
 import { OfficerInChargeModule } from '../officer-in-charge/officer-in-charge.module';
 import { CommitteeMembersModule } from '../committee-members/committee-members.module';
 import { EmployeesMsController } from './employees-ms.controller';
+import { AllEmployeesView } from './data/views/all-employees.view';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Employees, PlantillaPositions]),
+    TypeOrmModule.forFeature([Employees, PlantillaPositions, AllEmployeesView]),
     ClientsModule.registerAsync([
       { name: MicroserviceType.EMAIL, useClass: RedisConfigForMailMS },
       { name: MicroserviceType.AUTHN, useClass: RedisConfigForAuthN },
