@@ -84,7 +84,7 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         gmId,
       } = (await this.entityRepository.query('CALL sp_get_prf_trail_signatories(?);', [prfDetailsId]))[0][0];
 
-      const gmOverride = '';
+      const gmOverride = (await this.entityRepository.query('CALL sp_get_gm_details_by_prf_details_id(?);', [prfDetailsId]))[0][0];
 
       return {
         division: {
@@ -129,13 +129,13 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
         },
         gm: {
           status: gmStatus,
-          employeeId: gmId,
-          name: gmName,
+          employeeId: gmOverride.employeeId,
+          name: gmOverride.gmName,
           position: gmPosition,
           designation: gmDesignation,
           updatedAt: gmStatusUpdatedAt,
-          signatureUrl: await this.getPrfSignatures(gmId),
-          photoUrl: await this.getPrfPhotoUrl(gmId),
+          signatureUrl: gmOverride.employeeSignature,
+          photoUrl: gmOverride.photoUrl,
         },
       };
     } catch (error) {
