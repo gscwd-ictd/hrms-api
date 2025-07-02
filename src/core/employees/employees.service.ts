@@ -15,6 +15,7 @@ import { CommitteeMembersService } from '../committee-members/committee-members.
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 import { BasicEmployeeInfo } from './utils/employee.type';
+import e from 'express';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -717,14 +718,20 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getEmployeeNameByIdForEmpMonitoring(ids: { employeeId: string; supervisorId: string }) {
+    let _employeeId = '';
+    let _supervisorId = '';
     try {
       const { employeeId, supervisorId } = ids;
+      _employeeId = employeeId;
+      _supervisorId = supervisorId;
       const employeeSignature = await this.getEmployeeSignature(employeeId);
       const supervisorSignature = await this.getEmployeeSignature(supervisorId);
       const employeeName = (await this.getEmployeeNameById(employeeId)).fullName;
       const supervisorName = (await this.getEmployeeNameById(supervisorId)).fullName;
       return { employeeName, employeeSignature, supervisorName, supervisorSignature };
     } catch (error) {
+      console.log(_employeeId, ' ', _supervisorId);
+      console.log(error);
       throw new RpcException('Employee not found');
     }
   }
@@ -1522,6 +1529,66 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         [employeeId],
       );
       return employee.length > 0 ? employee[0] : null;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  async getAllEmployeesWithPagination(pagination: { page: number; limit: number; name: string }) {
+    try {
+      const { page, limit, name } = pagination;
+      const _items = (await this.entityRepository.query(`CALL sp_get_all_employees_paginated(?,?,?);`, [page, limit, name]))[0];
+      let totalItems = 0;
+      let items = [];
+      if (_items.length > 0) {
+        items = await Promise.all(
+          _items.map(async (item) => {
+            const { totalCount, ...rest } = item;
+            return rest;
+          }),
+        );
+        totalItems = _items[0].totalCount;
+      }
+      if (page !== 0 && limit !== 0) {
+        const meta = {
+          totalItems,
+          itemCount: _items.length,
+          itemsPerPage: Number(limit),
+          totalPages: totalItems / limit > 1 ? Math.ceil(totalItems / limit) : 1,
+          currentPage: Number(page),
+        };
+        console.log({ items, meta });
+        return { items, meta };
+      }
+      return items;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  async getSimpleEmployeeDetails(employeeId: string) {
+    try {
+      const employeeDetails = (
+        await this.employeeRepository.query(
+          `
+        SELECT
+            hris_emp._id employeeId,
+            hris_emp.company_id companyId,
+            hris_dev1.get_employee_fullname2(hris_emp._id) name,
+            hris_dev1.get_employee_position_or_oic(hris_emp._id) positionTitle,
+            hris_dev1.get_employee_assignment_or_oic(hris_emp._id) assignment,
+            port_emp.mobile_number mobileNumber,
+            port_emp.photo_url photoUrl
+        FROM hris_dev1.employees hris_emp
+        INNER JOIN portal.employees port_emp ON hris_emp._id=port_emp.user_id_fk
+        WHERE hris_dev1.get_employee_position_or_oic(hris_emp._id) IS NOT NULL AND 
+        hris_emp._id = ? 
+        `,
+          [employeeId],
+        )
+      )[0];
+      console.log(employeeDetails);
+      return employeeDetails;
     } catch (error) {
       throw new NotFoundException(error.message);
     }

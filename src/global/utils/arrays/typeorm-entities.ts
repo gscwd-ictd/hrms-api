@@ -60,6 +60,7 @@ import { EmployeeTags } from 'src/core/employee-tags/data/employee-tags.entity';
 import { PositionDutiesResponsibilities } from 'src/core/position-duties-responsibilities/data/entities/position-duties-responsibilities.entity';
 import { EmployeeTemporaryAssignment } from 'src/core/employee-temporary-assignment/data';
 import { Employee201 } from 'src/core/employees/201/entities/employee201.entity';
+import { AllEmployeesView } from 'src/core/employees/data/views/all-employees.view';
 
 export const typeormEntities = [
   ...PrfEntities,
@@ -127,4 +128,5 @@ export const typeormEntities = [
   PositionDutiesResponsibilities,
   EmployeeTemporaryAssignment,
   Employee201,
+  AllEmployeesView,
 ];
