@@ -6,7 +6,7 @@ import { BasicEmployeeInfo } from './utils/employee.type';
 
 @Controller('employees')
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) { }
+  constructor(private readonly employeesService: EmployeesService) {}
 
   @Get('/name/')
   async getEmployeesByNameMatch(@Query('value') name: string) {
@@ -99,7 +99,6 @@ export class EmployeesController {
     return await this.employeesService.getEmployeeDetailsByPlantillaId(plantillaId);
   }
 
-
   @Get('plantilla-positions/get-everything/:employee_id')
   async getEmployeePosition(@Param('employee_id') employeeId: string) {
     //return employeeId;
@@ -110,7 +109,7 @@ export class EmployeesController {
    * @dateCreated 2025-02-25
    * @description this function is used for updating Employee's (Name, Title Prefix/Suffix, Birthday, Sex)
    * @author RV
-   * @param updateBasicEmployeeInfoDto 
+   * @param updateBasicEmployeeInfoDto
    * @returns Promise<BasicEmployeeInfo>
    */
   @Put('details/basic')
@@ -187,5 +186,10 @@ export class EmployeesController {
       salaryGrade,
       amount,
     });
+  }
+
+  @Get('meter-reading/all-employees/')
+  async getAllEmployeesWithPagination(@Query('page') page: number, @Query('limit') limit: number, @Query('q') name: string) {
+    return await this.employeesService.getAllEmployeesWithPagination({ page: page ? page : 0, limit: limit ? limit : 0, name: name ? name : '' });
   }
 }

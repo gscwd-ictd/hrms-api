@@ -32,7 +32,9 @@ export class EmployeesMsController {
   @MessagePattern({ msg: 'find_all_employees' })
   async getAllEmployees() {
     try {
-      return await this.employeesService.findEntityAll();
+      const result = await this.employeesService.findEntityAll();
+      console.log(result);
+      return result;
     } catch (error) {
       throw new RpcException(error.message);
     }
@@ -497,5 +499,15 @@ export class EmployeesMsController {
     } catch (error) {
       throw new RpcException(error.message);
     }
+  }
+
+  @MessagePattern('get_all_employees_paginated')
+  async getAllEmployeesWithPagination(@Payload() pagination: { page: number; limit: number; name: string }) {
+    return await this.employeesService.getAllEmployeesWithPagination(pagination);
+  }
+
+  @MessagePattern('get_simple_employee_details')
+  async getSimpleEmployeeDetails(@Payload() employeeId: string) {
+    return await this.employeesService.getSimpleEmployeeDetails(employeeId);
   }
 }

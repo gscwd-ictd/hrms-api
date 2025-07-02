@@ -53,10 +53,25 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
         examScore: 0,
       });
 
+      const { email, ...rest } = jobPortalDTO.personalInfo;
+      const token = this.jwtService.jwtService.sign(
+        {
+          email: externalApplicant.email,
+          details: {
+            externalApplicantPayload: {
+              ...rest,
+            },
+            vppId: vppId,
+          },
+        },
+        { secret: process.env.MAIL_JWT_SECRET, expiresIn: '1d' },
+      );
+
       return {
         externalApplicant,
         pds,
         postingApplicant,
+        token,
       };
     } catch (error) {
       throw new InternalServerErrorException(error.message);
@@ -117,7 +132,6 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
       )[0];
       return name;
     } catch (error) {
-
       throw new HttpException(error.message, error.status);
     }
   }
