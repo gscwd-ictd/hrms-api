@@ -29,11 +29,26 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
       const vpp = (await this.entityRepository.query(`SELECT COUNT(_id) \`count\` FROM vacant_position_posting WHERE _id = ?`, [vppId]))[0];
       if (vpp.count === '0') throw new HttpException('Invalid Posting ID', 404);
       if (details) {
-        const applicantEmailResult = await this.emailService.sendEmailForApplicant(email.email, details, vppId);
+        //const applicantEmailResult = await this.emailService.sendEmailForApplicant(email.email, details, vppId);
+
+        const token = this.jwtService.jwtService.sign(
+          {
+            email: email.email,
+            details: {
+              externalApplicantPayload: {
+                ...details,
+              },
+              vppId,
+            },
+          },
+          { secret: process.env.MAIL_JWT_SECRET, expiresIn: '7d' },
+        );
+
         return {
           email,
           details,
-          applicantEmailResult,
+          token,
+          //applicantEmailResult,
         };
       }
       return null;
@@ -44,19 +59,10 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
 
   async addExternalApplicant(vppId: string, jobPortalDTO: JobPortalDTO) {
     try {
-      const externalApplicant = await this.saveEntity(jobPortalDTO.personalInfo);
-      const pds = await this.pdsService.savePDS(externalApplicant._id, jobPortalDTO.pds);
-      const postingApplicant = await this.applicantService.saveEntity({
-        vacantPositionPostingId: vppId,
-        externalApplicantId: externalApplicant._id,
-        applicantStatus: 'For review',
-        examScore: 0,
-      });
-
       const { email, ...rest } = jobPortalDTO.personalInfo;
       const token = this.jwtService.jwtService.sign(
         {
-          email: externalApplicant.email,
+          email: jobPortalDTO.personalInfo.email,
           details: {
             externalApplicantPayload: {
               ...rest,
@@ -64,8 +70,17 @@ export class ExternalApplicantsService extends BaseEntityCrudService<ExternalApp
             vppId: vppId,
           },
         },
-        { secret: process.env.MAIL_JWT_SECRET, expiresIn: '1d' },
+        { secret: process.env.MAIL_JWT_SECRET, expiresIn: '7d' },
       );
+      const externalApplicant = await this.saveEntity({ ...jobPortalDTO.personalInfo });
+      const pds = await this.pdsService.savePDS(externalApplicant._id, jobPortalDTO.pds);
+
+      const postingApplicant = await this.applicantService.saveEntity({
+        vacantPositionPostingId: vppId,
+        externalApplicantId: externalApplicant._id,
+        applicantStatus: 'For review',
+        examScore: 0,
+      });
 
       return {
         externalApplicant,
