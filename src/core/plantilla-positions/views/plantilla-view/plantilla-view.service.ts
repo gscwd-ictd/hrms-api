@@ -164,6 +164,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
               posId: _id,
             })
             .getRawOne();
+          if (!reportsTo) reportsTo = { reportsTo: 'General Manager A' };
         }
       }
     }
