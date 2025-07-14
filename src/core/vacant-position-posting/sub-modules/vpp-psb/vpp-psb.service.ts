@@ -142,22 +142,24 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
   async getUnacknowledgedVppSchedules(psbEmployeeId: string) {
     const vppUnacknowledgedSchedules = await this.entityRepository.query(
       `
-    SELECT vpppv.vppId vppId,
-    vpppv.positionId positionId,
-    vpppv.positionTitle positionTitle, 
-    vpppv.numberOfPositions numberOfPositions, 
-    get_position_assignment(vpppv.positionId) assignment,
-    DATE_FORMAT(vpps.schedule, '%Y-%m-%d %H:%i:%s') 'schedule', 
-    venue,
-    vppp.acknowledged_schedule acknowledgedSchedule,
-    vppp.declined_schedule declinedSchedule,
-    vppp.decline_reason declineReason,
-    DATE_FORMAT(vppp.date_acknowledged, '%Y-%m-%d %H:%i:%s') dateAcknowledged
+     SELECT vpppv.vppId vppId,
+      group_concat( vpppv.positionId ) positionId,
+      vpppv.positionTitle positionTitle, 
+      count(vpppv.positionId) numberOfPositions, 
+      get_position_assignment(vpppv.positionId) assignment,
+      DATE_FORMAT(vpps.schedule, '%Y-%m-%d %H:%i:%s') 'schedule', 
+      venue,
+      vppp.acknowledged_schedule acknowledgedSchedule,
+      vppp.declined_schedule declinedSchedule,
+      vppp.decline_reason declineReason,
+      DATE_FORMAT(vppp.date_acknowledged, '%Y-%m-%d %H:%i:%s') dateAcknowledged
     FROM vpp_schedule vpps 
         INNER JOIN vacant_position_posting vpp ON vpp._id = vpps.vacant_position_posting_id_fk 
         INNER JOIN vpp_psb vppp ON vppp.vacant_position_posting_id_fk = vpp._id
         INNER JOIN vacant_position_posting_publication_view vpppv ON vpppv.vppId = vpp._id
-    WHERE vppp.employee_id_fk = ? AND vpps.schedule_type = 'interview';
+    WHERE vppp.employee_id_fk = ? AND vpps.schedule_type = 'interview'
+    GROUP BY vppId, positionTitle, numberOfPositions, assignment,\`schedule\`,venue, acknowledgedSchedule,declinedSchedule,declineReason,dateAcknowledged
+    ORDER BY DATE_FORMAT(vpps.schedule, '%Y-%m-%d %H:%i:%s') DESC;
     `,
       [psbEmployeeId],
     );
@@ -193,6 +195,6 @@ export class VppPsbService extends BaseEntityCrudService<VppPsb> {
          FROM vpp_psb WHERE vacant_position_posting_id_fk = ? AND acknowledged_schedule = 1`,
         [vppId],
       );
-    } catch (error) { }
+    } catch (error) {}
   }
 }
