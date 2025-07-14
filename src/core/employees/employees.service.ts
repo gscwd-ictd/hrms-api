@@ -1356,7 +1356,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp 
       INNER JOIN office_positions op ON op.position_id_fk = pp._id 
       INNER JOIN office o ON op.office_id_fk = o._id 
-    WHERE pp.position_title = 'General Manager' AND o.name = 'Office of the General Manager') 
+    WHERE pp.position_title = 'General Manager A' AND o.name = 'Office of the General Manager') 
     UNION
     (
       SELECT employeeId FROM officer_in_charge_view 
@@ -1406,12 +1406,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getSignatoriesForTrainingCertification(includeGm: boolean) {
     const hrdManagerId = await this.getHrdManager();
     const hrdDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(hrdManagerId);
+    console.log(hrdDetails);
 
     const tddManagerId = await this.getTddManager();
     const tddDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(tddManagerId);
+    console.log(tddDetails);
 
     const gmId = await this.getGeneralManager();
     const gmDetails = await this.getEmployeeDetailsWithSignatureByEmployeeId(gmId);
+    console.log(gmDetails);
 
     return {
       tddMgr: {

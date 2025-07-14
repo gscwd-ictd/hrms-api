@@ -45,6 +45,7 @@ export enum AppointmentStatus {
   APPRENTICESHIP = 'Apprenticeship',
   TEMPORARY_PERMANENT = 'Temporary permanent',
   TEMPORARY = 'Temporary',
+  PERMANENT = 'Permanent',
 }
 
 export enum SeparationFromService {

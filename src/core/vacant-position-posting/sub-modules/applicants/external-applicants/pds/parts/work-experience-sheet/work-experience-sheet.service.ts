@@ -18,7 +18,7 @@ export class WorkExperienceSheetService {
     private readonly basicService: WorkExperienceSheetBasicService,
     private readonly postingApplicantService: ApplicantsService,
     private readonly workExperienceService: PDSWorkExperienceService,
-  ) { }
+  ) {}
 
   async getWorkExperienceSheet(postingApplicantId: string) {
     try {
@@ -53,7 +53,11 @@ export class WorkExperienceSheetService {
         basic.map(async (basicItem) => {
           const workExperience = await this.workExperienceService.entityRepository.findOne({
             where: { _id: basicItem.workExperienceId._id },
+            //order: { from: 'DESC' },
           });
+
+          console.log(workExperience);
+
           const accomplishments = await this.accomplishmentsService.entityRepository.find({ where: { workExperienceSheetBasicId: basicItem._id } });
           const duties = await this.dutiesService.entityRepository.find({ where: { workExperienceSheetBasicId: basicItem._id } });
           const { workExperienceId, _id, ...rest } = basicItem;
@@ -61,7 +65,7 @@ export class WorkExperienceSheetService {
         }),
       );
 
-      return result;
+      return result.sort((a, b) => new Date(b.from).getTime() - new Date(a.from).getTime());
     } catch (error) {
       throw new NotFoundException(error.message);
     }

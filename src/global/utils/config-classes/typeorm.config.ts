@@ -14,7 +14,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
       database: process.env.DB_NAME,
       entities: typeormEntities,
       logging: false,
-      synchronize: true,
+      synchronize: false,
       charset: 'utf8mb4_0900_ai_ci',
     };
   }

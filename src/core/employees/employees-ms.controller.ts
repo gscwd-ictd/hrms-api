@@ -477,7 +477,9 @@ export class EmployeesMsController {
   @MessagePattern('get_training_signatories')
   async getTrainingSignatories(@Payload() includeGm: boolean) {
     try {
-      return await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+      const result = await this.employeesService.getSignatoriesForTrainingCertification(includeGm);
+      console.log(result);
+      return result;
     } catch (error) {
       throw new RpcException(error.message);
     }
