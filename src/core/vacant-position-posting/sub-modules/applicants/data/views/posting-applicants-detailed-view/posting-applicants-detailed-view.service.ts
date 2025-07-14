@@ -64,6 +64,7 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
 
     const functionalScores = await this.entityRepository
       .createQueryBuilder('padv')
+      .distinct(true)
       .select('vir._id', 'ratingId')
       .addSelect('cm.code', 'competencyCode')
       .addSelect('cm.name', 'competencyName')
@@ -71,6 +72,7 @@ export class PostingApplicantsDetailedViewService extends BaseEntityCrudService<
       .addSelect('p.level', 'proficiencyLevel')
       .addSelect('p.key_actions', 'keyActions')
       .addSelect('vir.rating', 'rating')
+      .addSelect('ogdr.percentage', 'percentage')
       .innerJoin('vpp_interview_rating', 'vir', 'vir.posting_applicants_id_fk = padv.postingApplicantId')
       .innerJoin('vpp_psb', 'vpp_psb', 'vpp_psb._id = vir.vpp_psb_id_fk')
       .innerJoin('position_competency_proficiency_level', 'pcpl', 'pcpl._id = vir.pcpl_id_fk')
