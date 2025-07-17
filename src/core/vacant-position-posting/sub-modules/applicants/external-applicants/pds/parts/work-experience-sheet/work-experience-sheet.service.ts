@@ -18,7 +18,7 @@ export class WorkExperienceSheetService {
     private readonly basicService: WorkExperienceSheetBasicService,
     private readonly postingApplicantService: ApplicantsService,
     private readonly workExperienceService: PDSWorkExperienceService,
-  ) { }
+  ) {}
 
   async getWorkExperienceSheet(postingApplicantId: string) {
     try {
@@ -61,7 +61,7 @@ export class WorkExperienceSheetService {
         }),
       );
 
-      return result;
+      return result.sort((a, b) => new Date(b.from).getTime() - new Date(a.from).getTime());
     } catch (error) {
       throw new NotFoundException(error.message);
     }
