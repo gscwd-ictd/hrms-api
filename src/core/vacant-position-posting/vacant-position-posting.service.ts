@@ -213,7 +213,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .addSelect('vp.done', 'isDone')
         .addSelect('vs.schedule_type', 'scheduleType')
         .addSelect('vs.venue', 'venue')
-        .addSelect('pp.item_number', 'itemNumber')
+        .addSelect('group_concat( distinct pp.item_number ORDER BY pp.item_number ASC)', 'itemNumber')
         .addSelect('pp.position_title', 'positionTitle')
         .addSelect('get_plantilla_salary_grade(pp._id)', 'salaryGrade')
         .addSelect(`vp.declined_schedule`, 'declinedSchedule')
@@ -226,7 +226,26 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .innerJoin('plantilla_positions', 'pp', 'pp._id = vppp.prf_positions_positions_id_fk')
         .where(`vp.employee_id_fk = :employeeId AND vs.schedule_type='interview'`, { employeeId })
         .orderBy('postingDate', 'DESC')
-        .addOrderBy('itemNumber', 'ASC')
+        .groupBy(
+          `
+          vpp._id,
+          get_employee_fullname2(prfd.employee_id_fk),
+          has_pending_acknowledgement(vpp._id),
+          vpp.posting_date,
+          vpp.posting_deadline,
+          vpp.posting_status,
+          vs.schedule,
+          vp.done,
+          vs.schedule_type,
+          vs.venue,
+          vp.psb_no,
+          prfd.with_exam,
+          pp.position_title,
+          vp.declined_schedule,
+          get_plantilla_salary_grade(pp._id),
+          get_position_assignment(pp._id)  
+        `,
+        )
         .getRawMany();
       return posting;
     } catch (error) {
