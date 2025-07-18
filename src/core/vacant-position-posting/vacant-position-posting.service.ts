@@ -213,6 +213,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .addSelect('vp.done', 'isDone')
         .addSelect('vs.schedule_type', 'scheduleType')
         .addSelect('vs.venue', 'venue')
+        .addSelect('pp.item_number', 'itemNumber')
         .addSelect('pp.position_title', 'positionTitle')
         .addSelect('get_plantilla_salary_grade(pp._id)', 'salaryGrade')
         .addSelect(`vp.declined_schedule`, 'declinedSchedule')
@@ -225,6 +226,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
         .innerJoin('plantilla_positions', 'pp', 'pp._id = vppp.prf_positions_positions_id_fk')
         .where(`vp.employee_id_fk = :employeeId AND vs.schedule_type='interview'`, { employeeId })
         .orderBy('postingDate', 'DESC')
+        .addOrderBy('itemNumber', 'ASC')
         .getRawMany();
       return posting;
     } catch (error) {
@@ -416,7 +418,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       const { effectivityDate } = vppEffectivityDateDTO;
       //get vppIds;
       return await this.updateEntity({ _id: vppId, effectivityDate });
-    } catch (error) { }
+    } catch (error) {}
   }
 
   //! REFACTOR
@@ -460,7 +462,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       );
 
       return { core, functional, managerial };
-    } catch (error) { }
+    } catch (error) {}
   }
 
   /* ----- */
@@ -486,7 +488,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
      );`,
         [vppId],
       );
-    } catch (error) { }
+    } catch (error) {}
   }
 
   async getPsbDetails(vppId: string) {
