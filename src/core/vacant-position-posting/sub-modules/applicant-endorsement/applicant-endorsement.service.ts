@@ -114,7 +114,6 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
   }
 
   async selectApplicants(vppId: string, applicantEndorsementDTO: ApplicantEndorsementDTO) {
-
     const requestingEntitySelection = await Promise.all(
       applicantEndorsementDTO.postingApplicantIds.map(async (selection) => {
         const updateResult = await this.updateEndorsementStatus(selection, ApplicantEndorsementStatus.SELECTED_BY_REQUESTING_ENTITY);
@@ -290,28 +289,30 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
       return await this.entityRepository.query(
         `
           SELECT DISTINCT 
-          vppId,
-          itemNumber,
-          positionTitle, 
-          postingDate,
-          ae.appointing_authority_selection_date appointingAuthoritySelectionDate,
-          numberOfPositions,
-          salaryGradeLevel,   
-          salaryGrade,
-          annualSalary,
-          education,training, eligibility, experience, 
-          placeOfAssignment,
-          occupationName,
-          prfNo,
-          prfId,
-          withExam,
-          postingStatus,
-          appointing_authority_has_selected(ae.posting_applicant_id_fk) hasSelected 
+              vppId,
+              itemNumber,
+              positionTitle, 
+              postingDate,
+              ae.appointing_authority_selection_date appointingAuthoritySelectionDate,
+              numberOfPositions,
+              salaryGradeLevel,   
+              salaryGrade,
+              annualSalary,
+              education,training, eligibility, experience, 
+              placeOfAssignment,
+              occupationName,
+              prfNo,
+              prfId,
+              withExam,
+              postingStatus,
+              appointing_authority_has_selected(ae.posting_applicant_id_fk) hasSelected,
+              DATE_FORMAT(vs.schedule,'%Y-%m-%d %H:%i:%s') \`schedule\`
           FROM vacant_position_posting_view vpppv 
               INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpppv.vppId
               INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = pa._id 
               INNER JOIN prf_details prfd ON vpppv.prfId = prfd._id
-          WHERE vpppv.postingStatus = 'Appointing authority selection';
+              INNER JOIN vpp_schedule vs ON vs.vacant_position_posting_id_fk=vpppv.vppId
+          WHERE vpppv.postingStatus = 'Appointing authority selection' ORDER BY \`schedule\` DESC;
     `,
       );
     } catch (error) {
@@ -324,28 +325,27 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
       return await this.entityRepository.query(
         `
           SELECT DISTINCT 
-          vppId,
-          itemNumber,
-          positionTitle, 
-          postingDate,
-          DATE_FORMAT(ae.appointing_authority_selection_date,'%Y-%m-%d') appointingAuthoritySelectionDate,
-          numberOfPositions,
-          salaryGradeLevel,
-          salaryGrade,
-          annualSalary,
-          education,training, eligibility, experience, 
-          placeOfAssignment,
-          occupationName,
-          prfNo,
-          prfId,
-          withExam,
-          postingStatus 
+              vppId,
+              itemNumber,
+              positionTitle, 
+              postingDate,
+              DATE_FORMAT(ae.appointing_authority_selection_date,'%Y-%m-%d') appointingAuthoritySelectionDate,
+              numberOfPositions,
+              salaryGradeLevel,
+              salaryGrade,
+              annualSalary,
+              education, training, eligibility, experience, 
+              placeOfAssignment,
+              occupationName,
+              prfNo,
+              prfId,
+              withExam,
+              postingStatus 
           FROM vacant_position_posting_view vpppv 
               INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpppv.vppId
               INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = pa._id 
               INNER JOIN prf_details prfd ON vpppv.prfId = prfd._id
-          WHERE ae.status = ? AND postingStatus = ?;
-
+          WHERE ae.status = ? AND postingStatus = ? ;
     `,
         [applicantEndorsementStatus, postingStatus],
       );
