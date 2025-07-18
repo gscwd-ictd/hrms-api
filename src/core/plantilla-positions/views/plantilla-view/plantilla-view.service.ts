@@ -308,7 +308,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
     try {
       const core = await this.entityRepository.query(
         `
-        SELECT ogdr.percentage percentage, dr.description \`description\`,cm.name competency, prof.level \`level\`,d.type \`domain\` 
+        SELECT DISTINCT ogdr.percentage percentage, dr.description \`description\`,cm.name competency, prof.level \`level\`,d.type \`domain\` 
         FROM occupational_group_duties_responsibilities ogdr 
           INNER JOIN occupations_duties_responsibilities odr ON odr._id = ogdr.odr_id_fk 
           INNER JOIN occupational_group og ON og._id = ogdr.occupational_group_id_fk 
@@ -324,7 +324,7 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
 
       const support = await this.entityRepository.query(
         `
-        SELECT ogdr.percentage percentage, dr.description \`description\`,cm.name competency, prof.level \`level\`,d.type \`domain\` 
+        SELECT DISTINCT ogdr.percentage percentage, dr.description \`description\`,cm.name competency, prof.level \`level\`,d.type \`domain\` 
         FROM occupational_group_duties_responsibilities ogdr 
           INNER JOIN occupations_duties_responsibilities odr ON odr._id = ogdr.odr_id_fk 
           INNER JOIN occupational_group og ON og._id = ogdr.occupational_group_id_fk 
