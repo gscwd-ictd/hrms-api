@@ -62,7 +62,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     try {
       const postingApplicants = await this.postingApplicantsDetailedViewService.entityRepository.query(
         `SELECT postingApplicantId, applicantName2 
-      FROM posting_applicants_detailed_view WHERE vppId=? AND (applicantStatus = 'Qualified' OR applicantStatus = 'Shortlisted' OR applicantStatus = 'Accepted')`,
+      FROM posting_applicants_detailed_view WHERE vppId=? AND (applicantStatus = 'Qualified' OR applicantStatus = 'Shortlisted' OR applicantStatus = 'Accepted')
+      ORDER BY applicantName2 ASC;
+      `,
         [vppId],
       );
 
@@ -141,6 +143,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         .addSelect('has_dbm_csc_form(padv.postingApplicantId)', 'hasDbmCsc')
         .innerJoin('posting_applicants_detailed_view', 'padv', 'padv.postingApplicantId = ae.posting_applicant_id_fk')
         .where(`ae.status = :status AND padv.vppId=:vppId`, { status, vppId })
+        .orderBy('padv.applicantName2', 'ASC')
         .getRawMany();
       return selectedApplicants;
     } catch (error) {
