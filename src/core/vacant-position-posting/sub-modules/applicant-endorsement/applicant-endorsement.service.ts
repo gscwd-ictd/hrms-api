@@ -61,7 +61,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
   async getQualifiedApplicants(vppId: string) {
     try {
       const postingApplicants = await this.postingApplicantsDetailedViewService.entityRepository.query(
-        `SELECT postingApplicantId, applicantName2 
+        `SELECT postingApplicantId, applicantName2, applicantType  
       FROM posting_applicants_detailed_view WHERE vppId=? AND (applicantStatus = 'Qualified' OR applicantStatus = 'Shortlisted' OR applicantStatus = 'Accepted')
       ORDER BY applicantName2 ASC;
       `,
