@@ -20,6 +20,11 @@ export class PrfDetailsController {
     return await this.prfDetailsService.getAllPrfsByStatus('approved');
   }
 
+  @Get('approved/v2/:year')
+  async getAllApprovedPrfsV2(@Param('year') postingYear: number) {
+    return await this.prfDetailsService.getAllApprovedPrfsV2(postingYear);
+  }
+
   @Get('disapproved')
   async getAllDisapprovedPrfs() {
     return await this.prfDetailsService.getAllPrfsByStatus('disapproved');

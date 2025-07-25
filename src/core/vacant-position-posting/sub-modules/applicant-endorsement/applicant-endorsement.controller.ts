@@ -63,7 +63,7 @@ export class ApplicantEndorsementController {
     return [
       ...(await this.applicantEndorsementService.getApplicantsByEndorsementStatus(vppId, ApplicantEndorsementStatus.SELECTED_BY_REQUESTING_ENTITY)),
       ...(await this.applicantEndorsementService.getApplicantsByEndorsementStatus(vppId, ApplicantEndorsementStatus.SELECTED_BY_APPOINTING_AUTHORITY)),
-    ];
+    ].sort((a, b) => a.applicantName.localeCompare(b.applicantName));
   }
 
   /**

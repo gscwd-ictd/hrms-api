@@ -156,6 +156,56 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
     }
   }
 
+  async getAllApprovedPrfsV2(postingYear: number) {
+    try {
+      return await this.entityRepository.query(
+        `
+         SELECT DISTINCT 
+          vpp._id vppId,
+          get_employee_fullname2(prfd.employee_id_fk) requestingEntity,
+          has_pending_acknowledgement(vpp._id) hasPendingAcknowledgement, 
+          get_number_of_applicants(vpp._id) numberOfApplicants,
+          vpp.posting_date postingDate, 
+          vpp.posting_deadline postingDeadline,
+          vpp.posting_status postingStatus,
+          GROUP_CONCAT(distinct pp._id order by pp.item_number ASC) positionId,
+          GROUP_CONCAT(distinct pp.item_number order by pp.item_number ASC) itemNumber,
+          vs.schedule schedule,
+          vs.schedule_type scheduleType,
+          vs.venue venue,
+          pp.position_title positionTitle,
+          get_plantilla_salary_grade(pp._id) salaryGrade,
+          get_position_assignment(pp._id) assignment
+        FROM vacant_position_posting vpp
+          LEFT JOIN vpp_schedule vs ON vs.vacant_position_posting_id_fk = vpp._id
+          INNER JOIN vpp_positions vppp ON vpp._id=vppp.vacant_position_posting_id_fk
+          INNER JOIN prf_positions prfp ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
+          INNER JOIN prf_details prfd ON prfd._id = prfp.prf_details_id_fk
+          INNER JOIN plantilla_positions pp ON pp._id = vppp.prf_positions_positions_id_fk
+        WHERE
+         date_format(vpp.posting_date,'%Y') = ? 
+         GROUP BY 
+         vpp._id,
+         get_employee_fullname2(prfd.employee_id_fk),
+		 has_pending_acknowledgement(vpp._id),
+         vpp.posting_date,
+         vpp.posting_deadline,
+         vpp.posting_status,
+         vs.schedule,
+         vs.schedule_type,
+         vs.venue,
+         pp.position_title,
+         get_plantilla_salary_grade(pp._id),
+         get_position_assignment(pp._id)
+        ORDER BY postingDate DESC;
+    `,
+        [postingYear],
+      );
+    } catch (error) {
+      throw new HttpException(error, 500);
+    }
+  }
+
   async getPrfsByEmpIdAndPrfDetailsId(_id: string) {
     try {
       const prfDetails = await this.entityRepository

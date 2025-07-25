@@ -395,6 +395,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       .addSelect('vs.venue', 'venue')
       .distinct(true)
       .addSelect('pp.position_title', 'title')
+      .addSelect('group_concat(distinct pp.item_number order by pp.item_number ASC)', 'itemNumbers')
       .addSelect('vs.schedule_type', 'scheduleType')
       .addSelect("DATE_FORMAT(vs.schedule,'%Y-%m-%d %H:%i:%s')", 'start')
       .innerJoin('vacant_position_posting', 'vpp', 'vs.vacant_position_posting_id_fk = vpp._id')
@@ -403,6 +404,7 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       .innerJoin('plantilla_positions', 'pp', 'pp._id = prf_pos.position_id_fk')
       .where("DATE_FORMAT(schedule,'%m') <= :nextmonth AND DATE_FORMAT(schedule,'%m') >= :prevmonth AND DATE_FORMAT(schedule,'%Y') = year(now())", { nextmonth, prevmonth })
       .orderBy('start', 'ASC')
+      .groupBy(`vpp._id,vs.venue,pp.position_title,vs.schedule_type, DATE_FORMAT(vs.schedule,'%Y-%m-%d %H:%i:%s')`)
       .getRawMany();
 
     const events = await Promise.all(
