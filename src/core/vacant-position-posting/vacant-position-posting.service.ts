@@ -396,6 +396,8 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
       .distinct(true)
       .addSelect('pp.position_title', 'title')
       .addSelect('group_concat(distinct pp.item_number order by pp.item_number ASC)', 'itemNumber')
+      .addSelect(`get_plantilla_salary_grade(SUBSTRING_INDEX( group_concat(distinct pp._id order by item_number ASC) ,',',1))`, 'salaryGrade')
+      .addSelect(`get_position_assignment(SUBSTRING_INDEX( group_concat(distinct pp._id order by pp.item_number ASC) ,',',1))`, 'assignment')
       .addSelect('vs.schedule_type', 'scheduleType')
       .addSelect("DATE_FORMAT(vs.schedule,'%Y-%m-%d %H:%i:%s')", 'start')
       .innerJoin('vacant_position_posting', 'vpp', 'vs.vacant_position_posting_id_fk = vpp._id')

@@ -197,7 +197,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
          pp.position_title,
          get_plantilla_salary_grade(pp._id),
          get_position_assignment(pp._id)
-        ORDER BY postingDate DESC;
+        ORDER BY itemNumber ASC;
     `,
         [postingYear],
       );
