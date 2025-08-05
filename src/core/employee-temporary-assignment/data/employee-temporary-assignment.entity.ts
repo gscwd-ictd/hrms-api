@@ -15,7 +15,7 @@ export class EmployeeTemporaryAssignment extends DefaultTable {
   @Column({ name: 'date_from', type: 'date', nullable: false })
   dateFrom: Date;
 
-  @Column({ name: 'date_to', type: 'date', nullable: false })
+  @Column({ name: 'date_to', type: 'date', nullable: true })
   dateTo: Date;
 
   @Column({ name: 'status', type: 'enum', enum: EmployeeTemporaryAssignmentStatus, default: EmployeeTemporaryAssignmentStatus.ACTIVE })
