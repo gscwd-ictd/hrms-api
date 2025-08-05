@@ -56,6 +56,7 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
     } catch (error) {
       Logger.error(error.errno);
       if (error.errno === 1062) throw new HttpException('Resourcce already exist', HttpStatus.CONFLICT);
+      console.log(error);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
@@ -90,18 +91,15 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
   /* update employee temporary assignment by id */
   async updateEmployeeTemporaryAssignmentById(id: string, data: UpdateEmployeeTemporaryAssignmentDto) {
     try {
-      const { employeeId, ...rest } = data;
+      const { _id, ...rest } = data;
 
       const updateTemporaryAssignment = await this.employeeTemporaryAssignmentRepository
         .createQueryBuilder()
         .update()
         .set({
-          employee: {
-            _id: employeeId,
-          },
           ...rest,
         })
-        .where('_id = :id', { id: id })
+        .where('_id = :id', { id })
         .execute();
 
       if (updateTemporaryAssignment.affected < 1) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
@@ -136,14 +134,30 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
   /* find all assignable employee */
   async findAllAssignableEmployee() {
     try {
-      return (await this.employeeTemporaryAssignmentRepository.query(`SELECT 
-      get_employee_fullname(emp._id) label,
-      emp._id value FROM employees emp 
+      const result = (await this.employeeTemporaryAssignmentRepository.query(`
+      SELECT 
+        get_employee_fullname2(emp._id) label,
+        emp._id employeeId,
+        get_employee_assignment_id_or_oic_id(emp._id) organizationId
+      FROM employees emp   
       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
       INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
       WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-      AND sg.salary_grade <= 27
-      ORDER BY get_employee_fullname(emp._id) ASC;`)) as { label: string; value: string }[];
+      AND sg.salary_grade <= 27 AND emp._id NOT IN (SELECT employee_id_fk FROM employee_temporary_assignment)
+      ORDER BY get_employee_fullname2(emp._id) ASC;
+      `)) as { label: string; employeeId: string; organizationId: string }[];
+      return await Promise.all(
+        result.map(async (item) => {
+          const { employeeId, label, organizationId } = item;
+          return {
+            label,
+            value: {
+              employeeId,
+              organizationId,
+            },
+          };
+        }),
+      );
     } catch (error) {
       Logger.error(error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
