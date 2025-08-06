@@ -440,7 +440,9 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
     try {
       const { effectivityDate } = vppEffectivityDateDTO;
       //get vppIds;
-      return await this.updateEntity({ _id: vppId, effectivityDate });
+      const result = await this.updateEntity({ _id: vppId, effectivityDate });
+      const vppUpdate = await this.entityRepository.query(`UPDATE vacant_position_posting SET posting_status='Date of effectivity set' WHERE _id=?`, [vppId]);
+      return { result, vppUpdate };
     } catch (error) {}
   }
 
