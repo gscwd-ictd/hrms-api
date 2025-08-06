@@ -13,6 +13,7 @@ export enum PostingStatus {
   APPOINTING_AUTHORITY_SELECTION = 'Appointing authority selection',
   APPOINTING_AUTHORITY_SELECTION_DONE = 'Appointing authority selection done',
   HIRING_PROCESS_DONE = 'Hiring process done',
+  DATE_OF_EFFECTIVITY_SET = 'Date of effectivity set',
   FOR_PRINTING = 'For printing',
 }
 
