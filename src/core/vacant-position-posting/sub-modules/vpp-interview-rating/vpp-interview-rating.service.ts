@@ -115,9 +115,9 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     ;`);
 
       let approvedByIndex = 1;
-      if ((signatories.length = 3)) approvedByIndex = 2;
+      if (signatories.length === 3) approvedByIndex = 2;
 
-      return { resultsOfHiring, signatories: { certifiedCorrectBy: signatories[0], approvedBy: signatories[2] } };
+      return { resultsOfHiring, signatories: { certifiedCorrectBy: signatories[0], approvedBy: signatories[approvedByIndex] } };
     } catch (error) {
       throw new NotFoundException(error.message);
     }
@@ -200,13 +200,13 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
         )
       ).length > 0
         ? (
-          await this.entityRepository.query(
-            `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
+            await this.entityRepository.query(
+              `SELECT DATE_FORMAT(schedule,'%M %d, %Y %h:%i%p') dateOfPanelInterview 
         FROM vpp_schedule 
        WHERE vacant_position_posting_id_fk=? AND schedule_type='interview'`,
-            [vppId],
-          )
-        )[0]
+              [vppId],
+            )
+          )[0]
         : { dateOfPanelInterview: null };
 
     const { allPsbSubmitted } = (
@@ -411,7 +411,6 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
       const { employeeDetails, pdsPersonalInfo } = employeeInfo;
       applicantSex = employeeDetails.sex;
       applicantCivilStatus = pdsPersonalInfo.civilStatus;
-
     } else {
       const { externalApplicantId } = (
         await this.entityRepository.query('SELECT external_applicant_id_fk externalApplicantId FROM posting_applicants WHERE _id=?', [postingApplicantId])
