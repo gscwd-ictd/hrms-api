@@ -379,7 +379,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
          hprv.salaryGradeLevel, 
          hprv.postingDate, 
          hprv.psbDate, 
-         hprv.selected,positionId;`,
+         hprv.selected,positionId
+         ORDER BY GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ',\n' ) ASC;
+         ;`,
         [effectivityDate],
       );
     } catch (error) {
@@ -408,7 +410,9 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
         hprv.salaryGradeLevel, 
         hprv.postingDate, 
         hprv.psbDate, 
-        hprv.selected,positionId;`,
+        hprv.selected,positionId 
+        ORDER BY GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ',\n' ) ASC;
+        ;`,
       );
     } catch (error) {
       throw new NotFoundException(error.message);
