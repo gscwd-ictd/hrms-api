@@ -361,12 +361,14 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     try {
       return await this.hiringProcessResultsService.entityRepository.query(
         `SELECT DISTINCT hprv.vppId vppId,  
-         hprv.positionTitle positionTitle, 
-         get_nature_of_appointment(substring_index(vppv.positionId,',',1)) natureOfAppointment, 
-         hprv.assignedTo assignedTo,
-         hprv.salaryGradeLevel salaryGradeLevel,
-         IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
-         GROUP_CONCAT(plantillaNumber SEPARATOR ', \n') plantillaNumber, selected, DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate  
+            hprv.positionTitle positionTitle, 
+            get_nature_of_appointment(substring_index(vppv.positionId,',',1)) natureOfAppointment, 
+            hprv.assignedTo assignedTo,
+            hprv.salaryGradeLevel salaryGradeLevel,
+            IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
+            GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
+            selected, 
+            DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate  
          FROM hiring_process_results_view hprv  
             INNER JOIN vacant_position_posting vpp ON vpp._id = vppId 
             INNER JOIN vacant_position_posting_view vppv ON vppv.vppId = hprv.vppId 
@@ -388,12 +390,14 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
     try {
       return await this.hiringProcessResultsService.entityRepository.query(
         `SELECT DISTINCT hprv.vppId vppId,  
-        hprv.positionTitle positionTitle, 
-        get_nature_of_appointment(substring_index(vppv.positionId,',',1)) natureOfAppointment, 
-        hprv.assignedTo assignedTo,
-        hprv.salaryGradeLevel salaryGradeLevel,
-        IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
-        GROUP_CONCAT(plantillaNumber SEPARATOR ', \n') plantillaNumber, selected, DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate 
+            hprv.positionTitle positionTitle, 
+            get_nature_of_appointment(substring_index(vppv.positionId,',',1)) natureOfAppointment, 
+            hprv.assignedTo assignedTo,
+            hprv.salaryGradeLevel salaryGradeLevel,
+            IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
+            GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
+            selected, 
+            DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate 
         FROM hiring_process_results_view hprv  
            INNER JOIN vacant_position_posting vpp ON vpp._id = vppId 
            INNER JOIN vacant_position_posting_view vppv ON vppv.vppId = hprv.vppId 
