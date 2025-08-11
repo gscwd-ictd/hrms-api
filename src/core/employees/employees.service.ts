@@ -105,7 +105,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async testEmail() {
-    return await this.emailService.sendEmail('jofhernilapirot@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
+    return await this.emailService.sendEmail('allynjosephcubero@gmail.com', '62fef63c-b26f-11ed-a79b-000c29f95a80', 1, null);
   }
 
   async getEmployeesUnderSupervisor(employeeId: string) {
@@ -934,6 +934,8 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
         .addSelect('get_employee_assignment_id(emp._id)', 'id')
         .addSelect('get_employee_assignment(emp._id)', 'name')
+        .addSelect('is_ta(emp._id)', 'isTa')
+        .addSelect(`if(is_ta(emp._id)=1,get_actual_employee_assignment(emp._id),'N/A')`, 'actualAssignment')
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .orderBy('get_employee_fullname2(emp._id)', 'ASC')
         .where(`pp.position_title<>'Chairman'`, {})
@@ -941,7 +943,23 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
       const _empPositions = await Promise.all(
         empPositions.map(async (empPosition) => {
-          const { id, name, userId, companyId, fullName, firstName, middleName, lastName, positionTitle, nameExt, employeeId, natureOfAppointment, positionId } = empPosition;
+          const {
+            id,
+            name,
+            userId,
+            companyId,
+            fullName,
+            firstName,
+            middleName,
+            lastName,
+            positionTitle,
+            nameExt,
+            employeeId,
+            natureOfAppointment,
+            positionId,
+            isTa,
+            actualAssignment,
+          } = empPosition;
 
           const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
           const employeeSchedule = await this.getEmployeeSchedule(employeeId);
@@ -954,7 +972,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
               userId,
               companyId,
               positionTitle,
-              assignment: { id, name, divisionName, departmentName, officeName },
+              assignment: { id, name, divisionName, departmentName, officeName, isTa, actualAssignment },
               positionId,
               scheduleBase: employeeSchedule.scheduleBase,
               natureOfAppointment,
@@ -1348,14 +1366,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   async getGeneralManager() {
     return (
       await this.entityRepository.query(`
-    SELECT employeeId FROM 
-    ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp 
-      INNER JOIN office_positions op ON op.position_id_fk = pp._id 
-      INNER JOIN office o ON op.office_id_fk = o._id 
-    WHERE pp.position_title = 'General Manager' AND o.name = 'Office of the General Manager') 
+    SELECT employeeId FROM
+    ((SELECT pp.employee_id_fk employeeId FROM plantilla_positions pp
+      INNER JOIN office_positions op ON op.position_id_fk = pp._id
+      INNER JOIN office o ON op.office_id_fk = o._id
+    WHERE pp.position_title = 'General Manager A' AND o.name = 'Office of the General Manager')
     UNION
     (
-      SELECT employeeId FROM officer_in_charge_view 
+      SELECT employeeId FROM officer_in_charge_view
       WHERE oicOrgName = 'Office of the General Manager' AND oicPosition = 'OIC-General Manager'
     )) hrdManagers WHERE employeeId IS NOT NULL;`)
     )[0].employeeId;
