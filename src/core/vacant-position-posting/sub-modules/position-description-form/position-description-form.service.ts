@@ -22,7 +22,7 @@ export class PositionDescriptionFormService {
     private readonly positionDescriptionFormExternalContacts: PositionDescriptionFormExternalContactsService,
     private readonly positionDescriptionFormWorkingConditionService: PositionDescriptionFormWorkingConditionService,
     private readonly occupationalGroupDutiesResponsibilities: OccupationalGroupDutiesResponsibilitiesService,
-  ) { }
+  ) {}
 
   async savePositionDescriptionForm(positionDescriptionFormDTO: PositionDescriptionFormDTO) {
     try {
@@ -64,12 +64,11 @@ export class PositionDescriptionFormService {
           [postingApplicantId],
         )
       )[0];
-    } catch (error) { }
+    } catch (error) {}
   }
 
   async getPositionDescriptionFormByPostingApplicantId(postingApplicantId: string) {
     try {
-
       const { positionDetails, positionDescriptionFormBasic } = await this.positionDescriptionFormBasic.getPositionDescriptionFormBasicInfo(postingApplicantId);
 
       const internal = await this.positionDescriptionFormInternalContacts.getInternalContactFrequency(postingApplicantId);
@@ -95,7 +94,7 @@ export class PositionDescriptionFormService {
 
       const functionalManagerial = await this.positionDescriptionFormBasic.entityRepository.query(
         `
-        SELECT cm.name competencyName, cm.desc description, p.level 'level'   
+        SELECT DISTINCT cm.name competencyName, cm.desc description, p.level 'level', percentage   
           FROM occupational_group_duties_responsibilities ogdr
           INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
           INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
