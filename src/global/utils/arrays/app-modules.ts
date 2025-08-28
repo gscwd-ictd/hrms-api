@@ -46,6 +46,7 @@ import { PositionDutiesResponsibilitiesModule } from 'src/core/position-duties-r
 import { EmployeeTemporaryAssignmentModule } from 'src/core/employee-temporary-assignment/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Employee201Module } from 'src/core/employees/201/employee201.module';
+import { NosiNosaModule } from 'src/core/salary-grade/components/nosi-nosa/nosi-nosa.module';
 
 export const modules = [
   AuthModule,
@@ -97,5 +98,6 @@ export const modules = [
   PositionDutiesResponsibilitiesModule,
   EmployeeTemporaryAssignmentModule,
   Employee201Module,
+  NosiNosaModule,
   ScheduleModule.forRoot(),
 ];
