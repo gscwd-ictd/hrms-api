@@ -4,3 +4,9 @@ export type SalaryGradeType = {
   stepIncrement: number;
   amount: number;
 };
+
+export enum NosiNosaStatus {
+  FOR_ISSUANCE = 'for issuance',
+  FOR_GM_APPROVAL = 'for gm approval',
+  APPROVED_NOSI = 'approved nosi',
+}
