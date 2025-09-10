@@ -9,7 +9,7 @@ export class OrganizationalPositionsService {
     private readonly officePositionsService: OfficePositionsService,
     private readonly departmentPositionsService: DepartmentPositionService,
     private readonly divisionPositionsService: DivisionPositionsService,
-  ) { }
+  ) {}
 
   async getAssignmentPositions(_assignmentId: string, employeeId: string) {
     let organization: string;
@@ -206,7 +206,7 @@ export class OrganizationalPositionsService {
             .where(
               `div._id = :assignmentId AND has_duties(pp._id) = true  AND pp.employee_id_fk IS NULL AND pp._id NOT IN (SELECT position_id_fk FROM 
               prf_positions,prf_details, plantilla_positions 
-              WHERE position_id_fk = plantilla_positions._id AND prf_details._id = prf_positions.prf_details_id_fk AND (prf_details.status<>'Disapproved' AND prf_details.status<>'Cancelled')) AND pp._id <> :positionId`,
+              WHERE position_id_fk = plantilla_positions._id AND prf_details._id = prf_positions.prf_details_id_fk AND (prf_details.status<>'Disapproved' AND prf_details.status<>'Cancelled' AND (prf_details.status='Approved' AND year(date_requested)=year(now())))) AND pp._id <> :positionId`,
               { assignmentId, positionId },
             )
             .getRawMany();
