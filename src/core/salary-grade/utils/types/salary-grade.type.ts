@@ -6,7 +6,10 @@ export type SalaryGradeType = {
 };
 
 export enum NosiNosaStatus {
-  FOR_ISSUANCE = 'for issuance',
-  FOR_GM_APPROVAL = 'for gm approval',
+  NOSI_FOR_ISSUANCE = 'nosi for issuance',
+  NOSI_FOR_GM_APPROVAL = 'nosi for gm approval',
+  NOSA_FOR_ISSUANCE = 'nosa for issuance',
+  NOSA_FOR_GM_APPROVAL = 'nosa for gm approval',
   APPROVED_NOSI = 'approved nosi',
+  APPROVED_NOSA = 'approved nosa',
 }
