@@ -348,7 +348,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
               INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpppv.vppId
               INNER JOIN applicant_endorsement ae ON ae.posting_applicant_id_fk = pa._id 
               INNER JOIN prf_details prfd ON vpppv.prfId = prfd._id
-          WHERE ae.status = ? AND postingStatus = ? ;
+          WHERE ae.status = ? AND postingStatus = ? AND year(prfd.date_requested) = year(now());
     `,
         [applicantEndorsementStatus, postingStatus],
       );
