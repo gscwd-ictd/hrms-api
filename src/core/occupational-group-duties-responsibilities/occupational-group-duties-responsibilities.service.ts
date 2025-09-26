@@ -401,7 +401,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     try {
       return await this.entityRepository.query(
         `
-      SELECT percentage, cm.name competencyName, dr.description dutyResponsibility, p.level competencyLevel
+      SELECT DISTINCT percentage, cm.name competencyName, dr.description dutyResponsibility, p.level competencyLevel
             FROM occupational_group_duties_responsibilities ogdr
           INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
           INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
