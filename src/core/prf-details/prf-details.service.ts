@@ -165,6 +165,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
           get_employee_fullname2(prfd.employee_id_fk) requestingEntity,
           has_pending_acknowledgement(vpp._id) hasPendingAcknowledgement, 
           get_number_of_applicants(vpp._id) numberOfApplicants,
+          get_number_of_applicants_selected_by_gm(vpp._id) numberOfSelectedApplicants,
           vpp.posting_date postingDate, 
           vpp.posting_deadline postingDeadline,
           vpp.posting_status postingStatus,
@@ -175,7 +176,8 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
           vs.venue venue,
           pp.position_title positionTitle,
           get_plantilla_salary_grade(pp._id) salaryGrade,
-          get_position_assignment(pp._id) assignment
+          get_position_assignment(pp._id) assignment,
+          prfd.with_exam withExam
         FROM vacant_position_posting vpp
           LEFT JOIN vpp_schedule vs ON vs.vacant_position_posting_id_fk = vpp._id
           INNER JOIN vpp_positions vppp ON vpp._id=vppp.vacant_position_posting_id_fk
@@ -196,7 +198,8 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
          vs.venue,
          pp.position_title,
          get_plantilla_salary_grade(pp._id),
-         get_position_assignment(pp._id)
+         get_position_assignment(pp._id),
+         withExam
         ORDER BY itemNumber ASC;
     `,
         [postingYear],
