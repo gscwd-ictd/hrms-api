@@ -366,7 +366,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
             hprv.assignedTo assignedTo,
             hprv.salaryGradeLevel salaryGradeLevel,
             IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
-            GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
+            GROUP_CONCAT(DISTINCT plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
             selected, 
             DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate  
          FROM hiring_process_results_view hprv  
@@ -397,7 +397,7 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
             hprv.assignedTo assignedTo,
             hprv.salaryGradeLevel salaryGradeLevel,
             IF( hprv.salaryGradeLevel >= 12, 2, 1 ) \`level\`, 
-            GROUP_CONCAT(plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
+            GROUP_CONCAT(DISTINCT plantillaNumber ORDER BY plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
             selected, 
             DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate 
         FROM hiring_process_results_view hprv  
