@@ -10,7 +10,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   vpppv.salaryGradeLevel,
   padv.postingDate postingDate,
   vpps.schedule psbDate,
-  GROUP_CONCAT(padv.applicantName SEPARATOR ', \n') selected 
+  GROUP_CONCAT(DISTINCT padv.applicantName SEPARATOR ', \n') selected 
   FROM vacant_position_posting_publication_view vpppv 
       INNER JOIN posting_applicants_detailed_view padv ON padv.vppId = vpppv.vppId 
       INNER JOIN applicant_endorsement ae ON padv.postingApplicantId = ae.posting_applicant_id_fk 
