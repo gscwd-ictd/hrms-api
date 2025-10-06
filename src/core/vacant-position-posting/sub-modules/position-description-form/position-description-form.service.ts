@@ -136,16 +136,31 @@ export class PositionDescriptionFormService {
         )
       )[0].applicantName;
 
-      const requestingEntity = (
-        await this.positionDescriptionFormBasic.entityRepository.query(
-          `
+      const placeOfAssignment = positionDetails.placeOfAssignment;
+
+      let requestingEntity;
+
+      if (placeOfAssignment === 'Office of the General Manager' || placeOfAssignment === 'Office of the Board of Directors') {
+        requestingEntity = (
+          await this.positionDescriptionFormBasic.entityRepository.query(
+            `
+                SELECT get_employee_fullname(emp._id) employeeName,get_employee_position_or_oic(emp._id) positionTitle FROM employees emp WHERE 
+            get_employee_position_or_oic(emp._id) = 'General Manager A' OR get_employee_position_or_oic(emp._id) = 'OIC-General Manager';
+        `,
+            [postingApplicantId],
+          )
+        )[0];
+      } else
+        requestingEntity = (
+          await this.positionDescriptionFormBasic.entityRepository.query(
+            `
         SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_position_title_for_documents(get_employee_position_or_oic(vppp.employee_id_fk)) positionTitle FROM vpp_psb vppp 
               INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
         AND pa._id = ? AND vppp.psb_no = 2;
         `,
-          [postingApplicantId],
-        )
-      )[0];
+            [postingApplicantId],
+          )
+        )[0];
 
       return {
         positionDetails,
