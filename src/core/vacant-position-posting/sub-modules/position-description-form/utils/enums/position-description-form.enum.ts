@@ -8,6 +8,7 @@ export enum AppointmentType {
   PROMOTION = 'Promotion',
   REAPPOINTMENT = 'Reappointment',
   COTERMINOUS = 'Coterminous',
+  TEMPORARY = 'Temporary',
 }
 
 /*
