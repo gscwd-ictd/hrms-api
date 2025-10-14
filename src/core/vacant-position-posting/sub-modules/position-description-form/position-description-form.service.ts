@@ -94,15 +94,15 @@ export class PositionDescriptionFormService {
 
       const functionalManagerial = await this.positionDescriptionFormBasic.entityRepository.query(
         `
-        SELECT DISTINCT cm.name competencyName, cm.desc description, p.level 'level', percentage   
+          SELECT DISTINCT cm.name competencyName, cm.desc description, p.level 'level', percentage   
           FROM occupational_group_duties_responsibilities ogdr
-          INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
-          INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
-          INNER JOIN position_competency_proficiency_level pcpl ON pcpl._id = ogdr.pcpl_id_fk
-          INNER JOIN proficiency p ON p._id = pcpl.proficiency_id_fk
-          INNER JOIN competency_model cm on p.competency_id_fk = cm._id
-          INNER JOIN domain d ON d._id = cm.domain_id_fk
-          INNER JOIN occupational_group og ON og._id = ogdr.occupational_group_id_fk
+            INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
+            INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
+            INNER JOIN position_competency_proficiency_level pcpl ON pcpl._id = ogdr.pcpl_id_fk
+            INNER JOIN proficiency p ON p._id = pcpl.proficiency_id_fk
+            INNER JOIN competency_model cm on p.competency_id_fk = cm._id
+            INNER JOIN domain d ON d._id = cm.domain_id_fk
+            INNER JOIN occupational_group og ON og._id = ogdr.occupational_group_id_fk
           WHERE og.position_id_fk = ? 
           AND (d.type='Functional' OR d.type='Cross-Cutting Functional' OR d.type='Leadership/Managerial')
           ORDER BY percentage desc, competencyName asc;`,
@@ -137,10 +137,18 @@ export class PositionDescriptionFormService {
       )[0].applicantName;
 
       const placeOfAssignment = positionDetails.placeOfAssignment;
+      const officeName = (
+        await this.positionDescriptionFormBasic.entityRepository.query(
+          `
+               SELECT get_office_name_by_position_id(?) officeName;
+        `,
+          [positionDetails.positionId],
+        )
+      )[0].officeName;
 
       let requestingEntity;
 
-      if (placeOfAssignment === 'Office of the General Manager' || placeOfAssignment === 'Office of the Board of Directors') {
+      if (placeOfAssignment === 'Office of the General Manager' || placeOfAssignment === 'Office of the Board of Directors' || officeName === 'Office of the General Manager') {
         requestingEntity = (
           await this.positionDescriptionFormBasic.entityRepository.query(
             `
