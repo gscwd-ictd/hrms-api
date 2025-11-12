@@ -162,9 +162,15 @@ export class PositionDescriptionFormService {
         requestingEntity = (
           await this.positionDescriptionFormBasic.entityRepository.query(
             `
-        SELECT get_employee_fullname(vppp.employee_id_fk) employeeName, get_position_title_for_documents(get_employee_position_or_oic(vppp.employee_id_fk)) positionTitle FROM vpp_psb vppp 
-              INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vppp.vacant_position_posting_id_fk 
-        AND pa._id = ? AND vppp.psb_no = 2;
+              SELECT
+                DISTINCT get_employee_fullname(prfd.employee_id_fk) employeeName, 
+                get_position_title_for_documents(get_employee_position_or_oic(prfd.employee_id_fk)) positionTitle
+              FROM prf_details prfd
+              INNER JOIN prf_positions prfp ON prfp.prf_details_id_fk = prfd._id
+              INNER JOIN vpp_positions vppp ON vppp.prf_positions_positions_id_fk = prfp.position_id_fk
+              INNER JOIN vacant_position_posting vpp ON vpp._id = vppp.vacant_position_posting_id_fk
+              INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpp._id
+              WHERE pa._id = ?;
         `,
             [postingApplicantId],
           )
