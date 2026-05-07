@@ -13,6 +13,11 @@ export class ApplicantEndorsementController {
     return await this.applicantEndorsementService.getHiringProcessResults(effectivityDate);
   }
 
+  @Get('/hiring-process-results/:year')
+  async getHiringProcessResultsByYear(@Param('year') year: number) {
+    return await this.applicantEndorsementService.getHiringProcessByEffectivityYear(year);
+  }
+
   @Get('/:vpp_id')
   async getEndorsedApplicants(@Param('vpp_id') vppId: string) {
     return await this.applicantEndorsementService.getEndorsedApplicants(vppId);
