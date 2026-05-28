@@ -140,7 +140,15 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
 
     return await this.entityRepository.query(
       `
-    (SELECT distinct position_id positionId, pv.position_title positionTitle, pv.item_number itemNumber, get_position_assignment(position_id) designation,has_employee(position_id) hasEmployee, has_ongoing_prf(position_id) hasOngoingPrf,IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName  ,DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt
+    (SELECT distinct position_id positionId, 
+            pv.position_title positionTitle, 
+            pv.item_number itemNumber, 
+            get_position_assignment(position_id) designation,
+            has_employee(position_id) hasEmployee, 
+            has_ongoing_prf(position_id) hasOngoingPrf,
+            IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName,
+            pv.salary_grade salaryGrade,
+            DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt
     FROM plantilla_view pv 
       INNER JOIN occupational_group og ON og.position_id_fk = pv.position_id
       INNER JOIN occupational_group_duties_responsibilities ogdr ON ogdr.occupational_group_id_fk = og._id
@@ -150,7 +158,15 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
       FROM 
       (SELECT sum(ogdr.percentage) as percentage, ogdr.occupational_group_id_fk occupationalGroupId FROM occupational_group_duties_responsibilities ogdr    
     GROUP BY ogdr.occupational_group_id_fk) a WHERE a.percentage >= 100)) UNION (
-      SELECT distinct position_id positionId, pv.position_title positionTitle, pv.item_number itemNumber, get_position_assignment(position_id) designation,has_employee(position_id) hasEmployee, has_ongoing_prf(position_id) hasOngoingPrf ,IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName ,DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt 
+      SELECT distinct position_id positionId, 
+            pv.position_title positionTitle, 
+            pv.item_number itemNumber, 
+            get_position_assignment(position_id) designation,
+            has_employee(position_id) hasEmployee, 
+            has_ongoing_prf(position_id) hasOngoingPrf ,
+            IF(pp.employee_id_fk IS NOT NULL, get_employee_fullname(pp.employee_id_fk),null) employeeName,
+            pv.salary_grade salaryGrade ,
+            DATE_FORMAT(ogdr.updated_at, '%Y-%m-%d') updatedAt 
           FROM plantilla_view pv 
       LEFT JOIN occupational_group og ON og.position_id_fk = pv.position_id
       LEFT JOIN occupational_group_duties_responsibilities ogdr ON ogdr.occupational_group_id_fk = og._id
@@ -401,7 +417,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     try {
       return await this.entityRepository.query(
         `
-      SELECT DISTINCT percentage, cm.name competencyName, dr.description dutyResponsibility, p.level competencyLevel
+          SELECT DISTINCT percentage, cm.name competencyName, dr.description dutyResponsibility, p.level competencyLevel
             FROM occupational_group_duties_responsibilities ogdr
           INNER JOIN occupations_duties_responsibilities odr ON ogdr.odr_id_fk = odr._id
           INNER JOIN duties_responsibilities dr ON dr._id = odr.duties_responsibilities_id_fk
