@@ -186,6 +186,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
           INNER JOIN plantilla_positions pp ON pp._id = vppp.prf_positions_positions_id_fk
         WHERE
          date_format(vpp.posting_date,'%Y') = ? 
+         AND YEAR(prfp.created_at) = ?
          GROUP BY 
          vpp._id,
          get_employee_fullname2(prfd.employee_id_fk),
@@ -202,7 +203,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
          withExam
         ORDER BY itemNumber ASC;
     `,
-        [postingYear],
+        [postingYear, postingYear],
       );
     } catch (error) {
       throw new HttpException(error, 500);
