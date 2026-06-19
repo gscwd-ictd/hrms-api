@@ -187,6 +187,7 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
         WHERE
          date_format(vpp.posting_date,'%Y') = ? 
          AND YEAR(prfp.created_at) = ?
+        AND prfd.status = 'Approved' 
          GROUP BY 
          vpp._id,
          get_employee_fullname2(prfd.employee_id_fk),
