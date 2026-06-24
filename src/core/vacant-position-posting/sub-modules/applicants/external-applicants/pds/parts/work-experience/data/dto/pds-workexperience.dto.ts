@@ -6,7 +6,7 @@ export class PDSWorkExperienceDTO {
   _id: string;
   positionTitle: string;
   companyName: string;
-  monthlySalary: number;
+  monthlySalary?: number;
   appointmentStatus: AppointmentStatus;
   isGovernmentService: boolean;
   salaryGrade: string;

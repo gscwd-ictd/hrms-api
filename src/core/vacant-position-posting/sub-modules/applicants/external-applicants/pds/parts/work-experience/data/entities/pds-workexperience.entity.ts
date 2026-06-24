@@ -11,7 +11,7 @@ export class PDSWorkExperience extends DefaultTable {
   @Column({ name: 'company_name' })
   companyName: string;
 
-  @Column({ name: 'monthly_salary' })
+  @Column({ name: 'monthly_salary', nullable: true })
   monthlySalary: number;
 
   @Column({ name: 'appointment_status', type: 'enum', enum: AppointmentStatus })
