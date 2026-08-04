@@ -435,6 +435,10 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     const line1 = _houseNumber + _street + _subdivision;
 
     const line2 = barangay + ', ' + city;
+
+    const escapedLine1 = line1.replace(/'/g, "''");
+    const escapedLine2 = line2.replace(/'/g, "''");
+
     const data = (
       await this.entityRepository.query(
         `
@@ -442,8 +446,8 @@ export class VppInterviewRatingService extends BaseEntityCrudService<VppIntervie
     CONCAT('${salutation}',' ',padv.applicantName) applicantName,
     vppv.positionTitle positionTitle,
     vppv.placeOfAssignment placeOfAssignment,
-    '${line1}' addressLine1,
-    '${line2}' addressLine2,
+    '${escapedLine1}' addressLine1,
+    '${escapedLine2}' addressLine2,
     CONCAT(UPPER(amount_in_words(get_salary_grade_amount(get_salary_grade_id(get_plantilla_salary_grade(vppv.positionId))))),' (Php ',FORMAT(get_salary_grade_amount(get_salary_grade_id(get_plantilla_salary_grade(vppv.positionId))),2),')') amountInWords,
     CONCAT(pdfb.item_number,' FY ',DATE_FORMAT(padv.effectivityDate,'%Y')) itemNumber,
     pdfb.appointment_type  appointmentType,
