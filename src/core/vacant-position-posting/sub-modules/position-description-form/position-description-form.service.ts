@@ -158,20 +158,44 @@ export class PositionDescriptionFormService {
             [postingApplicantId],
           )
         )[0];
-      } else
+      }
+      // requestingEntity = (
+      //   await this.positionDescriptionFormBasic.entityRepository.query(
+      //     `
+      //       SELECT
+      //         DISTINCT get_employee_fullname(prfd.employee_id_fk) employeeName,
+      //         get_position_title_for_documents(get_employee_position_or_oic(prfd.employee_id_fk)) positionTitle
+      //       FROM prf_details prfd
+      //       INNER JOIN prf_positions prfp ON prfp.prf_details_id_fk = prfd._id
+      //       INNER JOIN vpp_positions vppp ON vppp.prf_positions_positions_id_fk = prfp.position_id_fk
+      //       INNER JOIN vacant_position_posting vpp ON vpp._id = vppp.vacant_position_posting_id_fk
+      //       INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpp._id
+      //       WHERE pa._id = ?;
+      // `,
+      //     [postingApplicantId],
+      //   )
+      // )[0];
+      else
         requestingEntity = (
           await this.positionDescriptionFormBasic.entityRepository.query(
             `
-              SELECT
-                DISTINCT get_employee_fullname(prfd.employee_id_fk) employeeName, 
-                get_position_title_for_documents(get_employee_position_or_oic(prfd.employee_id_fk)) positionTitle
-              FROM prf_details prfd
-              INNER JOIN prf_positions prfp ON prfp.prf_details_id_fk = prfd._id
-              INNER JOIN vpp_positions vppp ON vppp.prf_positions_positions_id_fk = prfp.position_id_fk
-              INNER JOIN vacant_position_posting vpp ON vpp._id = vppp.vacant_position_posting_id_fk
-              INNER JOIN posting_applicants pa ON pa.vacant_position_posting_id_fk = vpp._id
-              WHERE pa._id = ?;
-        `,
+            SELECT DISTINCT
+    get_employee_fullname(prfd.employee_id_fk) AS employeeName,
+    get_position_title_for_documents(
+        get_employee_position_or_oic(prfd.employee_id_fk)
+    ) AS positionTitle
+FROM posting_applicants pa
+INNER JOIN vacant_position_posting vpp
+    ON vpp._id = pa.vacant_position_posting_id_fk
+INNER JOIN vpp_positions vppp
+    ON vppp.vacant_position_posting_id_fk = vpp._id
+INNER JOIN prf_positions prfp
+    ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
+INNER JOIN prf_details prfd
+    ON prfd._id = prfp.prf_details_id_fk
+WHERE pa._id = ?
+  AND YEAR(prfd.date_requested) = YEAR(vpp.posting_date);
+ `,
             [postingApplicantId],
           )
         )[0];
