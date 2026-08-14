@@ -182,15 +182,19 @@ export class PositionDescriptionFormService {
       //     [postingApplicantId],
       //   )
       // )[0];
-      else
+      else {
         requestingEntity = (
           await this.positionDescriptionFormBasic.entityRepository.query(
             `
             SELECT DISTINCT
               get_employee_fullname(prfd.employee_id_fk) AS employeeName,
-              get_position_title_for_documents(
-                get_employee_position_or_oic(prfd.employee_id_fk)
-                ) AS positionTitle
+              CASE
+                WHEN get_employee_fullname(prfd.employee_id_fk) = 'Atty. Judy A. Lim-Pasman'
+                  THEN 'Acting Division Manager'
+                ELSE get_position_title_for_documents(
+                  get_employee_position_or_oic(prfd.employee_id_fk)
+                  )
+              END AS positionTitle
             FROM posting_applicants pa
             INNER JOIN vacant_position_posting vpp
               ON vpp._id = pa.vacant_position_posting_id_fk
@@ -206,6 +210,7 @@ export class PositionDescriptionFormService {
             [postingApplicantId],
           )
         )[0];
+      }
 
       return {
         positionDetails,
