@@ -506,10 +506,15 @@ export class VacantPositionPostingService extends BaseEntityCrudService<VacantPo
     try {
       return await this.plantillaViewService.entityRepository.query(
         `
-      SELECT itemNumber,positionId FROM vacant_position_posting_publication_view vpppv
-      INNER JOIN plantilla_positions pp ON pp._id = vpppv.positionId
-     WHERE vppId = ? AND pp.employee_id_fk IS NULL AND pp.item_number NOT IN (
-       SELECT item_number FROM position_description_form_basic
+      SELECT 
+        vpppv.itemNumber,
+        vpppv.positionId
+      FROM vacant_position_posting_publication_view vpppv
+        INNER JOIN plantilla_positions pp 
+        ON pp._id = vpppv.positionId
+      WHERE 
+        vpppv.vppId = ?
+        AND pp.employee_id_fk IS NULL;
      );`,
         [vppId],
       );
