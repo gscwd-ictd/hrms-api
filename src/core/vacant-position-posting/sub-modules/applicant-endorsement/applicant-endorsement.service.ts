@@ -371,22 +371,22 @@ export class ApplicantEndorsementService extends BaseEntityCrudService<Applicant
           GROUP_CONCAT(DISTINCT hprv.plantillaNumber ORDER BY hprv.plantillaNumber ASC SEPARATOR ', \n') plantillaNumber, 
           hprv.selected selected, 
           DATE_FORMAT(vpp.effectivity_date,'%Y-%m-%d') effectivityDate  
-      FROM hiring_process_results_view hprv  
-          INNER JOIN vacant_position_posting vpp ON vpp._id = hprv.vppId 
-          INNER JOIN vacant_position_posting_view_v2 vppv ON vppv.vppId = hprv.vppId 
-      WHERE 
-          YEAR(vpp.posting_date) = ?
-          AND vppv.prfYear = ?
-      GROUP BY 
-          hprv.vppId, 
-          hprv.positionTitle, 
-          hprv.assignedTo, 
-          hprv.salaryGradeLevel, 
-          hprv.postingDate, 
-          hprv.psbDate, 
-          hprv.selected,
-          vppv.positionId
-      ORDER BY GROUP_CONCAT(hprv.plantillaNumber ORDER BY hprv.plantillaNumber ASC SEPARATOR ',\n') ASC;
+        FROM hiring_process_results_view hprv  
+            INNER JOIN vacant_position_posting vpp ON vpp._id = hprv.vppId 
+            INNER JOIN vacant_position_posting_view_v2 vppv ON vppv.vppId = hprv.vppId 
+        WHERE 
+            YEAR(vpp.posting_date) = ?
+            AND vppv.prfYear = ?
+        GROUP BY 
+            hprv.vppId, 
+            hprv.positionTitle, 
+            hprv.assignedTo, 
+            hprv.salaryGradeLevel, 
+            hprv.postingDate, 
+            hprv.psbDate, 
+            hprv.selected,
+            vppv.positionId
+        ORDER BY GROUP_CONCAT(hprv.plantillaNumber ORDER BY hprv.plantillaNumber ASC SEPARATOR ',\n') ASC;
       `,
         [year, year],
       );
