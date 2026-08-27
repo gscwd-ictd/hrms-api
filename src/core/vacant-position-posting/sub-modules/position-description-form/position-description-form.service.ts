@@ -186,26 +186,45 @@ export class PositionDescriptionFormService {
         requestingEntity = (
           await this.positionDescriptionFormBasic.entityRepository.query(
             `
-            SELECT DISTINCT
-              get_employee_fullname(prfd.employee_id_fk) AS employeeName,
+           SELECT
+                e.employeeName,
+                e.positionTitle
+            FROM (
+              SELECT DISTINCT
+                prfd.employee_id_fk,
+                get_employee_fullname(prfd.employee_id_fk) AS employeeName,
+                CASE
+                  WHEN get_employee_fullname(prfd.employee_id_fk) = 'Atty. Judy A. Lim-Pasman'
+                    THEN 'Acting Division Manager'
+                  WHEN oicv.oicPosition IS NOT NULL
+                    THEN oicv.oicPosition
+                  ELSE pp.position_title
+                END AS positionTitle
+              FROM posting_applicants pa
+              INNER JOIN vacant_position_posting vpp
+                ON vpp._id = pa.vacant_position_posting_id_fk
+              INNER JOIN vpp_positions vppp
+                ON vppp.vacant_position_posting_id_fk = vpp._id
+              INNER JOIN prf_positions prfp
+                ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
+              INNER JOIN prf_details prfd
+                ON prfd._id = prfp.prf_details_id_fk
+              LEFT JOIN officer_in_charge_view oicv
+                ON oicv.employeeId = prfd.employee_id_fk
+              LEFT JOIN plantilla_positions pp
+                ON pp.employee_id_fk = prfd.employee_id_fk
+              WHERE pa._id = 'c7121d47-82b7-43f4-a9e5-143c63c62300'
+                AND YEAR(prfd.date_requested) = YEAR(vpp.posting_date)
+            ) e
+            ORDER BY
               CASE
-                WHEN get_employee_fullname(prfd.employee_id_fk) = 'Atty. Judy A. Lim-Pasman'
-                  THEN 'Acting Division Manager'
-                ELSE get_position_title_for_documents(
-                  get_employee_position_or_oic(prfd.employee_id_fk)
-                  )
-              END AS positionTitle
-            FROM posting_applicants pa
-            INNER JOIN vacant_position_posting vpp
-              ON vpp._id = pa.vacant_position_posting_id_fk
-            INNER JOIN vpp_positions vppp
-              ON vppp.vacant_position_posting_id_fk = vpp._id
-            INNER JOIN prf_positions prfp
-              ON prfp.position_id_fk = vppp.prf_positions_positions_id_fk
-            INNER JOIN prf_details prfd
-              ON prfd._id = prfp.prf_details_id_fk
-            WHERE pa._id = ?
-              AND YEAR(prfd.date_requested) = YEAR(vpp.posting_date);
+                WHEN e.positionTitle LIKE '%Division Manager%' THEN 1
+                WHEN e.positionTitle LIKE '%Department Manager%' THEN 2
+                WHEN e.positionTitle LIKE '%Assistant General Manager%' THEN 3
+                WHEN e.positionTitle LIKE '%General Manager%' THEN 4
+                ELSE 5
+              END ASC
+            LIMIT 1;
           `,
             [postingApplicantId],
           )
