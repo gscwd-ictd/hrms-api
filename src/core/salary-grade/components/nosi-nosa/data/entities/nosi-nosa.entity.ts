@@ -2,7 +2,7 @@ import { DefaultTable } from 'src/core/base-entity/data/base.entity';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { PlantillaPositions } from 'src/core/plantilla-positions/data/entities/plantilla-positions.entity';
 import { SalaryGrade } from 'src/core/salary-grade/data/entities/salary-grade.entity';
-import { NosiNosaStatus } from 'src/core/salary-grade/utils/types/salary-grade.type';
+import { InactiveReason, NosiNosaStatus } from 'src/core/salary-grade/utils/types/salary-grade.type';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'nosi_nosa' })
@@ -26,6 +26,15 @@ export class NosiNosa extends DefaultTable {
   @Column({ name: 'effectivity_date', type: 'date' })
   effectivityDate: Date;
 
+  @Column({ name: 'rate', type: 'decimal', precision: 7, scale: 2, default: null, nullable: true })
+  rate: number;
+
+  @Column({ name: 'is_per_piece', type: 'boolean', default: false })
+  isPerPiece: boolean;
+
   @Column({ name: 'status', type: 'enum', enum: NosiNosaStatus })
   status: NosiNosaStatus;
+
+  @Column({ name: 'inactive_reason', type: 'enum', enum: InactiveReason, nullable: true })
+  inactiveReason: InactiveReason;
 }

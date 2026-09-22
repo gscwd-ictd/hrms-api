@@ -40,6 +40,15 @@ export class EmployeesMsController {
     }
   }
 
+  @MessagePattern('get_all_inactive_employees')
+  async getAllInactiveEmployees() {
+    try {
+      return await this.employeesService.getAllInactiveEmployees();
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+  }
+
   @MessagePattern('find_employee_by_id_lnd')
   async getEmployeeByIdForLND(@Payload() employeeId: string) {
     try {
@@ -433,6 +442,15 @@ export class EmployeesMsController {
   async getCompanyIdsByOrgId(@Payload() orgId: string) {
     try {
       return await this.employeesService.getCompanyIdsByOrgId(orgId);
+    } catch (error) {
+      throw new RpcException(error.message);
+    }
+  }
+
+  @MessagePattern('get_all_active_regular_employee_ids')
+  async getAllActiveRegularEmployeeIds() {
+    try {
+      return await this.employeesService.getAllActiveRegularEmployeeIds();
     } catch (error) {
       throw new RpcException(error.message);
     }

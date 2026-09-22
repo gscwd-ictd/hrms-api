@@ -19,6 +19,11 @@ export class EmployeesController {
     return await this.employeesService.getAllEmployees();
   }
 
+  @Get('/inactive')
+  async getAllInactiveEmployeesList() {
+    return await this.employeesService.getAllInactiveEmployees();
+  }
+
   @Get('test/test/test/test')
   async testEmail() {
     return await this.employeesService.testEmail();
