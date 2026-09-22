@@ -1115,10 +1115,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
-      `    SELECT get_employee_fullname2(emp._id) label,emp._id value 
-       FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-       AND company_id NOT IN ('2008-005','2021-002','2017-031', '2022-002', '2020-007', '2007-003' ) 
-       ORDER BY get_employee_fullname2(emp._id) ASC;`,
+      `SELECT get_employee_fullname2(emp._id) label, emp._id value
+        FROM employees emp
+        INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+        WHERE (pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent')
+        AND company_id NOT IN ('2008-005','2021-002','2017-031','2022-002','2020-007','2007-003','2000-001','2013-006','2002-002','2021-022','2017-013','1989-002','1998-002')
+        ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
 
