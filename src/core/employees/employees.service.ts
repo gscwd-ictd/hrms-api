@@ -15,7 +15,7 @@ import { CommitteeMembersService } from '../committee-members/committee-members.
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 import { BasicEmployeeInfo } from './utils/employee.type';
-import e from 'express';
+import { NosiNosaStatus } from 'src/core/salary-grade/utils/types/salary-grade.type';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -402,8 +402,6 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
 
       const photoUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
-
-      console.log(photoUrl);
 
       return {
         userId,
@@ -939,6 +937,96 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
         .orderBy('get_employee_fullname2(emp._id)', 'ASC')
         .where(`pp.position_title<>'Chairman'`, {})
+        .andWhere(
+          `NOT EXISTS (
+          SELECT 1 FROM nosi_nosa nn
+          WHERE nn.employee_id_fk = emp._id
+          AND nn.status = 'inactive'
+        )`,
+        )
+        .getRawMany();
+
+      const _empPositions = await Promise.all(
+        empPositions.map(async (empPosition) => {
+          const {
+            id,
+            name,
+            userId,
+            companyId,
+            fullName,
+            firstName,
+            middleName,
+            lastName,
+            positionTitle,
+            nameExt,
+            employeeId,
+            natureOfAppointment,
+            positionId,
+            isTa,
+            actualAssignment,
+          } = empPosition;
+
+          const { officeName, divisionName, departmentName } = (await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [id]))[0][0];
+          const employeeSchedule = await this.getEmployeeSchedule(employeeId);
+          const avatarUrl = await this.getEmployeePhotoUrlFromPortal(employeeId);
+
+          return {
+            employmentDetails: {
+              employeeId,
+              userId,
+              companyId,
+              positionTitle,
+              assignment: { id, name, divisionName, departmentName, officeName, isTa, actualAssignment },
+              positionId,
+              scheduleBase: employeeSchedule ? employeeSchedule.scheduleBase : null,
+              natureOfAppointment,
+              avatarUrl,
+            },
+            personalDetails: { fullName, firstName, middleName, lastName, nameExt },
+          };
+        }),
+      );
+      return _empPositions;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  /**
+   * @description Returns all employees who have at least one nosi_nosa record
+   * with status = 'inactive'. A single inactive nosi_nosa entry, at any
+   * effectivity_date, permanently marks the employee as inactive here —
+   * a later non-inactive entry does not reverse it.
+   */
+  async getAllInactiveEmployees() {
+    try {
+      const empPositions = await this.employeeRepository
+        .createQueryBuilder('emp')
+        .select('emp._id', 'employeeId')
+        .addSelect('emp.company_id', 'companyId')
+        .addSelect('get_employee_fullname2(emp._id)', 'fullName')
+        .addSelect('emp.first_name', 'firstName')
+        .addSelect('emp.middle_name', 'middleName')
+        .addSelect('emp.last_name', 'lastName')
+        .addSelect('emp.name_extension', 'nameExt')
+        .addSelect('pp.position_title', 'positionTitle')
+        .addSelect('pp._id', 'positionId')
+        .addSelect('pp.nature_of_appointment', 'natureOfAppointment')
+        .addSelect('get_employee_assignment_id(emp._id)', 'id')
+        .addSelect('get_employee_assignment(emp._id)', 'name')
+        .addSelect('is_ta(emp._id)', 'isTa')
+        .addSelect(`if(is_ta(emp._id)=1,get_actual_employee_assignment(emp._id),'N/A')`, 'actualAssignment')
+        .innerJoin('plantilla_positions', 'pp', 'pp.employee_id_fk = emp._id')
+        .orderBy('get_employee_fullname2(emp._id)', 'ASC')
+        .where(`pp.position_title<>'Chairman'`, {})
+        .andWhere(
+          `EXISTS (
+            SELECT 1 FROM nosi_nosa nn
+            WHERE nn.employee_id_fk = emp._id
+            AND nn.status = :inactiveStatus
+          )`,
+          { inactiveStatus: NosiNosaStatus.INACTIVE },
+        )
         .getRawMany();
 
       const _empPositions = await Promise.all(
@@ -974,7 +1062,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
               positionTitle,
               assignment: { id, name, divisionName, departmentName, officeName, isTa, actualAssignment },
               positionId,
-              scheduleBase: employeeSchedule.scheduleBase,
+              scheduleBase: employeeSchedule ? employeeSchedule.scheduleBase : null,
               natureOfAppointment,
               avatarUrl,
             },
@@ -1027,9 +1115,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
   async getAllPermanentCasualEmployees2() {
     return (await this.entityRepository.query(
-      `SELECT get_employee_fullname2(emp._id) label,emp._id value 
+      `    SELECT get_employee_fullname2(emp._id) label,emp._id value 
        FROM employees emp INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-       AND company_id NOT IN ('2008-005','2021-002') 
+       AND company_id NOT IN ('2008-005','2021-002','2017-031', '2022-002', '2020-007', '2007-003' ) 
        ORDER BY get_employee_fullname2(emp._id) ASC;`,
     )) as { label: string; value: string }[];
   }
@@ -1094,6 +1182,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       //4. Get salary grade of position
       const salaryGrade = (await this.plantillaPositionsService.entityRepository.query('SELECT get_plantilla_salary_grade(?) salaryGrade;', [employeeDto.positionId]))[0]
         .salaryGrade;
+
       const companyId = (await this.plantillaPositionsService.entityRepository.query('SELECT generate_company_id() companyId;', []))[0].companyId;
 
       const role = this.getUserRole(parseInt(salaryGrade));
@@ -1111,18 +1200,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       });
 
       //7. Send Email to Employee Portal User
-      const emailResult = await this.emailService.sendEmail(employeeDto.email, employee._id, salaryGrade, {
-        companyId,
-        firstName,
-        middleName,
-        lastName,
-        nameExt: nameExtension,
-      });
+      // const emailResult = await this.emailService.sendEmail(employeeDto.email, employee._id, salaryGrade, {
+      //   companyId,
+      //   firstName,
+      //   middleName,
+      //   lastName,
+      //   nameExt: nameExtension,
+      // });
 
       return {
         createdUser: employee,
         updatedPosition,
-        email: emailResult,
+        //email: emailResult,
         schedule,
       };
     } catch (error) {
@@ -1167,6 +1256,33 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       `SELECT _id employeeId, get_employee_fullname(_id) fullName,get_employee_position_or_oic(_id) positionTitle FROM employees WHERE get_employee_fullname(_id) LIKE CONCAT('%',?,'%') ORDER BY get_employee_fullname(_id) ASC;`,
       [name],
     );
+  }
+
+  async getAllActiveRegularEmployeeIds() {
+    try {
+      const employeeIds = await this.entityRepository.query(
+        `SELECT 
+        emp._id employeeId,
+        get_employee_fullname2(emp._id), 
+        emp.company_id companyId 
+      FROM 
+        employees emp 
+      INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id 
+      WHERE user_role IN 
+      ('rank_and_file',
+      'division_manager',
+      'department_manager',
+      'general_manager',
+      'assistant_general_manager') 
+      AND company_id IS NOT NULL AND company_id <> '' 
+      AND (pp.item_number IS NULL OR pp.item_number NOT LIKE '%*%')
+      AND is_active_employee(emp._id,now()) = 1;`,
+      );
+
+      return employeeIds;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   async getAllRegularEmployeeIds() {

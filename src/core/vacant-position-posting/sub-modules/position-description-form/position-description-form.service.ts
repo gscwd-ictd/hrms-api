@@ -213,7 +213,7 @@ export class PositionDescriptionFormService {
                 ON oicv.employeeId = prfd.employee_id_fk
               LEFT JOIN plantilla_positions pp
                 ON pp.employee_id_fk = prfd.employee_id_fk
-              WHERE pa._id = 'c7121d47-82b7-43f4-a9e5-143c63c62300'
+              WHERE pa._id = ?
                 AND YEAR(prfd.date_requested) = YEAR(vpp.posting_date)
             ) e
             ORDER BY
