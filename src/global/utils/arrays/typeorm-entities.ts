@@ -62,6 +62,7 @@ import { EmployeeTemporaryAssignment } from 'src/core/employee-temporary-assignm
 import { Employee201 } from 'src/core/employees/201/entities/employee201.entity';
 import { AllEmployeesView } from 'src/core/employees/data/views/all-employees.view';
 import { NosiNosa } from 'src/core/salary-grade/components/nosi-nosa/data/entities/nosi-nosa.entity';
+import { NosiNosaView } from 'src/core/salary-grade/components/nosi-nosa/views/nosi-nosa.view';
 
 export const typeormEntities = [
   ...PrfEntities,
@@ -131,4 +132,5 @@ export const typeormEntities = [
   Employee201,
   AllEmployeesView,
   NosiNosa,
+  NosiNosaView,
 ];
