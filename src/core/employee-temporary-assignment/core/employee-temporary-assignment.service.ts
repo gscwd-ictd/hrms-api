@@ -143,7 +143,8 @@ export class EmployeeTemporaryAssignmentService extends BaseEntityCrudService<Em
       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
       INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
       WHERE pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent' 
-      AND sg.salary_grade <= 27 AND emp._id NOT IN (SELECT employee_id_fk FROM employee_temporary_assignment)
+      AND sg.salary_grade <= 27 
+      AND emp._id NOT IN (SELECT employee_id_fk FROM employee_temporary_assignment)
       ORDER BY get_employee_fullname2(emp._id) ASC;
       `)) as { label: string; employeeId: string; organizationId: string }[];
       return await Promise.all(

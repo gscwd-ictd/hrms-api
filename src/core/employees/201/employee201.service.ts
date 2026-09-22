@@ -15,7 +15,7 @@ export class Employee201Service extends BaseEntityCrudService<Employee201> {
   }
 
   async getEmployee201(employeeId: string) {
-    return await this.employee201Repository.query(
+    const serviceRecord = await this.employee201Repository.query(
       `SELECT 
           _id,
     	    DATE_FORMAT(date_from,'%Y-%m-%d') dateFrom,
@@ -27,6 +27,16 @@ export class Employee201Service extends BaseEntityCrudService<Employee201> {
       FROM employee_201 WHERE employee_id_fk = ? ORDER BY date_from DESC;`,
       [employeeId],
     );
+    if (serviceRecord.length > 0) {
+      const latestRecord = serviceRecord[0];
+      const status = latestRecord.dateTo !== null ? 'inactive' : 'active';
+
+      return {
+        status,
+        serviceRecord,
+      };
+    }
+    return [];
   }
 
   async addEmployee201Record(employee201Dto: Employee201Dto) {
