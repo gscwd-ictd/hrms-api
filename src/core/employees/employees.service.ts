@@ -755,6 +755,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     `);
   }
 
+  /**
+   * Managers (SG 24 and up) and officers-in-charge who can receive L&D slot distributions.
+   * Excludes separated employees: latest NOSI/NOSA record is 'inactive' (retirement, resignation, death, ...)
+   * with an effectivity date on or before today.
+   */
   async getAllManagersForLnd() {
     const managers = await this.entityRepository.query(`
     SELECT employeeId, fullName FROM ((SELECT emp._id employeeId, get_employee_fullname2(emp._id) fullName FROM employees emp 
@@ -763,7 +768,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     WHERE sg.salary_grade >= 24 ORDER BY get_employee_fullname2(emp._id) ASC)
     UNION (
       SELECT employee_id_fk employeeId, get_employee_fullname2(employee_id_fk) fullName FROM officer_in_charge oic
-    )) managers ORDER BY fullName ASC; 
+    )) managers
+    WHERE NOT EXISTS (
+      SELECT 1 FROM nosi_nosa nn
+       WHERE nn.employee_id_fk = managers.employeeId
+         AND nn.status = 'inactive'
+         AND nn.effectivity_date <= CURDATE()
+         AND nn.effectivity_date = (SELECT MAX(nn2.effectivity_date) FROM nosi_nosa nn2 WHERE nn2.employee_id_fk = managers.employeeId)
+    )
+    ORDER BY fullName ASC;
     `);
     return managers;
   }
@@ -1364,8 +1377,27 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
+  /**
+   * Employees under a manager ({ value, label }), used by the portal training nomination dropdown
+   * (GET employees/supervisors/:employee_id/subordinates) and LMS (get_employees_under_manager).
+   * Separated employees (latest NOSI/NOSA 'inactive', effective on or before today) are left out.
+   */
   async getSubordinates(employeeId: string) {
-    return (await this.entityRepository.query(`CALL sp_get_employees_under_manager(?);`, [employeeId]))[0];
+    const subordinates = (await this.entityRepository.query(`CALL sp_get_employees_under_manager(?);`, [employeeId]))[0] as { value: string; label: string }[];
+    const separated = await this.getSeparatedEmployeeIds();
+    return subordinates.filter((subordinate) => !separated.has(subordinate.value));
+  }
+
+  /** Employees whose latest NOSI/NOSA record is 'inactive' (retirement, resignation, death, ...) effective on or before today. */
+  async getSeparatedEmployeeIds(): Promise<Set<string>> {
+    const rows = (await this.entityRepository.query(`
+      SELECT nn.employee_id_fk employeeId
+        FROM nosi_nosa nn
+       WHERE nn.status = 'inactive'
+         AND nn.effectivity_date <= CURDATE()
+         AND nn.effectivity_date = (SELECT MAX(nn2.effectivity_date) FROM nosi_nosa nn2 WHERE nn2.employee_id_fk = nn.employee_id_fk);
+    `)) as { employeeId: string }[];
+    return new Set(rows.map((row) => row.employeeId));
   }
 
   async getSubordinatesWithCompanyId(employeeId: string) {
