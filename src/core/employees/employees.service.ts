@@ -1517,12 +1517,12 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
             ORDER BY n.effectivity_date DESC, n.created_at DESC LIMIT 1) statusOnDate,
           (SELECT p2.nature_of_appointment FROM nosi_nosa n LEFT JOIN plantilla_positions p2 ON p2._id = n.position_id_fk
             WHERE n.employee_id_fk = emp._id ORDER BY n.effectivity_date ASC, n.created_at ASC LIMIT 1) firstAppointment,
-          (SELECT sg.salary_grade FROM nosi_nosa n INNER JOIN salary_grade sg ON sg._id = n.adjusted_salary_grade_id_fk
+          (SELECT CONCAT(sg.salary_grade, ' - ', sg.step_increment) FROM nosi_nosa n INNER JOIN salary_grade sg ON sg._id = n.adjusted_salary_grade_id_fk
             WHERE n.employee_id_fk = emp._id AND n.effectivity_date <= ? AND n.status IN ('approved nosi', 'approved nosa')
-            ORDER BY n.effectivity_date DESC LIMIT 1) nosiSalaryGrade,
+            ORDER BY n.effectivity_date DESC, n.created_at DESC LIMIT 1) nosiSalaryGrade,
           NULLIF(get_nosi_nosa_salary_grade_amount(emp._id, ?), 0) nosiSalaryGradeAmount,
           NULLIF(get_nosi_nosa_daily_rate(emp._id, ?), 0) nosiDailyRate,
-          psg.salary_grade plantillaSalaryGrade,
+          CONCAT(psg.salary_grade, ' - ', psg.step_increment) plantillaSalaryGrade,
           psg.amount plantillaSalaryGradeAmount,
           pp.daily_rate plantillaDailyRate,
           pe.sex sex,
