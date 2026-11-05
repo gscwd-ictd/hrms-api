@@ -12,26 +12,36 @@ export class ModulesService extends BaseEntityCrudService<Modules> {
     super(modulesRepository);
   }
 
+  /**
+   * Creates a module and gives it, UNCHECKED (has_access = false), to every user of the same app
+   * (users who already have any module of that app, e.g. all EMS users for app 'ems').
+   * Users of other apps do not get it. Nobody gets a duplicate role.
+   */
   async saveModule(modulesDTO: ModulesType) {
     try {
-      const module = await this.saveEntity(modulesDTO);
-      const users = await this.entityRepository.query(`SELECT _id FROM users;`);
+      return await getManager().transaction(async (transactionEntityManager) => {
+        const module = await transactionEntityManager.getRepository(Modules).save(modulesDTO);
 
-      const updateResult = await getManager().transaction(async (transactionEntityManager) => {
-        const userRoles = await Promise.all(
-          users.map(async (user) => {
-            const { _id } = user;
-            const userModule = await transactionEntityManager.getRepository(UserRoles).save({
-              userId: _id,
+        const appUsers = (await transactionEntityManager.query(
+          `SELECT DISTINCT ur.user_id_fk userId
+             FROM user_roles ur
+            INNER JOIN modules m ON m._id = ur.module_id_fk
+            WHERE m.app = ? AND m._id <> ? AND ur.user_id_fk IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM user_roles x WHERE x.user_id_fk = ur.user_id_fk AND x.module_id_fk = ?);`,
+          [module.app, module._id, module._id],
+        )) as { userId: string }[];
+
+        await Promise.all(
+          appUsers.map(({ userId }) =>
+            transactionEntityManager.getRepository(UserRoles).save({
+              userId: { _id: userId },
               moduleId: module,
               hasAccess: false,
-            });
-            return userModule;
-          }),
+            }),
+          ),
         );
-        return userRoles;
+        return module;
       });
-      return updateResult;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
