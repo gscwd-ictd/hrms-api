@@ -1455,34 +1455,188 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
     }
   }
 
+  /**
+   * Report on Employee Information.
+   *  - Only employees active on the active roll date (asOf, default today), based on NOSI/NOSA:
+   *      * the latest record effective on or before the date is not 'inactive' (retired, resigned, deceased ...)
+   *      * no record yet on the date: included only when the employee's first record is permanent / casual
+   *        (records encoded late); a job order / contract of service whose first record is later was not yet hired
+   *  - Nature of appointment filter ('' = all)
+   *  - Salary grade / amount in effect on the date (NOSI/NOSA), else the plantilla position's
+   *  - Age on the date; addresses without empty parts; columns kept only when selected (TIN was always removed)
+   * Built with a few queries in HRIS (+ portal tables) instead of several microservice calls per employee.
+   */
   async generateReportOnEmployeeDetails(employeeDetailsFilter: {
-    companyId: boolean;
+    companyId: boolean | string;
     employeeId: string;
-    natureOfAppointment: NatureOfAppointment;
-    personalDetails: boolean;
-    gsis: boolean;
-    pagibig: boolean;
-    sss: boolean;
-    tin: boolean;
-    residentialAddress: boolean;
-    permanentAddress: boolean;
-    primaryEducation: boolean;
-    secondaryEducation: boolean;
-    vocationalCourse: boolean;
-    collegeEducation: boolean;
-    graduateStudies: boolean;
-    eligibility: boolean;
-    dateHired: boolean;
-    philhealth: boolean;
-    assignment: boolean;
-    office: boolean;
-    department: boolean;
-    division: boolean;
-    positionTitle: boolean;
-    salaryGrade: boolean;
-    amount: boolean;
+    natureOfAppointment: NatureOfAppointment | string;
+    personalDetails: boolean | string;
+    gsis: boolean | string;
+    pagibig: boolean | string;
+    sss: boolean | string;
+    tin: boolean | string;
+    residentialAddress: boolean | string;
+    permanentAddress: boolean | string;
+    primaryEducation: boolean | string;
+    secondaryEducation: boolean | string;
+    vocationalCourse: boolean | string;
+    collegeEducation: boolean | string;
+    graduateStudies: boolean | string;
+    eligibility: boolean | string;
+    dateHired: boolean | string;
+    philhealth: boolean | string;
+    assignment: boolean | string;
+    office: boolean | string;
+    department: boolean | string;
+    division: boolean | string;
+    positionTitle: boolean | string;
+    salaryGrade: boolean | string;
+    amount: boolean | string;
+    asOf?: string;
   }) {
-    return await lastValueFrom(this.clientAuthn.send({ msg: 'generate_report_on_employee_details' }, employeeDetailsFilter));
+    const portal = process.env.PORTAL_DB_NAME;
+    const f = employeeDetailsFilter;
+    const on = (v: boolean | string | undefined) => v !== undefined && v !== null && v.toString() === 'true';
+    const asOf = f.asOf && /^\d{4}-\d{2}-\d{2}$/.test(f.asOf) ? f.asOf : new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); // today in Asia/Manila
+    const natureOfAppointment = f.natureOfAppointment && !['false', 'all', 'undefined'].includes(f.natureOfAppointment.toString()) ? f.natureOfAppointment.toString() : '';
+    const employeeId = f.employeeId && f.employeeId !== 'undefined' ? f.employeeId : '';
+
+    const rows = (await this.entityRepository.query(
+      `
+      SELECT * FROM (
+        SELECT
+          emp._id employeeId,
+          get_employee_fullname2(emp._id) fullName,
+          emp.company_id companyId,
+          pp.position_title positionTitle,
+          pp.nature_of_appointment natureOfAppointment,
+          get_employee_assignment_id(emp._id) assignmentId,
+          get_employee_assignment(emp._id) assignment,
+          (SELECT IF(n.status = 'inactive', 'inactive', 'active') FROM nosi_nosa n
+            WHERE n.employee_id_fk = emp._id AND n.effectivity_date <= ?
+            ORDER BY n.effectivity_date DESC, n.created_at DESC LIMIT 1) statusOnDate,
+          (SELECT p2.nature_of_appointment FROM nosi_nosa n LEFT JOIN plantilla_positions p2 ON p2._id = n.position_id_fk
+            WHERE n.employee_id_fk = emp._id ORDER BY n.effectivity_date ASC, n.created_at ASC LIMIT 1) firstAppointment,
+          (SELECT sg.salary_grade FROM nosi_nosa n INNER JOIN salary_grade sg ON sg._id = n.adjusted_salary_grade_id_fk
+            WHERE n.employee_id_fk = emp._id AND n.effectivity_date <= ? AND n.status IN ('approved nosi', 'approved nosa')
+            ORDER BY n.effectivity_date DESC LIMIT 1) nosiSalaryGrade,
+          NULLIF(get_nosi_nosa_salary_grade_amount(emp._id, ?), 0) nosiSalaryGradeAmount,
+          NULLIF(get_nosi_nosa_daily_rate(emp._id, ?), 0) nosiDailyRate,
+          psg.salary_grade plantillaSalaryGrade,
+          psg.amount plantillaSalaryGradeAmount,
+          pp.daily_rate plantillaDailyRate,
+          pe.sex sex,
+          DATE_FORMAT(pe.birth_date, '%M %d, %Y') birthDate,
+          TIMESTAMPDIFF(YEAR, pe.birth_date, ?) age,
+          u.email email,
+          gi.gsis_number gsis, gi.pagibig_number pagibig, gi.sss_number sss, gi.philhealth_number philhealth, gi.tin_number tin,
+          pi.height height, pi.weight weight, pi.blood_type bloodType, pi.birth_place birthPlace, pi.civil_status civilStatus,
+          NULLIF(CONCAT_WS(', ', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(pa.house_number, ''), NULLIF(pa.street, ''))), ''),
+                 NULLIF(pa.subdivision, ''), NULLIF(pa.barangay, ''), NULLIF(pa.city, ''), NULLIF(pa.province, ''), NULLIF(pa.zip_code, '')), '') permanentAddress,
+          NULLIF(CONCAT_WS(', ', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(ra.house_number, ''), NULLIF(ra.street, ''))), ''),
+                 NULLIF(ra.subdivision, ''), NULLIF(ra.barangay, ''), NULLIF(ra.city, ''), NULLIF(ra.province, ''), NULLIF(ra.zip_code, '')), '') residentialAddress,
+          IF(ee.user_id_fk IS NULL, NULL, CONCAT(IF(ee.year_graduated IS NOT NULL, 'Graduated', 'Attended'), ' (',
+             IF(ee.year_graduated IS NOT NULL, ee.year_graduated, CONCAT_WS('-', ee.from, ee.to)), ')')) primaryEducation,
+          IF(es.user_id_fk IS NULL, NULL, CONCAT(IF(es.year_graduated IS NOT NULL, 'Graduated', 'Attended'), ' (',
+             IF(es.year_graduated IS NOT NULL, es.year_graduated, CONCAT_WS('-', es.from, es.to)), ')')) secondaryEducation,
+          ${portal}get_vocational(emp._id) vocationalCourse,
+          ${portal}get_college(emp._id) collegeEducation,
+          ${portal}get_graduate(emp._id) graduateStudies,
+          ${portal}get_eligibility(emp._id) eligibility,
+          ${portal}get_date_hired_from_pds(emp._id) dateHired
+        FROM employees emp
+          INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
+          LEFT JOIN salary_grade psg ON psg._id = pp.salary_grade_id_fk
+          LEFT JOIN ${portal}employees pe ON pe.user_id_fk = emp._id
+          LEFT JOIN ${portal}users u ON u.user_id = emp._id
+          LEFT JOIN ${portal}pds_basic_government_info gi ON gi.user_id_fk = emp._id
+          LEFT JOIN ${portal}pds_basic_personal_info pi ON pi.user_id_fk = emp._id
+          LEFT JOIN ${portal}pds_basic_permanent_address pa ON pa.user_id_fk = emp._id
+          LEFT JOIN ${portal}pds_basic_residential_address ra ON ra.user_id_fk = emp._id
+          LEFT JOIN ${portal}pds_education_elementary ee ON ee.user_id_fk = emp._id
+          LEFT JOIN ${portal}pds_education_secondary es ON es.user_id_fk = emp._id
+        WHERE pp.position_title <> 'Chairman'
+          AND (? = '' OR pp.nature_of_appointment = ?)
+          AND (? = '' OR emp._id = ?)
+      ) employees
+      WHERE (statusOnDate = 'active' OR (statusOnDate IS NULL AND (firstAppointment IS NULL OR firstAppointment IN ('permanent', 'casual'))))
+      ORDER BY fullName ASC;`,
+      [asOf, asOf, asOf, asOf, asOf, natureOfAppointment, natureOfAppointment, employeeId, employeeId],
+    )) as Record<string, any>[];
+
+    // office / department / division names of each assignment (one call per distinct assignment)
+    const orgNames = new Map<string, { officeName: string | null; departmentName: string | null; divisionName: string | null }>();
+    for (const assignmentId of [...new Set(rows.map((r) => r.assignmentId).filter(Boolean))]) {
+      const result = await this.entityRepository.query(`CALL sp_get_office_department_division(?);`, [assignmentId]);
+      orgNames.set(assignmentId, result?.[0]?.[0] ?? { officeName: null, departmentName: null, divisionName: null });
+    }
+
+    return rows.map((r) => {
+      const org = orgNames.get(r.assignmentId) ?? { officeName: null, departmentName: null, divisionName: null };
+      const isSalaryGradeBased = r.natureOfAppointment === 'permanent' || r.natureOfAppointment === 'casual';
+      const row: Record<string, any> = {
+        fullName: r.fullName,
+        natureOfAppointment: r.natureOfAppointment,
+        companyId: r.companyId,
+        positionTitle: r.positionTitle,
+        assignment: r.assignment,
+        office: org.officeName,
+        department: org.departmentName,
+        division: org.divisionName,
+        sex: r.sex,
+        birthDate: r.birthDate,
+        age: r.age,
+        email: r.email,
+        civilStatus: r.civilStatus,
+        birthPlace: r.birthPlace,
+        height: r.height,
+        weight: r.weight,
+        bloodType: r.bloodType,
+        dateHired: r.dateHired,
+        residentialAddress: r.residentialAddress,
+        permanentAddress: r.permanentAddress,
+        gsis: r.gsis,
+        pagibig: r.pagibig,
+        philhealth: r.philhealth,
+        sss: r.sss,
+        tin: r.tin,
+        primaryEducation: r.primaryEducation,
+        secondaryEducation: r.secondaryEducation,
+        vocationalCourse: r.vocationalCourse,
+        collegeEducation: r.collegeEducation,
+        graduateStudies: r.graduateStudies,
+        eligibility: r.eligibility,
+        salaryGrade: isSalaryGradeBased ? r.nosiSalaryGrade ?? r.plantillaSalaryGrade : null,
+        salaryGradeAmount: isSalaryGradeBased ? r.nosiSalaryGradeAmount ?? r.plantillaSalaryGradeAmount : r.nosiDailyRate ?? r.plantillaDailyRate,
+      };
+      const keep: Array<[boolean | string, string[]]> = [
+        [f.companyId, ['companyId']],
+        [f.positionTitle, ['positionTitle']],
+        [f.assignment, ['assignment']],
+        [f.office, ['office']],
+        [f.department, ['department']],
+        [f.division, ['division']],
+        [f.dateHired, ['dateHired']],
+        [f.residentialAddress, ['residentialAddress']],
+        [f.permanentAddress, ['permanentAddress']],
+        [f.gsis, ['gsis']],
+        [f.pagibig, ['pagibig']],
+        [f.philhealth, ['philhealth']],
+        [f.sss, ['sss']],
+        [f.tin, ['tin']],
+        [f.primaryEducation, ['primaryEducation']],
+        [f.secondaryEducation, ['secondaryEducation']],
+        [f.vocationalCourse, ['vocationalCourse']],
+        [f.collegeEducation, ['collegeEducation']],
+        [f.graduateStudies, ['graduateStudies']],
+        [f.eligibility, ['eligibility']],
+        [f.salaryGrade, ['salaryGrade']],
+        [f.amount, ['salaryGradeAmount']],
+        [f.personalDetails, ['sex', 'birthDate', 'age', 'email', 'civilStatus', 'birthPlace', 'height', 'weight', 'bloodType']],
+      ];
+      for (const [selected, keys] of keep) if (!on(selected)) keys.forEach((key) => delete row[key]);
+      return row;
+    });
   }
 
   async getHrdManager() {
