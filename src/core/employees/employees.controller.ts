@@ -163,8 +163,10 @@ export class EmployeesController {
     @Query('assignment') assignment: boolean,
     @Query('salary_grade') salaryGrade: boolean,
     @Query('amount') amount: boolean,
+    @Query('as_of') asOf: string,
   ) {
     return await this.employeesService.generateReportOnEmployeeDetails({
+      asOf,
       companyId,
       employeeId,
       natureOfAppointment,
