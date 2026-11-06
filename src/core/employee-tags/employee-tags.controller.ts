@@ -6,15 +6,14 @@ import { MsExceptionFilter } from 'src/global/utils/filters/rpc-exception.filter
 
 @Controller()
 export class EmployeeTagsController {
-  constructor(private readonly employeeTagsService: EmployeeTagsService) { }
+  constructor(private readonly employeeTagsService: EmployeeTagsService) {}
 
   @UseFilters(new MsExceptionFilter())
   @MessagePattern('add_employee_tags')
   async addEmployeeTags(@Payload() employeeTagsDto: CreateEmployeeTagsDto) {
     try {
       return await this.employeeTagsService.addEmployeeTags(employeeTagsDto);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -24,11 +23,9 @@ export class EmployeeTagsController {
   async getTagsByEmployeeId(@Payload() employeeId: string) {
     try {
       return await this.employeeTagsService.getTagsByEmployeeId(employeeId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @UseFilters(new MsExceptionFilter())
@@ -36,8 +33,7 @@ export class EmployeeTagsController {
   async getEmployeeByTagId(@Payload() tagId: string) {
     try {
       return await this.employeeTagsService.getSupervisorByEmployeeTags(tagId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -47,8 +43,17 @@ export class EmployeeTagsController {
   async getEmployeesByTagIds(@Payload() tagIds: string[]) {
     try {
       return await this.employeeTagsService.getSupervisorByEmployeeTagsV2(tagIds);
+    } catch (error) {
+      throw new RpcException(error.message);
     }
-    catch (error) {
+  }
+
+  @UseFilters(new MsExceptionFilter())
+  @MessagePattern('get_employees_by_tag_ids_v3')
+  async getEmployeesByTagIdsV3(@Payload() tagIds: string[]) {
+    try {
+      return await this.employeeTagsService.getSupervisorByEmployeeTagsV3(tagIds);
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -58,8 +63,7 @@ export class EmployeeTagsController {
   async deleteEmployeeTag(@Payload() data: DeleteEmployeeTagDto) {
     try {
       return await this.employeeTagsService.deleteEmployeeTag(data);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
@@ -68,19 +72,16 @@ export class EmployeeTagsController {
   async countEmployeeTags(@Payload() tagId: string) {
     try {
       return await this.employeeTagsService.countEmployeeTags(tagId);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
-
   }
 
   @MessagePattern('check_employee_tags')
   async checkEmployeeTags(@Payload() data: CheckEmployeeTagsDto) {
     try {
       return await this.employeeTagsService.checkEmployeeTags(data);
-    }
-    catch (error) {
+    } catch (error) {
       throw new RpcException(error.message);
     }
   }
