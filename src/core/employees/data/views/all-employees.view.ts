@@ -6,18 +6,18 @@ import { ViewColumn, ViewEntity } from 'typeorm';
       SELECT 
         hris_emp._id AS employee_id,
         hris_emp.company_id AS company_id,
-        hris_prod.get_employee_fullname2(hris_emp._id) AS name,
-        hris_prod.get_employee_position_or_oic(hris_emp._id) AS position_title,
-        hris_prod.get_employee_assignment_or_oic(hris_emp._id) AS assignment,
-        hris_prod.get_employee_assignment_id_or_oic_id(hris_emp._id) AS assignmentId,
+        ${process.env.HRMS_DB_NAME}get_employee_fullname2(hris_emp._id) AS name,
+        ${process.env.HRMS_DB_NAME}get_employee_position_or_oic(hris_emp._id) AS position_title,
+        ${process.env.HRMS_DB_NAME}get_employee_assignment_or_oic(hris_emp._id) AS assignment,
+        ${process.env.HRMS_DB_NAME}get_employee_assignment_id_or_oic_id(hris_emp._id) AS assignmentId,
         port_emp.mobile_number AS mobile_number,
         port_emp.photo_url AS photo_url
     FROM
         (employees hris_emp
-        JOIN portal_prod.employees port_emp ON ((hris_emp._id = port_emp.user_id_fk)))
+        JOIN ${process.env.PORTAL_DB_NAME}employees port_emp ON ((hris_emp._id = port_emp.user_id_fk)))
     WHERE
-        (hris_prod.get_employee_position_or_oic(hris_emp._id) IS NOT NULL)
-    ORDER BY hris_prod.get_employee_fullname2(hris_emp._id) ASC;
+        (${process.env.HRMS_DB_NAME}get_employee_position_or_oic(hris_emp._id) IS NOT NULL)
+    ORDER BY ${process.env.HRMS_DB_NAME}get_employee_fullname2(hris_emp._id) ASC;
     `,
 })
 export class AllEmployeesView {
