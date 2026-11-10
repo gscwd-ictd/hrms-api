@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { UserLogsService } from '../user-logs.service';
+import { SUPER_USER_LOG_ID, UserLogsService } from '../user-logs.service';
 
 @Injectable()
 export class UserlogsMiddleware implements NestMiddleware {
@@ -9,13 +9,14 @@ export class UserlogsMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const origin = req.headers['origin'] || 'No Origin Header';
 
-    if (origin === 'http://' + process.env.DB_HOST + ':3001') {
+    // RSP FE origins to log (comma separated, e.g. http://172.20.110.60:3001,https://rsp.gscwd.app); default: http://<DB_HOST>:3001
+    const logOrigins = (process.env.USER_LOG_ORIGINS || 'http://' + process.env.DB_HOST + ':3001').split(',').map((o) => o.trim());
+    if (logOrigins.includes(String(origin))) {
       if (req.method !== 'GET' && req.originalUrl !== '/api/auth/login' && req.originalUrl !== '/api/auth/logout') {
         const currentSession = req.session as typeof req.session & { user: { _id?: string; employeeId?: string; username?: string; isSuperUser?: boolean } };
-        let employeeId = '';
-        if (!currentSession.user.isSuperUser) {
-          employeeId = currentSession.user.employeeId;
-        }
+        // log only actions done by a signed-in user (super user -> SUPER_USER_LOG_ID)
+        const employeeId = currentSession.user?.isSuperUser ? SUPER_USER_LOG_ID : currentSession.user?.employeeId;
+        if (!employeeId) return next();
         const body = JSON.stringify(req.body);
         await this.userLogsService.addLogs({
           body,

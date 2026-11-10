@@ -1,4 +1,4 @@
-import { UserLogsService } from './../user-logs.service';
+import { SUPER_USER_LOG_ID, UserLogsService } from './../user-logs.service';
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { map } from 'rxjs';
 
@@ -8,13 +8,11 @@ export class UserLogsInterceptor implements NestInterceptor {
 
   async intercept(context: ExecutionContext, next: CallHandler<any>) {
     const request = context.switchToHttp().getRequest();
-    const user = request.session.user;
-    let employeeId = '';
-    if (!user.isSuperUser) {
-      employeeId = user.employeeId;
-    }
+    const user = request.session?.user;
+    // log only actions done by a signed-in user (super user -> SUPER_USER_LOG_ID)
+    const employeeId = user?.isSuperUser ? SUPER_USER_LOG_ID : user?.employeeId;
 
-    await this.userLogsService.addLogs({
+    if (employeeId) await this.userLogsService.addLogs({
       userId: employeeId,
       route: request.url,
       method: request.method,

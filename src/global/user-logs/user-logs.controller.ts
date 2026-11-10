@@ -1,15 +1,16 @@
 import { AuthenticatedGuard } from './../auth/guards/authenticated2.guard';
 import { UserLogsService } from './user-logs.service';
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 
 @UseGuards(AuthenticatedGuard)
 @Controller('/user-logs/')
 export class UserLogsController {
   constructor(private readonly userLogsService: UserLogsService) {}
 
+  /** ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD (default: the last 30 days) */
   @Get()
-  async getAllLogs() {
-    return await this.userLogsService.getAllLogs();
+  async getAllLogs(@Query('date_from') dateFrom: string, @Query('date_to') dateTo: string) {
+    return await this.userLogsService.getAllLogs(dateFrom, dateTo);
   }
 
   @Get('year-month/:yearmonth')
