@@ -1899,14 +1899,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         SELECT
             hris_emp._id employeeId,
             hris_emp.company_id companyId,
-            hris_prod.get_employee_fullname2(hris_emp._id) name,
-            hris_prod.get_employee_position_or_oic(hris_emp._id) positionTitle,
-            hris_prod.get_employee_assignment_or_oic(hris_emp._id) assignment,
+            ${process.env.HRMS_DB_NAME}get_employee_fullname2(hris_emp._id) name,
+            ${process.env.HRMS_DB_NAME}get_employee_position_or_oic(hris_emp._id) positionTitle,
+            ${process.env.HRMS_DB_NAME}get_employee_assignment_or_oic(hris_emp._id) assignment,
             port_emp.mobile_number mobileNumber,
             port_emp.photo_url photoUrl
-        FROM hris_prod.employees hris_emp
-        INNER JOIN portal_prod.employees port_emp ON hris_emp._id=port_emp.user_id_fk
-        WHERE hris_prod.get_employee_position_or_oic(hris_emp._id) IS NOT NULL AND 
+        FROM ${process.env.HRMS_DB_NAME}employees hris_emp
+        INNER JOIN ${process.env.PORTAL_DB_NAME}employees port_emp ON hris_emp._id=port_emp.user_id_fk
+        WHERE ${process.env.HRMS_DB_NAME}get_employee_position_or_oic(hris_emp._id) IS NOT NULL AND 
         hris_emp._id = ? 
         `,
           [employeeId],

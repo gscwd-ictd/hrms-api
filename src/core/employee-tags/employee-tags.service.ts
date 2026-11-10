@@ -117,6 +117,47 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
     }
   }
 
+  async getSupervisorByEmployeeTagsV3(tagIds: string[]) {
+    try {
+      //1. GET EMPLOYEE NAMES WITH TAGS
+      const supervisors = await this.entityRepository.query(
+        ` SELECT DISTINCT supervisorId,supervisorName FROM (SELECT distinct 
+          get_employee_assignment_or_oic(emp._id) assignmentName,
+          get_employee_position_or_oic(emp._id) positionTitle,
+          emp._id employeeId,
+          get_employee_fullname2(emp._id) employeeFullName, 
+          get_employee_supervisor(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+         INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo;
+        `,
+        [tagIds],
+      );
+
+      const employees = await Promise.all(
+        supervisors.map(async (supervisor) => {
+          const { supervisorId, supervisorName } = supervisor;
+          const employees = await this.entityRepository.query(
+            `
+         SELECT DISTINCT employeeId,employeeFullName name,positionTitle FROM (SELECT distinct 
+          get_employee_assignment_or_oic(emp._id) assignmentName,
+          get_employee_position_or_oic(emp._id) positionTitle,
+          emp._id employeeId,
+          get_employee_fullname2(emp._id) employeeFullName, 
+          get_employee_supervisor(emp._id) supervisorId, 
+          get_employee_fullname2(get_employee_supervisor(emp._id)) supervisorName FROM employees emp 
+         INNER JOIN employee_tags et ON et.employee_id_fk = emp._id WHERE et.tag_id_fk IN (?)) supervisorInfo WHERE supervisorInfo.supervisorId = ?;
+         `,
+            [tagIds, supervisorId],
+          );
+          return { supervisor: { supervisorId: supervisorId, name: supervisorName }, employees };
+        }),
+      );
+      return employees;
+    } catch (error) {
+      throw new RpcException(error);
+    }
+  }
+
   async getTagsByEmployeeId(employeeId: string) {
     try {
       const tags = await this.entityRepository.find({ where: { employeeId }, select: ['tagId'], order: { createdAt: 'ASC' } });
