@@ -1,4 +1,7 @@
-import { ValidationPipe } from '@nestjs/common';
+import * as dotenv from 'dotenv';
+import { join } from 'path';
+dotenv.config({ path: join(__dirname, '../.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -7,8 +10,6 @@ import * as redis from 'redis';
 import * as connectRedis from 'connect-redis';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import helmet from 'helmet';
-import { fstat, readFileSync } from 'fs';
-import { join } from 'path';
 
 const whitelist = [
   'http://172.20.10.57:3109',
@@ -56,7 +57,7 @@ const whitelist = [
 
 const redisClient = redis.createClient({
   url: `redis://${process.env.MS_HOST_LOCAL}:6479`,
-  //password: process.env.MS_PASSWORD,
+  password: process.env.MS_PASSWORD,
 });
 console.log('-----------', redisClient);
 //redisClient.get
@@ -116,8 +117,9 @@ async function bootstrap() {
     transport: Transport.REDIS,
     options: {
       url: `redis://${process.env.MS_HOST_REMOTE}:${process.env.MS_EMPLOYEE_PORT}`,
-      //password: process.env.MS_PASSWORD,
+      password: process.env.MS_PASSWORD,
       retryAttempts: 10,
+      retryDelay: 3000,
     },
   });
 
