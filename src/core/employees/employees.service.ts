@@ -1199,7 +1199,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   /**
    * Registers a Casual or Job Order employee (HR 2026-11-11), in one transaction:
    *  hris_prod:   employees (Employee No. = year-sequence), plantilla_positions (title, nature, daily rate),
-   *               office/department/division_positions (designation), nosi_nosa 'active' (effectivity, rate)
+   *               office/department/division_positions (designation), nosi_nosa (Job Order: 'active' + daily rate; Casual: 'approved nosa' + salary grade)
    *  portal_prod: users (login: email + default password '@' + first name + employee no.), employees (profile)
    *  employee_monitoring (Casual only): leave credits - Beginning Balance + FL 5, VL 0, SL 0, SPL 3, Wellness by months left
    * The work schedule is set in EMS as usual.
@@ -1255,6 +1255,18 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           org.type as 'office' | 'department' | 'division'
         ];
 
+        // Casual: salary grade row (SG + step) of the effectivity year (latest table on or before it)
+        let salaryGradeId: number | null = null;
+        if (dto.natureOfAppointment === 'casual') {
+          const [sgRow] = await manager.query(
+            `SELECT _id FROM salary_grade WHERE salary_grade = ? AND step_increment = ? AND effectivity_year <= ?
+              ORDER BY effectivity_year DESC LIMIT 1;`,
+            [Number(dto.salaryGrade), Number(dto.stepIncrement), Number(effectivityDate.slice(0, 4))],
+          );
+          if (!sgRow) throw new HttpException(`Salary grade ${dto.salaryGrade} step ${dto.stepIncrement} is not in the salary grade table.`, HttpStatus.BAD_REQUEST);
+          salaryGradeId = sgRow._id;
+        }
+
         // Casual from an existing Job Order employee: new Casual position, the Job Order position is vacated;
         // Employee No. and Employee Portal account stay the same
         if (dto.existingEmployeeId) {
@@ -1273,14 +1285,15 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           const casualPositionId = randomUUID();
           await manager.query(`UPDATE plantilla_positions SET employee_id_fk = NULL WHERE _id = ?;`, [current.positionId]);
           await manager.query(
-            `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk) VALUES (?, ?, 'casual', ?);`,
-            [casualPositionId, dto.positionTitle.trim(), dto.existingEmployeeId],
+            `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk, salary_grade_id_fk) VALUES (?, ?, 'casual', ?, ?);`,
+            [casualPositionId, dto.positionTitle.trim(), dto.existingEmployeeId, salaryGradeId],
           );
           await manager.query(`INSERT INTO ${orgTable[0]} (_id, position_id_fk, ${orgTable[1]}) VALUES (?, ?, ?);`, [randomUUID(), casualPositionId, dto.orgId]);
           await manager.query(`UPDATE employees SET user_role = ? WHERE _id = ?;`, [UserRole.RANK_AND_FILE, dto.existingEmployeeId]);
           await manager.query(
-            `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, is_per_piece) VALUES (?, ?, 'active', ?, ?, 0);`,
-            [randomUUID(), effectivityDate, dto.existingEmployeeId, casualPositionId],
+            `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, actual_salary_grade_id_fk, adjusted_salary_grade_id_fk, is_per_piece)
+             VALUES (?, ?, 'approved nosa', ?, ?, ?, ?, 0);`,
+            [randomUUID(), effectivityDate, dto.existingEmployeeId, casualPositionId, salaryGradeId, salaryGradeId],
           );
           const leaveCredits = await this.addInitialCasualLeaveCredits(manager, dto.existingEmployeeId, effectivityDate);
           return {
@@ -1325,13 +1338,19 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           ],
         );
         await manager.query(
-          `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk, daily_rate) VALUES (?, ?, ?, ?, ?);`,
-          [positionId, dto.positionTitle.trim(), dto.natureOfAppointment, employeeId, dailyRate],
+          `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk, daily_rate, salary_grade_id_fk) VALUES (?, ?, ?, ?, ?, ?);`,
+          [positionId, dto.positionTitle.trim(), dto.natureOfAppointment, employeeId, dailyRate, salaryGradeId],
         );
         await manager.query(`INSERT INTO ${orgTable[0]} (_id, position_id_fk, ${orgTable[1]}) VALUES (?, ?, ?);`, [randomUUID(), positionId, dto.orgId]);
         await manager.query(
-          `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, rate, is_per_piece) VALUES (?, ?, 'active', ?, ?, ?, ?);`,
-          [randomUUID(), effectivityDate, employeeId, positionId, dailyRate, dto.isPerPieceRate ? 1 : 0],
+          // Job Order: 'active' with the daily rate; Casual: 'approved nosa' with the salary grade
+          isJobOrder
+            ? `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, rate, is_per_piece) VALUES (?, ?, 'active', ?, ?, ?, ?);`
+            : `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, actual_salary_grade_id_fk, adjusted_salary_grade_id_fk, is_per_piece)
+               VALUES (?, ?, 'approved nosa', ?, ?, ?, ?, 0);`,
+          isJobOrder
+            ? [randomUUID(), effectivityDate, employeeId, positionId, dailyRate, dto.isPerPieceRate ? 1 : 0]
+            : [randomUUID(), effectivityDate, employeeId, positionId, salaryGradeId, salaryGradeId],
         );
 
         // portal_prod

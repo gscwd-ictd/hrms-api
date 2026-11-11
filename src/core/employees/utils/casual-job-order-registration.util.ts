@@ -25,6 +25,9 @@ export type RegisterCasualJobOrderDto = {
   dailyRate?: number | string;
   isPerPieceRate?: boolean;
   positionTitle: string;
+  /** Casual only: salary grade (1-33) and step (1-8) of the position, for the NOSA */
+  salaryGrade?: number | string;
+  stepIncrement?: number | string;
   /** office / department / division _id (from GET organization/dropdown) */
   orgId: string;
   /** date the appointment takes effect (YYYY-MM-DD); default today */
@@ -49,6 +52,12 @@ export function validateRegistration(dto: RegisterCasualJobOrderDto): string | n
   if (!text(dto.positionTitle)) return 'Position title is required.';
   if (!text(dto.orgId)) return 'Select the office, department or division of the position.';
   if (dto.effectivityDate && !/^\d{4}-\d{2}-\d{2}$/.test(dto.effectivityDate)) return 'Effectivity date is not valid.';
+  if (dto.natureOfAppointment === 'casual') {
+    const sg = Number(dto.salaryGrade);
+    const step = Number(dto.stepIncrement);
+    if (!Number.isInteger(sg) || sg < 1 || sg > 33) return 'Salary grade (1-33) is required for Casual.';
+    if (!Number.isInteger(step) || step < 1 || step > 8) return 'Step (1-8) is required for Casual.';
+  }
   if (text(dto.existingEmployeeId)) {
     return dto.natureOfAppointment === 'casual' ? null : 'Only a Casual appointment can be given to an existing Job Order employee.';
   }

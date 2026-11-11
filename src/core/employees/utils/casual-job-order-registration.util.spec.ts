@@ -25,9 +25,12 @@ describe('validateRegistration', () => {
   };
   it('valid', () => expect(validateRegistration(ok)).toBeNull());
   it('JO needs a daily rate', () => expect(validateRegistration({ ...ok, dailyRate: '' })).toMatch(/Daily rate/));
-  it('casual does not', () => expect(validateRegistration({ ...ok, natureOfAppointment: 'casual', dailyRate: '' })).toBeNull());
+  it('casual does not need a daily rate', () =>
+    expect(validateRegistration({ ...ok, natureOfAppointment: 'casual', dailyRate: '', salaryGrade: 6, stepIncrement: 1 })).toBeNull());
+  it('casual needs salary grade and step', () =>
+    expect(validateRegistration({ ...ok, natureOfAppointment: 'casual', dailyRate: '' })).toMatch(/Salary grade/));
   it('existing JO employee to casual: only position and designation needed', () =>
-    expect(validateRegistration({ natureOfAppointment: 'casual', existingEmployeeId: 'e1', positionTitle: 'Clerk', orgId: 'o1' } as never)).toBeNull());
+    expect(validateRegistration({ natureOfAppointment: 'casual', existingEmployeeId: 'e1', positionTitle: 'Clerk', orgId: 'o1', salaryGrade: 6, stepIncrement: 1 } as never)).toBeNull());
   it('existing employee only for casual', () =>
     expect(validateRegistration({ ...ok, existingEmployeeId: 'e1' })).toMatch(/Casual/));
   it('position title required', () => expect(validateRegistration({ ...ok, positionTitle: ' ' })).toMatch(/Position/));
