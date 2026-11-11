@@ -6,7 +6,7 @@ import { EmailService } from 'src/global/auth/services/email.service';
 import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { UserRole } from '../users/utils/enums/role.enum';
@@ -20,6 +20,7 @@ import { randomUUID } from 'crypto';
 import * as argon from 'argon2';
 import {
   defaultPortalPassword,
+  initialCasualLeaveCredits,
   nextCompanyId,
   RegisterCasualJobOrderDto,
   validateRegistration,
@@ -1200,8 +1201,30 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    *  hris_prod:   employees (Employee No. = year-sequence), plantilla_positions (title, nature, daily rate),
    *               office/department/division_positions (designation), nosi_nosa 'active' (effectivity, rate)
    *  portal_prod: users (login: email + default password '@' + first name + employee no.), employees (profile)
+   *  employee_monitoring (Casual only): leave credits - Beginning Balance + FL 5, VL 0, SL 0, SPL 3, Wellness by months left
    * The work schedule is set in EMS as usual.
    */
+  /**
+   * Casual leave credits in employee_monitoring.leave_credit_earnings (Beginning Balance + initial credits).
+   * Skipped when the employee already has a Beginning Balance for that year.
+   */
+  private async addInitialCasualLeaveCredits(manager: EntityManager, employeeId: string, effectivityDate: string) {
+    const ems = process.env.EMS_DB_NAME ?? 'employee_monitoring.';
+    const [{ n }] = await manager.query(
+      `SELECT COUNT(*) n FROM ${ems}leave_credit_earnings WHERE employee_id_fk = ? AND remarks = 'Beginning Balance' AND YEAR(credit_date) = ? AND deleted_at IS NULL;`,
+      [employeeId, effectivityDate.slice(0, 4)],
+    );
+    if (Number(n) > 0) return [];
+    const rows = initialCasualLeaveCredits(effectivityDate);
+    for (const row of rows) {
+      await manager.query(
+        `INSERT INTO ${ems}leave_credit_earnings (leave_credit_earnings_id, employee_id_fk, credit_date, credit_value, leave_benefits_id_fk, remarks) VALUES (?, ?, ?, ?, ?, ?);`,
+        [randomUUID(), employeeId, row.creditDate, row.creditValue, row.leaveBenefitsId, row.remarks],
+      );
+    }
+    return rows;
+  }
+
   async registerCasualJobOrder(dto: RegisterCasualJobOrderDto) {
     const problem = validateRegistration(dto);
     if (problem) throw new HttpException(problem, HttpStatus.BAD_REQUEST);
@@ -1259,9 +1282,11 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
             `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, is_per_piece) VALUES (?, ?, 'active', ?, ?, 0);`,
             [randomUUID(), effectivityDate, dto.existingEmployeeId, casualPositionId],
           );
+          const leaveCredits = await this.addInitialCasualLeaveCredits(manager, dto.existingEmployeeId, effectivityDate);
           return {
             employeeId: dto.existingEmployeeId,
             companyId: current.companyId,
+            leaveCredits,
             positionId: casualPositionId,
             previousJobOrderPositionId: current.positionId,
             portalAccount: 'unchanged',
@@ -1330,7 +1355,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
           ],
         );
 
-        return { employeeId, companyId, positionId, email, defaultPassword: password };
+        const leaveCredits = isJobOrder ? [] : await this.addInitialCasualLeaveCredits(manager, employeeId, effectivityDate);
+
+        return { employeeId, companyId, positionId, email, defaultPassword: password, leaveCredits };
       } finally {
         await manager.query(`SELECT RELEASE_LOCK('hrms:register-employee');`);
       }

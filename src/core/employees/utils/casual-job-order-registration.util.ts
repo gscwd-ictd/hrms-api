@@ -60,3 +60,52 @@ export function validateRegistration(dto: RegisterCasualJobOrderDto): string | n
   if (dto.natureOfAppointment === 'job order' && !(Number(dto.dailyRate) > 0)) return 'Daily rate is required for Job Order.';
   return null;
 }
+
+/** employee_monitoring.leave_benefits ids */
+export const LEAVE_BENEFIT = {
+  FORCED: '1c6bc9b6-af14-468d-88ad-5dfc01869608',
+  SICK: '7eed9b4c-22b3-432a-a238-01102b2a0ea5',
+  VACATION: '8ea199f1-73b8-4279-a5c8-9952a51a4b8c',
+  SPECIAL_PRIVILEGE: 'cb91fdda-9f65-4132-ae80-c61bda9abe31',
+  WELLNESS: '855bca60-9d1b-40ed-bc73-582f0a19ffae',
+};
+
+/** 'Beginning Balance' of 0, dated January 1 of the year, for these 4 leave types */
+export const BEGINNING_BALANCE_LEAVES = [LEAVE_BENEFIT.FORCED, LEAVE_BENEFIT.SICK, LEAVE_BENEFIT.VACATION, LEAVE_BENEFIT.SPECIAL_PRIVILEGE];
+
+/** months of service left in the calendar year, counting the month of the effectivity date (Sep 1 -> 4) */
+export function remainingMonthsInYear(effectivityDate: string): number {
+  const month = parseInt(effectivityDate.slice(5, 7), 10); // 1..12
+  return 13 - month;
+}
+
+/** Wellness Leave by months of service left in the year: 10-11 -> 4, 7-9 -> 3, 4-6 -> 2, 1-3 -> 1 (12 -> 5, the full year) */
+export function initialWellnessCredits(months: number): number {
+  if (months >= 12) return 5;
+  if (months >= 10) return 4;
+  if (months >= 7) return 3;
+  if (months >= 4) return 2;
+  return months >= 1 ? 1 : 0;
+}
+
+/**
+ * Leave credits of a new Casual employee (HR 2026-11-11):
+ * Beginning Balance 0 (Jan 1) for FL / SL / VL / SPL, then initial credits on the effectivity date:
+ * FL 5, VL 0, SL 0, SPL 3, Wellness by months of service left in the year.
+ */
+export function initialCasualLeaveCredits(effectivityDate: string) {
+  const year = effectivityDate.slice(0, 4);
+  return [
+    ...BEGINNING_BALANCE_LEAVES.map((leaveBenefitsId) => ({ leaveBenefitsId, creditDate: `${year}-01-01`, creditValue: 0, remarks: 'Beginning Balance' })),
+    { leaveBenefitsId: LEAVE_BENEFIT.FORCED, creditDate: effectivityDate, creditValue: 5, remarks: null },
+    { leaveBenefitsId: LEAVE_BENEFIT.VACATION, creditDate: effectivityDate, creditValue: 0, remarks: null },
+    { leaveBenefitsId: LEAVE_BENEFIT.SICK, creditDate: effectivityDate, creditValue: 0, remarks: null },
+    { leaveBenefitsId: LEAVE_BENEFIT.SPECIAL_PRIVILEGE, creditDate: effectivityDate, creditValue: 3, remarks: null },
+    {
+      leaveBenefitsId: LEAVE_BENEFIT.WELLNESS,
+      creditDate: effectivityDate,
+      creditValue: initialWellnessCredits(remainingMonthsInYear(effectivityDate)),
+      remarks: null,
+    },
+  ];
+}
