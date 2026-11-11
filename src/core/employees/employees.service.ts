@@ -6,7 +6,7 @@ import { EmailService } from 'src/global/auth/services/email.service';
 import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data/dtos/employee.dto';
 import { Employees } from 'src/core/employees/data/entities/employees.entity';
 import { MicroserviceType } from 'src/global/utils/enums/microservice-type.enum';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
 import { PlantillaPositionsService } from '../plantilla-positions/plantilla-positions.service';
 import { UserRole } from '../users/utils/enums/role.enum';
@@ -16,6 +16,15 @@ import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointmen
 import { PlantillaPositions } from '../plantilla-positions/data/entities/plantilla-positions.entity';
 import { BasicEmployeeInfo } from './utils/employee.type';
 import { NosiNosaStatus } from 'src/core/salary-grade/utils/types/salary-grade.type';
+import { randomUUID } from 'crypto';
+import * as argon from 'argon2';
+import {
+  defaultPortalPassword,
+  initialCasualLeaveCredits,
+  nextCompanyId,
+  RegisterCasualJobOrderDto,
+  validateRegistration,
+} from './utils/casual-job-order-registration.util';
 
 @Injectable()
 export class EmployeesService extends BaseEntityCrudService<Employees> {
@@ -1185,6 +1194,229 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       //throw new HttpException('Email address already exists', HttpStatus.BAD_REQUEST);
       return null;
     }
+  }
+
+  /**
+   * Registers a Casual or Job Order employee (HR 2026-11-11), in one transaction:
+   *  hris_prod:   employees (Employee No. = year-sequence), plantilla_positions (title, nature, daily rate),
+   *               office/department/division_positions (designation), nosi_nosa (Job Order: 'active' + daily rate; Casual: 'approved nosa' + salary grade)
+   *  portal_prod: users (login: email + default password '@' + first name + employee no.), employees (profile)
+   *  employee_monitoring: employee schedule + rest days; Casual only: leave credits - Beginning Balance + FL 5, VL 0, SL 0, SPL 3, Wellness by months left
+   */
+  /**
+   * Casual leave credits in employee_monitoring.leave_credit_earnings (Beginning Balance + initial credits).
+   * Skipped when the employee already has a Beginning Balance for that year.
+   */
+  private async addInitialCasualLeaveCredits(manager: EntityManager, employeeId: string, effectivityDate: string) {
+    const ems = process.env.EMS_DB_NAME ?? 'employee_monitoring.';
+    const [{ n }] = await manager.query(
+      `SELECT COUNT(*) n FROM ${ems}leave_credit_earnings WHERE employee_id_fk = ? AND remarks = 'Beginning Balance' AND YEAR(credit_date) = ? AND deleted_at IS NULL;`,
+      [employeeId, effectivityDate.slice(0, 4)],
+    );
+    if (Number(n) > 0) return [];
+    const rows = initialCasualLeaveCredits(effectivityDate);
+    for (const row of rows) {
+      await manager.query(
+        `INSERT INTO ${ems}leave_credit_earnings (leave_credit_earnings_id, employee_id_fk, credit_date, credit_value, leave_benefits_id_fk, remarks) VALUES (?, ?, ?, ?, ?, ?);`,
+        [randomUUID(), employeeId, row.creditDate, row.creditValue, row.leaveBenefitsId, row.remarks],
+      );
+    }
+    return rows;
+  }
+
+  /** EMS employee schedule + rest days (same rows as EMS "add employee schedule") */
+  private async addEmployeeScheduleForRegistration(manager: EntityManager, employeeId: string, dto: RegisterCasualJobOrderDto) {
+    const ems = process.env.EMS_DB_NAME ?? 'employee_monitoring.';
+    const [schedule] = await manager.query(`SELECT name FROM ${ems}schedule WHERE schedule_id = ? AND deleted_at IS NULL;`, [dto.scheduleId]);
+    if (!schedule) throw new HttpException('Employee schedule not found.', HttpStatus.BAD_REQUEST);
+    await manager.query(
+      `INSERT INTO ${ems}employee_schedule (employee_schedule_id, employee_id_fk, date_from, date_to, schedule_id_fk) VALUES (?, ?, ?, ?, ?);`,
+      [randomUUID(), employeeId, dto.scheduleDateFrom, dto.scheduleDateTo, dto.scheduleId],
+    );
+    const restDayId = randomUUID();
+    await manager.query(`INSERT INTO ${ems}employee_rest_day (employee_rest_day_id, employee_id_fk, date_from, date_to) VALUES (?, ?, ?, ?);`, [
+      restDayId,
+      employeeId,
+      dto.scheduleDateFrom,
+      dto.scheduleDateTo,
+    ]);
+    for (const day of [...new Set(dto.restDays.map((d) => String(d)))]) {
+      await manager.query(`INSERT INTO ${ems}employee_rest_days (employee_rest_days_id, rest_day, employee_rest_day_id_fk) VALUES (?, ?, ?);`, [randomUUID(), day, restDayId]);
+    }
+    return { schedule: schedule.name, dateFrom: dto.scheduleDateFrom, dateTo: dto.scheduleDateTo, restDays: dto.restDays };
+  }
+
+  async registerCasualJobOrder(dto: RegisterCasualJobOrderDto) {
+    const problem = validateRegistration(dto);
+    if (problem) throw new HttpException(problem, HttpStatus.BAD_REQUEST);
+
+    const portal = process.env.PORTAL_DB_NAME ?? '';
+    const email = (dto.email ?? '').trim().toLowerCase();
+    const isJobOrder = dto.natureOfAppointment === 'job order';
+    const dailyRate = isJobOrder ? Number(dto.dailyRate) : null;
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const effectivityDate = dto.effectivityDate || `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    const nullIfBlank = (v?: string) => (v && v.trim() !== '' ? v.trim() : null);
+
+    return await this.entityRepository.manager.transaction(async (manager) => {
+      // one registration at a time, so two HR users cannot get the same Employee No.
+      const [{ locked }] = await manager.query(`SELECT GET_LOCK('hrms:register-employee', 10) locked;`);
+      if (Number(locked) !== 1) throw new HttpException('Another registration is in progress. Please try again.', HttpStatus.CONFLICT);
+      try {
+        // designation: which org table the selected id belongs to
+        const [org] = await manager.query(
+          `SELECT 'office' type FROM office WHERE _id = ?
+           UNION ALL SELECT 'department' FROM departments WHERE _id = ?
+           UNION ALL SELECT 'division' FROM divisions WHERE _id = ?;`,
+          [dto.orgId, dto.orgId, dto.orgId],
+        );
+        if (!org) throw new HttpException('Office / department / division not found.', HttpStatus.BAD_REQUEST);
+        const orgTable = { office: ['office_positions', 'office_id_fk'], department: ['department_positions', 'department_id_fk'], division: ['division_positions', 'division_id_fk'] }[
+          org.type as 'office' | 'department' | 'division'
+        ];
+
+        // Casual: salary grade row (SG + step) of the effectivity year (latest table on or before it)
+        let salaryGradeId: number | null = null;
+        if (dto.natureOfAppointment === 'casual') {
+          const [sgRow] = await manager.query(
+            `SELECT _id FROM salary_grade WHERE salary_grade = ? AND step_increment = ? AND effectivity_year <= ?
+              ORDER BY effectivity_year DESC LIMIT 1;`,
+            [Number(dto.salaryGrade), Number(dto.stepIncrement), Number(effectivityDate.slice(0, 4))],
+          );
+          if (!sgRow) throw new HttpException(`Salary grade ${dto.salaryGrade} step ${dto.stepIncrement} is not in the salary grade table.`, HttpStatus.BAD_REQUEST);
+          salaryGradeId = sgRow._id;
+        }
+
+        // Casual from an existing Job Order employee: new Casual position, the Job Order position is vacated;
+        // Employee No. and Employee Portal account stay the same
+        if (dto.existingEmployeeId) {
+          const [current] = await manager.query(
+            `SELECT e.company_id companyId, pp._id positionId, pp.nature_of_appointment nature,
+                    (SELECT n.status FROM nosi_nosa n WHERE n.employee_id_fk = e._id AND n.effectivity_date <= CURDATE()
+                      ORDER BY n.effectivity_date DESC, n.created_at DESC LIMIT 1) latestStatus
+               FROM employees e LEFT JOIN plantilla_positions pp ON pp.employee_id_fk = e._id
+              WHERE e._id = ?;`,
+            [dto.existingEmployeeId],
+          );
+          if (!current) throw new HttpException('Employee not found.', HttpStatus.NOT_FOUND);
+          if (current.nature !== 'job order') throw new HttpException('The selected employee is not a Job Order employee.', HttpStatus.BAD_REQUEST);
+          if (current.latestStatus === 'inactive') throw new HttpException('The selected employee is already separated.', HttpStatus.BAD_REQUEST);
+
+          const casualPositionId = randomUUID();
+          await manager.query(`UPDATE plantilla_positions SET employee_id_fk = NULL WHERE _id = ?;`, [current.positionId]);
+          await manager.query(
+            `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk, salary_grade_id_fk) VALUES (?, ?, 'casual', ?, ?);`,
+            [casualPositionId, dto.positionTitle.trim(), dto.existingEmployeeId, salaryGradeId],
+          );
+          await manager.query(`INSERT INTO ${orgTable[0]} (_id, position_id_fk, ${orgTable[1]}) VALUES (?, ?, ?);`, [randomUUID(), casualPositionId, dto.orgId]);
+          await manager.query(`UPDATE employees SET user_role = ? WHERE _id = ?;`, [UserRole.RANK_AND_FILE, dto.existingEmployeeId]);
+          await manager.query(
+            `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, actual_salary_grade_id_fk, adjusted_salary_grade_id_fk, is_per_piece)
+             VALUES (?, ?, 'approved nosa', ?, ?, ?, ?, 0);`,
+            [randomUUID(), effectivityDate, dto.existingEmployeeId, casualPositionId, salaryGradeId, salaryGradeId],
+          );
+          const leaveCredits = await this.addInitialCasualLeaveCredits(manager, dto.existingEmployeeId, effectivityDate);
+          const employeeSchedule = await this.addEmployeeScheduleForRegistration(manager, dto.existingEmployeeId, dto);
+          return {
+            employeeSchedule,
+            employeeId: dto.existingEmployeeId,
+            companyId: current.companyId,
+            leaveCredits,
+            positionId: casualPositionId,
+            previousJobOrderPositionId: current.positionId,
+            portalAccount: 'unchanged',
+          };
+        }
+
+        const [{ n: emailUsed }] = await manager.query(`SELECT COUNT(*) n FROM ${portal}users WHERE LOWER(email) = ?;`, [email]);
+        if (Number(emailUsed) > 0) throw new HttpException('This email is already used by an Employee Portal account.', HttpStatus.CONFLICT);
+
+        // Employee No.: +1 from the latest employee number of this year
+        const year = today.getFullYear();
+        const [latest] = await manager.query(
+          `SELECT company_id companyId FROM employees WHERE company_id REGEXP ? ORDER BY CAST(SUBSTRING_INDEX(company_id, '-', -1) AS UNSIGNED) DESC LIMIT 1;`,
+          [`^${year}-[0-9]+$`],
+        );
+        const companyId = nextCompanyId(year, latest?.companyId);
+
+        const employeeId = randomUUID();
+        const positionId = randomUUID();
+        const userRole = isJobOrder ? UserRole.JOB_ORDER : UserRole.RANK_AND_FILE;
+
+        // hris_prod
+        await manager.query(
+          `INSERT INTO employees (_id, company_id, first_name, middle_name, last_name, name_extension, title_prefix, title_suffix, user_role)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            employeeId,
+            companyId,
+            dto.firstName.trim(),
+            (dto.middleName ?? '').trim(),
+            dto.lastName.trim(),
+            nullIfBlank(dto.nameExtension),
+            nullIfBlank(dto.titlePrefix),
+            nullIfBlank(dto.titleSuffix),
+            userRole,
+          ],
+        );
+        await manager.query(
+          `INSERT INTO plantilla_positions (_id, position_title, nature_of_appointment, employee_id_fk, daily_rate, salary_grade_id_fk) VALUES (?, ?, ?, ?, ?, ?);`,
+          [positionId, dto.positionTitle.trim(), dto.natureOfAppointment, employeeId, dailyRate, salaryGradeId],
+        );
+        await manager.query(`INSERT INTO ${orgTable[0]} (_id, position_id_fk, ${orgTable[1]}) VALUES (?, ?, ?);`, [randomUUID(), positionId, dto.orgId]);
+        await manager.query(
+          // Job Order: 'active' with the daily rate; Casual: 'approved nosa' with the salary grade
+          isJobOrder
+            ? `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, rate, is_per_piece) VALUES (?, ?, 'active', ?, ?, ?, ?);`
+            : `INSERT INTO nosi_nosa (_id, effectivity_date, status, employee_id_fk, position_id_fk, actual_salary_grade_id_fk, adjusted_salary_grade_id_fk, is_per_piece)
+               VALUES (?, ?, 'approved nosa', ?, ?, ?, ?, 0);`,
+          isJobOrder
+            ? [randomUUID(), effectivityDate, employeeId, positionId, dailyRate, dto.isPerPieceRate ? 1 : 0]
+            : [randomUUID(), effectivityDate, employeeId, positionId, salaryGradeId, salaryGradeId],
+        );
+
+        // portal_prod
+        const password = defaultPortalPassword(dto.firstName, companyId);
+        await manager.query(`INSERT INTO ${portal}users (user_id, email, password) VALUES (?, ?, ?);`, [employeeId, email, await argon.hash(password)]);
+        await manager.query(
+          `INSERT INTO ${portal}employees (employee_id, company_id, first_name, middle_name, last_name, name_ext, sex, birth_date, mobile_number, email_address, photo_url, user_id_fk)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'user.png', ?);`,
+          [
+            randomUUID(),
+            companyId,
+            dto.firstName.trim(),
+            (dto.middleName ?? '').trim(),
+            dto.lastName.trim(),
+            nullIfBlank(dto.nameExtension),
+            dto.sex,
+            dto.birthday,
+            String(dto.phoneNumber).trim(),
+            email,
+            employeeId,
+          ],
+        );
+
+        const leaveCredits = isJobOrder ? [] : await this.addInitialCasualLeaveCredits(manager, employeeId, effectivityDate);
+
+        const employeeSchedule = await this.addEmployeeScheduleForRegistration(manager, employeeId, dto);
+
+        return { employeeId, companyId, positionId, email, defaultPassword: password, leaveCredits, employeeSchedule };
+      } finally {
+        await manager.query(`SELECT RELEASE_LOCK('hrms:register-employee');`);
+      }
+    });
+  }
+
+  /** Active Job Order employees, for the "Casual from an existing Job Order employee" dropdown: { value, label } */
+  async getJobOrderEmployeesForCasual() {
+    return await this.entityRepository.query(`
+      SELECT e._id value, CONCAT(get_employee_fullname2(e._id), ' (', IFNULL(e.company_id, ''), ') - ', pp.position_title) label
+        FROM employees e
+       INNER JOIN plantilla_positions pp ON pp.employee_id_fk = e._id AND pp.nature_of_appointment = 'job order'
+       WHERE COALESCE((SELECT n.status FROM nosi_nosa n WHERE n.employee_id_fk = e._id AND n.effectivity_date <= CURDATE()
+                        ORDER BY n.effectivity_date DESC, n.created_at DESC LIMIT 1), '') <> 'inactive'
+       ORDER BY label;`);
   }
 
   async addEmployeeWithRegisterLink(employeeDto: EmployeeDTO) {

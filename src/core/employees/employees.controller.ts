@@ -3,6 +3,7 @@ import { EmployeeDTO, UpdateBasicEmployeeInfoDto } from 'src/core/employees/data
 import { EmployeesService } from './employees.service';
 import { NatureOfAppointment } from 'src/global/utils/enums/nature-of-appointment.enum';
 import { BasicEmployeeInfo } from './utils/employee.type';
+import { RegisterCasualJobOrderDto } from './utils/casual-job-order-registration.util';
 
 @Controller('employees')
 export class EmployeesController {
@@ -37,6 +38,18 @@ export class EmployeesController {
   @Get('/:organization_id/list/')
   async getEmployeesByOrgIdAlone(@Param('organization_id') orgId: string) {
     return await this.employeesService.getEmployeesByOrgIdAlone(orgId);
+  }
+
+  /** active Job Order employees (dropdown for Casual registration) */
+  @Get('casual-job-order/job-order-employees')
+  async getJobOrderEmployeesForCasual() {
+    return await this.employeesService.getJobOrderEmployeesForCasual();
+  }
+
+  /** Casual / Job Order registration (hris_prod + Employee Portal account) */
+  @Post('casual-job-order')
+  async registerCasualJobOrder(@Body() dto: RegisterCasualJobOrderDto) {
+    return await this.employeesService.registerCasualJobOrder(dto);
   }
 
   @Post()
