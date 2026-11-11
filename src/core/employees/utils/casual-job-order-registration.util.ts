@@ -30,6 +30,11 @@ export type RegisterCasualJobOrderDto = {
   stepIncrement?: number | string;
   /** office / department / division _id (from GET organization/dropdown) */
   orgId: string;
+  /** employee schedule (EMS): schedule, range and rest days (0 = Sunday ... 6 = Saturday) */
+  scheduleId: string;
+  scheduleDateFrom: string; // YYYY-MM-DD
+  scheduleDateTo: string; // YYYY-MM-DD
+  restDays: (number | string)[];
   /** date the appointment takes effect (YYYY-MM-DD); default today */
   effectivityDate?: string;
 };
@@ -52,6 +57,12 @@ export function validateRegistration(dto: RegisterCasualJobOrderDto): string | n
   if (!text(dto.positionTitle)) return 'Position title is required.';
   if (!text(dto.orgId)) return 'Select the office, department or division of the position.';
   if (dto.effectivityDate && !/^\d{4}-\d{2}-\d{2}$/.test(dto.effectivityDate)) return 'Effectivity date is not valid.';
+  if (!text(dto.scheduleId)) return 'Select the employee schedule.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dto.scheduleDateFrom ?? '') || !/^\d{4}-\d{2}-\d{2}$/.test(dto.scheduleDateTo ?? ''))
+    return 'Schedule date from and date to are required.';
+  if (dto.scheduleDateFrom > dto.scheduleDateTo) return 'Schedule date from must be on or before date to.';
+  if (!Array.isArray(dto.restDays) || dto.restDays.length === 0 || dto.restDays.some((d) => !/^[0-6]$/.test(String(d))))
+    return 'Select the rest days.';
   if (dto.natureOfAppointment === 'casual') {
     const sg = Number(dto.salaryGrade);
     const step = Number(dto.stepIncrement);

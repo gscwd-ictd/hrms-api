@@ -22,7 +22,12 @@ describe('validateRegistration', () => {
     dailyRate: 708.45,
     positionTitle: 'Meter Reader',
     orgId: 'x',
+    scheduleId: 's1',
+    scheduleDateFrom: '2026-11-16',
+    scheduleDateTo: '2026-12-31',
+    restDays: [0, 6],
   };
+  const sched = { scheduleId: 's1', scheduleDateFrom: '2026-11-16', scheduleDateTo: '2026-12-31', restDays: [0, 6] };
   it('valid', () => expect(validateRegistration(ok)).toBeNull());
   it('JO needs a daily rate', () => expect(validateRegistration({ ...ok, dailyRate: '' })).toMatch(/Daily rate/));
   it('casual does not need a daily rate', () =>
@@ -30,9 +35,12 @@ describe('validateRegistration', () => {
   it('casual needs salary grade and step', () =>
     expect(validateRegistration({ ...ok, natureOfAppointment: 'casual', dailyRate: '' })).toMatch(/Salary grade/));
   it('existing JO employee to casual: only position and designation needed', () =>
-    expect(validateRegistration({ natureOfAppointment: 'casual', existingEmployeeId: 'e1', positionTitle: 'Clerk', orgId: 'o1', salaryGrade: 6, stepIncrement: 1 } as never)).toBeNull());
+    expect(validateRegistration({ natureOfAppointment: 'casual', existingEmployeeId: 'e1', positionTitle: 'Clerk', orgId: 'o1', salaryGrade: 6, stepIncrement: 1, ...sched } as never)).toBeNull());
   it('existing employee only for casual', () =>
     expect(validateRegistration({ ...ok, existingEmployeeId: 'e1' })).toMatch(/Casual/));
+  it('schedule required', () => expect(validateRegistration({ ...ok, scheduleId: '' })).toMatch(/schedule/));
+  it('rest days required', () => expect(validateRegistration({ ...ok, restDays: [] })).toMatch(/rest days/));
+  it('schedule range order', () => expect(validateRegistration({ ...ok, scheduleDateTo: '2026-11-01' })).toMatch(/on or before/));
   it('position title required', () => expect(validateRegistration({ ...ok, positionTitle: ' ' })).toMatch(/Position/));
 });
 

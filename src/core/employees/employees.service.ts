@@ -1201,8 +1201,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
    *  hris_prod:   employees (Employee No. = year-sequence), plantilla_positions (title, nature, daily rate),
    *               office/department/division_positions (designation), nosi_nosa (Job Order: 'active' + daily rate; Casual: 'approved nosa' + salary grade)
    *  portal_prod: users (login: email + default password '@' + first name + employee no.), employees (profile)
-   *  employee_monitoring (Casual only): leave credits - Beginning Balance + FL 5, VL 0, SL 0, SPL 3, Wellness by months left
-   * The work schedule is set in EMS as usual.
+   *  employee_monitoring: employee schedule + rest days; Casual only: leave credits - Beginning Balance + FL 5, VL 0, SL 0, SPL 3, Wellness by months left
    */
   /**
    * Casual leave credits in employee_monitoring.leave_credit_earnings (Beginning Balance + initial credits).
@@ -1223,6 +1222,28 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
       );
     }
     return rows;
+  }
+
+  /** EMS employee schedule + rest days (same rows as EMS "add employee schedule") */
+  private async addEmployeeScheduleForRegistration(manager: EntityManager, employeeId: string, dto: RegisterCasualJobOrderDto) {
+    const ems = process.env.EMS_DB_NAME ?? 'employee_monitoring.';
+    const [schedule] = await manager.query(`SELECT name FROM ${ems}schedule WHERE schedule_id = ? AND deleted_at IS NULL;`, [dto.scheduleId]);
+    if (!schedule) throw new HttpException('Employee schedule not found.', HttpStatus.BAD_REQUEST);
+    await manager.query(
+      `INSERT INTO ${ems}employee_schedule (employee_schedule_id, employee_id_fk, date_from, date_to, schedule_id_fk) VALUES (?, ?, ?, ?, ?);`,
+      [randomUUID(), employeeId, dto.scheduleDateFrom, dto.scheduleDateTo, dto.scheduleId],
+    );
+    const restDayId = randomUUID();
+    await manager.query(`INSERT INTO ${ems}employee_rest_day (employee_rest_day_id, employee_id_fk, date_from, date_to) VALUES (?, ?, ?, ?);`, [
+      restDayId,
+      employeeId,
+      dto.scheduleDateFrom,
+      dto.scheduleDateTo,
+    ]);
+    for (const day of [...new Set(dto.restDays.map((d) => String(d)))]) {
+      await manager.query(`INSERT INTO ${ems}employee_rest_days (employee_rest_days_id, rest_day, employee_rest_day_id_fk) VALUES (?, ?, ?);`, [randomUUID(), day, restDayId]);
+    }
+    return { schedule: schedule.name, dateFrom: dto.scheduleDateFrom, dateTo: dto.scheduleDateTo, restDays: dto.restDays };
   }
 
   async registerCasualJobOrder(dto: RegisterCasualJobOrderDto) {
@@ -1296,7 +1317,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
             [randomUUID(), effectivityDate, dto.existingEmployeeId, casualPositionId, salaryGradeId, salaryGradeId],
           );
           const leaveCredits = await this.addInitialCasualLeaveCredits(manager, dto.existingEmployeeId, effectivityDate);
+          const employeeSchedule = await this.addEmployeeScheduleForRegistration(manager, dto.existingEmployeeId, dto);
           return {
+            employeeSchedule,
             employeeId: dto.existingEmployeeId,
             companyId: current.companyId,
             leaveCredits,
@@ -1376,7 +1399,9 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
 
         const leaveCredits = isJobOrder ? [] : await this.addInitialCasualLeaveCredits(manager, employeeId, effectivityDate);
 
-        return { employeeId, companyId, positionId, email, defaultPassword: password, leaveCredits };
+        const employeeSchedule = await this.addEmployeeScheduleForRegistration(manager, employeeId, dto);
+
+        return { employeeId, companyId, positionId, email, defaultPassword: password, leaveCredits, employeeSchedule };
       } finally {
         await manager.query(`SELECT RELEASE_LOCK('hrms:register-employee');`);
       }
