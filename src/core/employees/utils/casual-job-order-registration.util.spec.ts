@@ -23,11 +23,11 @@ describe('validateRegistration', () => {
     positionTitle: 'Meter Reader',
     orgId: 'x',
     scheduleId: 's1',
-    scheduleDateFrom: '2026-11-16',
-    scheduleDateTo: '2026-12-31',
+    scheduleDateFrom: `${new Date().getFullYear()}-01-02`,
+    scheduleDateTo: `${new Date().getFullYear()}-12-31`,
     restDays: [0, 6],
   };
-  const sched = { scheduleId: 's1', scheduleDateFrom: '2026-11-16', scheduleDateTo: '2026-12-31', restDays: [0, 6] };
+  const sched = { scheduleId: 's1', scheduleDateFrom: `${new Date().getFullYear()}-01-02`, scheduleDateTo: `${new Date().getFullYear()}-12-31`, restDays: [0, 6] };
   it('valid', () => expect(validateRegistration(ok)).toBeNull());
   it('JO needs a daily rate', () => expect(validateRegistration({ ...ok, dailyRate: '' })).toMatch(/Daily rate/));
   it('casual does not need a daily rate', () =>
@@ -38,9 +38,12 @@ describe('validateRegistration', () => {
     expect(validateRegistration({ natureOfAppointment: 'casual', existingEmployeeId: 'e1', positionTitle: 'Clerk', orgId: 'o1', salaryGrade: 6, stepIncrement: 1, ...sched } as never)).toBeNull());
   it('existing employee only for casual', () =>
     expect(validateRegistration({ ...ok, existingEmployeeId: 'e1' })).toMatch(/Casual/));
+  it('typo year in the schedule range is refused', () =>
+    expect(validateRegistration({ ...ok, scheduleDateFrom: '0026-11-16' })).toMatch(/check the year/));
+  it('typo year in the birthday is refused', () => expect(validateRegistration({ ...ok, birthday: '0995-05-05' })).toMatch(/Birthday/));
   it('schedule required', () => expect(validateRegistration({ ...ok, scheduleId: '' })).toMatch(/schedule/));
   it('rest days required', () => expect(validateRegistration({ ...ok, restDays: [] })).toMatch(/rest days/));
-  it('schedule range order', () => expect(validateRegistration({ ...ok, scheduleDateTo: '2026-11-01' })).toMatch(/on or before/));
+  it('schedule range order', () => expect(validateRegistration({ ...ok, scheduleDateTo: `${new Date().getFullYear()}-01-01` })).toMatch(/on or before/));
   it('position title required', () => expect(validateRegistration({ ...ok, positionTitle: ' ' })).toMatch(/Position/));
 });
 

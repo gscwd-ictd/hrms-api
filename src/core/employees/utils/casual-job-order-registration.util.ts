@@ -57,6 +57,19 @@ export function validateRegistration(dto: RegisterCasualJobOrderDto): string | n
   if (!text(dto.positionTitle)) return 'Position title is required.';
   if (!text(dto.orgId)) return 'Select the office, department or division of the position.';
   if (dto.effectivityDate && !/^\d{4}-\d{2}-\d{2}$/.test(dto.effectivityDate)) return 'Effectivity date is not valid.';
+  // dates must be in an actual year (last year, this year or next year); typos like 0026 broke face scan lookups
+  const thisYear = new Date().getFullYear();
+  const yearOf = (d?: string) => parseInt((d ?? '').slice(0, 4), 10);
+  for (const [label, value] of [
+    ['Effectivity date', dto.effectivityDate],
+    ['Schedule date from', dto.scheduleDateFrom],
+    ['Schedule date to', dto.scheduleDateTo],
+  ] as const) {
+    if (value && !(yearOf(value) >= thisYear - 1 && yearOf(value) <= thisYear + 1))
+      return `${label} ${value} is not valid. The year must be ${thisYear - 1} to ${thisYear + 1}; please check the year.`;
+  }
+  if (dto.birthday && !(yearOf(dto.birthday) >= 1900 && yearOf(dto.birthday) <= thisYear - 15))
+    return `Birthday ${dto.birthday} is not valid; please check the year.`;
   if (!text(dto.scheduleId)) return 'Select the employee schedule.';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dto.scheduleDateFrom ?? '') || !/^\d{4}-\d{2}-\d{2}$/.test(dto.scheduleDateTo ?? ''))
     return 'Schedule date from and date to are required.';
