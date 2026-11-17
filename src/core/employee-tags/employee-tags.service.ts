@@ -194,17 +194,20 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
    *   the next supervisor up the chain is used.
    * - Only permanent, casual and job order employees can be nominated (Board of Directors excluded).
    * - is_active_employee() is only applied to permanent employees; casual/JO rely on NOSI/NOSA.
-   * - The General Manager is endorsed by the head of the Human Resource Department (code HRD).
+   * - The General Manager (plantilla position 'General Manager A') is endorsed by the head of the Human Resource Department (code HRD).
    * - IDs listed in LND_EXCLUDED_EMPLOYEE_IDS never appear, as nominee or as supervisor.
    */
   async getSupervisorByEmployeeTagsV3(tagIds: string[]) {
     try {
       // 1. tagged employees who are still active, with their plantilla-based supervisor
       const excluded = this.lndExcludedIds();
-      const taggedRows: { employeeId: string; name: string; positionTitle: string; supervisorId: string | null; userRole: string }[] = await this.entityRepository.query(
+      const taggedRows: { employeeId: string; name: string; positionTitle: string; supervisorId: string | null; isGm: number | string }[] = await this.entityRepository.query(
         `SELECT DISTINCT
             emp._id employeeId,
-            emp.user_role userRole,
+            EXISTS (
+              SELECT 1 FROM plantilla_positions ppg
+               WHERE ppg.employee_id_fk = emp._id AND ppg.position_title = 'General Manager A'
+            ) isGm,
             get_employee_fullname2(emp._id) name,
             get_employee_position_or_oic(emp._id) positionTitle,
             get_employee_supervisor(emp._id) supervisorId
@@ -222,14 +225,19 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       );
       const tagged = taggedRows.filter((e) => !excluded.has(e.employeeId));
 
-      // HRD department head (endorses the General Manager)
+      // HRD department head (endorses the General Manager and anyone at the top of the chain):
+      // highest salary grade among the HRD department positions; OIC/separation handled by resolveSupervisor
       const [hrdHead] = await this.entityRepository.query(
-        `SELECT emp._id employeeId
-           FROM employees emp
-          WHERE emp.user_role = 'department_manager'
-            AND get_employee_assignment_id(emp._id) = (SELECT _id FROM departments WHERE code = 'HRD' LIMIT 1)
+        `SELECT pp.employee_id_fk employeeId
+           FROM department_positions dp
+          INNER JOIN departments d ON d._id = dp.department_id_fk AND d.code = 'HRD'
+          INNER JOIN plantilla_positions pp ON pp._id = dp.position_id_fk
+          INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk
+          WHERE pp.employee_id_fk IS NOT NULL
+          ORDER BY sg.salary_grade DESC
           LIMIT 1;`,
       );
+      const hrdHeadId: string | null = hrdHead?.employeeId ?? null;
 
       // 2. position holder -> active OIC of that position
       const oicRows: { holderId: string; oicId: string }[] = await this.entityRepository.query(
@@ -244,6 +252,13 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
             AND NOT ${this.isSeparatedSql('oic.employee_id_fk')};`,
       );
       const oicOf = new Map(oicRows.map((r) => [r.holderId, r.oicId]));
+
+      // Board of Directors appointees never endorse LND nominees; the chain stops there (-> HRD head)
+      const bodRows: { employeeId: string }[] = await this.entityRepository.query(
+        `SELECT DISTINCT employee_id_fk employeeId FROM plantilla_positions
+          WHERE nature_of_appointment = 'board of directors' AND employee_id_fk IS NOT NULL;`,
+      );
+      const isTopOfChain = (id: string) => excluded.has(id) || bodRows.some((b) => b.employeeId === id);
 
       // cached lookups
       const separatedCache = new Map<string, boolean>();
@@ -267,6 +282,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       const resolveSupervisor = async (employeeId: string, startId: string | null) => {
         let current = startId;
         for (let hops = 0; current && hops < 6; hops++) {
+          if (isTopOfChain(current)) return null; // reached the Board / an excluded person -> HRD head fallback
           const oic = oicOf.get(current);
           if (oic && oic !== employeeId && !excluded.has(oic)) return oic; // OIC acts for this position
           if (!oic && current !== employeeId && !excluded.has(current) && !(await isSeparated(current))) return current; // active holder, no OIC
@@ -277,8 +293,12 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
 
       const groups = new Map<string, { employeeId: string; name: string; positionTitle: string }[]>();
       for (const emp of tagged) {
-        const start = emp.userRole === 'general_manager' && hrdHead?.employeeId ? hrdHead.employeeId : emp.supervisorId;
-        const supervisorId = await resolveSupervisor(emp.employeeId, start);
+        const isGm = Number(emp.isGm) === 1; // plantilla position 'General Manager A'
+        let supervisorId = isGm ? null : await resolveSupervisor(emp.employeeId, emp.supervisorId);
+        // GM, or nobody left above (e.g. supervisor excluded/separated at the top) -> HRD head
+        if (!supervisorId && hrdHeadId && hrdHeadId !== emp.employeeId) {
+          supervisorId = await resolveSupervisor(emp.employeeId, hrdHeadId);
+        }
         const key = supervisorId ?? '';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push({ employeeId: emp.employeeId, name: emp.name, positionTitle: emp.positionTitle });
@@ -301,7 +321,6 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       throw new RpcException(error);
     }
   }
-
   async getTagsByEmployeeId(employeeId: string) {
     try {
       const tags = await this.entityRepository.find({ where: { employeeId }, select: ['tagId'], order: { createdAt: 'ASC' } });
