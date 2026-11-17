@@ -158,31 +158,77 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
   //   }
   // }
 
+  /**
+   * SQL condition: true when the employee's latest NOSI/NOSA is "inactive" and already effective (separated).
+   * Same rule used by getAllManagersForLnd.
+   */
   private isSeparatedSql(employeeIdExpr: string) {
-    return `EXISTS (
+    return `(EXISTS (
       SELECT 1 FROM nosi_nosa nn
        WHERE nn.employee_id_fk = ${employeeIdExpr}
          AND nn.status = 'inactive'
          AND nn.effectivity_date <= CURDATE()
          AND nn.effectivity_date = (SELECT MAX(nn2.effectivity_date) FROM nosi_nosa nn2 WHERE nn2.employee_id_fk = ${employeeIdExpr})
-    )`;
+    ) OR (
+      EXISTS (SELECT 1 FROM plantilla_positions ppa WHERE ppa.employee_id_fk = ${employeeIdExpr} AND ppa.nature_of_appointment = 'permanent')
+      AND COALESCE(is_active_employee(${employeeIdExpr}, NOW()), 1) = 0
+    ))`;
   }
 
+  /** Employee IDs that must never appear in LND nominations (env LND_EXCLUDED_EMPLOYEE_IDS, comma-separated). */
+  private lndExcludedIds() {
+    return new Set(
+      (process.env.LND_EXCLUDED_EMPLOYEE_IDS ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id),
+    );
+  }
+
+  /**
+   * Groups the tagged employees under the supervisor who should endorse them (LND nominations).
+   *
+   * - Separated employees are excluded, both as nominees and as supervisors.
+   * - If a supervisor's position has an Officer-in-Charge, the OIC is used instead of the position holder.
+   * - If the employee is the OIC of their own supervisor's position (or the supervisor is separated with no OIC),
+   *   the next supervisor up the chain is used.
+   * - Only permanent, casual and job order employees can be nominated (Board of Directors excluded).
+   * - is_active_employee() is only applied to permanent employees; casual/JO rely on NOSI/NOSA.
+   * - The General Manager is endorsed by the head of the Human Resource Department (code HRD).
+   * - IDs listed in LND_EXCLUDED_EMPLOYEE_IDS never appear, as nominee or as supervisor.
+   */
   async getSupervisorByEmployeeTagsV3(tagIds: string[]) {
     try {
       // 1. tagged employees who are still active, with their plantilla-based supervisor
-      const tagged: { employeeId: string; name: string; positionTitle: string; supervisorId: string | null }[] = await this.entityRepository.query(
+      const excluded = this.lndExcludedIds();
+      const taggedRows: { employeeId: string; name: string; positionTitle: string; supervisorId: string | null; userRole: string }[] = await this.entityRepository.query(
         `SELECT DISTINCT
             emp._id employeeId,
+            emp.user_role userRole,
             get_employee_fullname2(emp._id) name,
             get_employee_position_or_oic(emp._id) positionTitle,
             get_employee_supervisor(emp._id) supervisorId
           FROM employees emp
           INNER JOIN employee_tags et ON et.employee_id_fk = emp._id
           WHERE et.tag_id_fk IN (?)
+            AND EXISTS (
+              SELECT 1 FROM plantilla_positions ppn
+               WHERE ppn.employee_id_fk = emp._id
+                 AND ppn.nature_of_appointment IN ('permanent', 'casual', 'job order')
+            )
             AND NOT ${this.isSeparatedSql('emp._id')}
           ORDER BY name ASC;`,
         [tagIds],
+      );
+      const tagged = taggedRows.filter((e) => !excluded.has(e.employeeId));
+
+      // HRD department head (endorses the General Manager)
+      const [hrdHead] = await this.entityRepository.query(
+        `SELECT emp._id employeeId
+           FROM employees emp
+          WHERE emp.user_role = 'department_manager'
+            AND get_employee_assignment_id(emp._id) = (SELECT _id FROM departments WHERE code = 'HRD' LIMIT 1)
+          LIMIT 1;`,
       );
 
       // 2. position holder -> active OIC of that position
@@ -203,7 +249,7 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
       const separatedCache = new Map<string, boolean>();
       const isSeparated = async (id: string) => {
         if (!separatedCache.has(id)) {
-          const [row] = await this.entityRepository.query(`SELECT ${this.isSeparatedSql('?')} separated;`, [id, id]);
+          const [row] = await this.entityRepository.query(`SELECT ${this.isSeparatedSql('?')} separated;`, [id, id, id, id]);
           separatedCache.set(id, Number(row?.separated) === 1);
         }
         return separatedCache.get(id);
@@ -222,8 +268,8 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
         let current = startId;
         for (let hops = 0; current && hops < 6; hops++) {
           const oic = oicOf.get(current);
-          if (oic && oic !== employeeId) return oic; // OIC acts for this position
-          if (!oic && current !== employeeId && !(await isSeparated(current))) return current; // active holder, no OIC
+          if (oic && oic !== employeeId && !excluded.has(oic)) return oic; // OIC acts for this position
+          if (!oic && current !== employeeId && !excluded.has(current) && !(await isSeparated(current))) return current; // active holder, no OIC
           current = await supervisorOf(current); // employee is the OIC himself, or holder separated with no OIC
         }
         return null;
@@ -231,7 +277,8 @@ export class EmployeeTagsService extends BaseEntityCrudService<EmployeeTags> {
 
       const groups = new Map<string, { employeeId: string; name: string; positionTitle: string }[]>();
       for (const emp of tagged) {
-        const supervisorId = await resolveSupervisor(emp.employeeId, emp.supervisorId);
+        const start = emp.userRole === 'general_manager' && hrdHead?.employeeId ? hrdHead.employeeId : emp.supervisorId;
+        const supervisorId = await resolveSupervisor(emp.employeeId, start);
         const key = supervisorId ?? '';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push({ employeeId: emp.employeeId, name: emp.name, positionTitle: emp.positionTitle });
