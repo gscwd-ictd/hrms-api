@@ -34,6 +34,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
             INNER JOIN modules m ON m._id = ur.module_id_fk 
         WHERE m.app = 'ems' AND has_access = 1
          ) 
+         WHERE is_active_employee(emp._id, CURDATE()) = 1
          ORDER BY get_employee_fullname2(emp._id) ASC;
       `,
       );
@@ -96,7 +97,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
            INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
            INNER JOIN divisions d ON d._id= dp.division_id_fk 
            INNER JOIN departments dep ON dep._id = d.department_id_fk 
-         WHERE dep.name='Human Resource Department' 
+         WHERE dep.name='Human Resource Department' AND is_active_employee(emp._id, CURDATE()) = 1
          AND emp._id NOT IN 
          (SELECT employee_id_fk FROM users 
             INNER JOIN employees ON employees._id = users.employee_id_fk
@@ -113,7 +114,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
            INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
            INNER JOIN department_positions dp ON dp.position_id_fk = pp._id 
            INNER JOIN departments dep ON dep._id = dp.department_id_fk 
-         WHERE dep.name='Human Resource Department' 
+         WHERE dep.name='Human Resource Department' AND is_active_employee(emp._id, CURDATE()) = 1
          AND emp._id 
          NOT IN (
          SELECT employee_id_fk FROM users 
@@ -133,7 +134,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
            INNER JOIN plantilla_positions pp ON pp.employee_id_fk = emp._id
            INNER JOIN office_positions op ON op.position_id_fk = pp._id 
            INNER JOIN office o ON o._id = op.office_id_fk 
-         WHERE pp.position_title='Assistant General Manager' AND o.name='Office of the Assistant General Manager for Administration' 
+         WHERE pp.position_title='Assistant General Manager' AND o.name='Office of the Assistant General Manager for Administration' AND is_active_employee(emp._id, CURDATE()) = 1
          AND emp._id 
          NOT IN (
         SELECT employee_id_fk FROM users 
@@ -173,7 +174,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
         INNER JOIN employees emp ON emp._id = u.employee_id_fk
         INNER JOIN user_roles ur ON u._id = ur.user_id_fk 
         INNER JOIN modules m  ON m._id = ur.module_id_fk 
-       WHERE m.app = 'rsp' AND ur.has_access = 1
+       WHERE m.app = 'rsp' AND ur.has_access = 1 AND is_active_employee(emp._id, CURDATE()) = 1
        ORDER BY get_employee_fullname2(employee_id_fk) ASC
        ;`);
     } catch (error) {
@@ -218,7 +219,7 @@ export class UsersService extends BaseEntityCrudService<Users> {
           INNER JOIN employees emp ON emp._id = u.employee_id_fk 
           INNER JOIN user_roles ur ON emp._id =  ur.user_id_fk 
           INNER JOIN modules m ON m._id = ur.module_id_fk 
-        WHERE m.app = ? AND ur.has_access = 1
+        WHERE m.app = ? AND ur.has_access = 1 AND is_active_employee(emp._id, CURDATE()) = 1
         ORDER BY get_employee_fullname2(employee_id_fk) ASC
        ;`,
         [app],

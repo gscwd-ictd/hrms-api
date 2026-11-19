@@ -1125,7 +1125,14 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   async getAllAssignableSupervisorEmployeesByEmployeeId(employeeId: string) {
-    return (await this.entityRepository.query(`CALL sp_get_assignable_supervisors(?);`, [employeeId]))[0];
+    const supervisors = (await this.entityRepository.query(`CALL sp_get_assignable_supervisors(?);`, [employeeId]))[0] as { label: string; value: string }[];
+    // separated employees (latest NOSI/NOSA 'inactive') cannot approve
+    if (!supervisors?.length) return supervisors;
+    const active = (await this.entityRepository.query(`SELECT _id FROM employees WHERE _id IN (?) AND is_active_employee(_id, CURDATE()) = 1;`, [
+      supervisors.map((s) => s.value),
+    ])) as { _id: string }[];
+    const activeIds = new Set(active.map((a) => a._id));
+    return supervisors.filter((s) => activeIds.has(s.value));
   }
 
   async getAllAssignableSupervisoryEmployees() {
@@ -1135,6 +1142,7 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
         INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk  
       WHERE (pp.nature_of_appointment = 'casual' OR pp.nature_of_appointment = 'permanent') 
       AND sg.salary_grade >= 16 
+      AND is_active_employee(emp._id, CURDATE()) = 1
       ORDER BY get_employee_fullname(emp._id) ASC;
     `);
   }
