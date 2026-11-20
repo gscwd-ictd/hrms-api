@@ -1,3 +1,4 @@
+import { notArchivedPositionSql } from 'src/global/utils/archived-position.util';
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from '../base-entity/base-entity.service';
@@ -60,6 +61,8 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
       .innerJoin('plantilla_positions', 'pp', 'pp._id = og.position_id_fk')
       .innerJoin('salary_grade', 'sg', 'sg._id = pp.salary_grade_id_fk')
       .where('o._id=:_id', { _id })
+      // archived positions ("*", separated employees) are not listed
+      .andWhere(notArchivedPositionSql('pp'))
       .orderBy('pp.item_number', 'ASC')
       .getRawMany();
   }
@@ -88,6 +91,7 @@ export class OccupationalGroupService extends BaseEntityCrudService<Occupational
         .addSelect('occ.occupation_name', 'occupationName')
         .innerJoin('plantilla_positions', 'pp', 'pp._id = occupational_group.position_id_fk')
         .innerJoin('occupations', 'occ', 'occ._id = occupational_group.occupation_id_fk')
+        .where(notArchivedPositionSql('pp'))
         .getRawMany();
     } catch (error) {
       throw new NotFoundException(error.message);

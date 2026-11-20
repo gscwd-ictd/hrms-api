@@ -1,3 +1,4 @@
+import { notArchivedPositionSql } from 'src/global/utils/archived-position.util';
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -63,7 +64,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
     // let positionDropDown = [];
     const posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
       plantilla_dropdown_view ppq, salary_grade sg
-  WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk AND pp.employee_id_fk IS NULL AND nature_of_appointment='permanent' AND code=?;
+  WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk AND pp.employee_id_fk IS NULL AND nature_of_appointment='permanent' AND ${notArchivedPositionSql('pp')} AND code=?;
       `;
     const orgCode = await this.plantillaPositionsRepository.query(`SELECT divisions.name \`name\`,divisions.code \`code\` FROM divisions
         UNION SELECT departments.name \`name\`,departments.code \`code\` FROM departments UNION SELECT office.name \`name\`,office.code \`code\` FROM office;`);
@@ -94,7 +95,7 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
   async getPositionsPerOrgStructWithOutOccupation() {
     const posquery = `SELECT position_title positionTitle,code,ppq.position_id positionId,sg.salary_grade salaryGrade from plantilla_positions pp,
       plantilla_dropdown_view ppq, salary_grade sg
-  WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk  AND pp.nature_of_appointment = 'permanent' AND pp._id NOT IN (SELECT position_id_fk FROM occupational_group) AND code=?;
+  WHERE ppq.position_id = pp._id AND sg._id = pp.salary_grade_id_fk  AND pp.nature_of_appointment = 'permanent' AND pp._id NOT IN (SELECT position_id_fk FROM occupational_group) AND ${notArchivedPositionSql('pp')} AND code=?;
       `;
     const orgCode = await this.plantillaPositionsRepository.query(`SELECT divisions.name \`name\`,divisions.code \`code\` FROM divisions
         UNION SELECT departments.name \`name\`,departments.code \`code\` FROM departments UNION SELECT office.name \`name\`,office.code \`code\` FROM office;`);

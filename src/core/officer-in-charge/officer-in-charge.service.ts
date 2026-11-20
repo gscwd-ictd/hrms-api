@@ -3,7 +3,15 @@ import { OfficerInChargeDTO } from './data/officer-incharge.dto';
 import { OfficerInChargeViewService } from './data/officer-in-charge-view/officer-in-charge-view.service';
 import { OfficerInCharge } from './data/officer-in-charge.entity';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+
+/**
+ * A position can get an OIC when it is vacant, or when its holder is OIC of another position (the holder works in
+ * that other position, so this one is technically vacant), e.g. FIN-CSD-001 while its holder is OIC of ADM-HRD-001.
+ * Archived positions ("*", separated employees) never get an OIC.
+ */
+const OIC_ASSIGNABLE_POSITION_SQL = `(IFNULL(pp.item_number, '') NOT LIKE '%*%' AND pp.position_title NOT LIKE '%*%'
+  AND (pp.employee_id_fk IS NULL OR pp.employee_id_fk IN (SELECT o.employee_id_fk FROM officer_in_charge o WHERE o.employee_id_fk IS NOT NULL)))`;
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -56,7 +64,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
   }
 
   async getManagerialPositionsForOIC() {
-    //all vacant managerial positions;
+    // vacant managerial positions, or held by an employee who is OIC of another position (technically vacant)
     try {
       const result = await this.entityRepository.query(`
       SELECT orgPositionId, positionTitle, assignedTo, orgType FROM ((SELECT 
@@ -67,7 +75,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
   FROM plantilla_positions pp 
         INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk
        INNER JOIN division_positions dp ON dp.position_id_fk = pp._id 
-  WHERE pp.employee_id_fk IS NULL AND sg.salary_grade >= 24 
+  WHERE ${OIC_ASSIGNABLE_POSITION_SQL} AND sg.salary_grade >= 24 
   ORDER BY positionTitle ASC,assignedTo ASC) 
   UNION 
   (SELECT 
@@ -78,7 +86,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
   FROM plantilla_positions pp 
         INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk
        INNER JOIN department_positions dp ON dp.position_id_fk = pp._id 
-  WHERE pp.employee_id_fk IS NULL AND sg.salary_grade >= 24 
+  WHERE ${OIC_ASSIGNABLE_POSITION_SQL} AND sg.salary_grade >= 24 
   ORDER BY positionTitle ASC,assignedTo ASC)
   UNION 
   (SELECT 
@@ -89,7 +97,7 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
   FROM plantilla_positions pp 
         INNER JOIN salary_grade sg ON sg._id = pp.salary_grade_id_fk
        INNER JOIN office_positions dp ON dp.position_id_fk = pp._id 
-  WHERE pp.employee_id_fk IS NULL AND sg.salary_grade >= 24 
+  WHERE ${OIC_ASSIGNABLE_POSITION_SQL} AND sg.salary_grade >= 24 
   ORDER BY positionTitle ASC,assignedTo ASC)) assignable 
   WHERE assignable.orgPositionId NOT IN (SELECT orgPositionId FROM officer_in_charge_view);`);
 
@@ -123,8 +131,23 @@ export class OfficerInChargeService extends BaseEntityCrudService<OfficerInCharg
   }
 
   async addOfficerInCharge(oicDTO: OfficerInChargeDTO) {
+    const { orgType, employeeId, orgPositionId } = oicDTO;
+    // the position must be vacant, or its holder must be OIC of another position (technically vacant)
+    const orgTable = { office: 'office_positions', department: 'department_positions', division: 'division_positions' }[orgType];
+    if (!orgTable) throw new BadRequestException('Invalid organization type');
+    const [position] = (await this.entityRepository.query(
+      `SELECT pp.position_title positionTitle, get_employee_fullname2(pp.employee_id_fk) holder, ${OIC_ASSIGNABLE_POSITION_SQL} assignable
+         FROM ${orgTable} op INNER JOIN plantilla_positions pp ON pp._id = op.position_id_fk WHERE op._id = ?;`,
+      [orgPositionId],
+    )) as { positionTitle: string; holder: string | null; assignable: string | number }[];
+    if (!position) throw new BadRequestException('Position not found');
+    if (Number(position.assignable) !== 1)
+      throw new BadRequestException(
+        `${position.positionTitle} is held by ${(position.holder ?? '').trim()}. An OIC can only be assigned to a vacant position, or to one whose holder is OIC of another position.`,
+      );
+    if ((await this.entityRepository.query(`SELECT 1 FROM officer_in_charge_view WHERE orgPositionId = ? LIMIT 1;`, [orgPositionId])).length > 0)
+      throw new BadRequestException('This position already has an OIC');
     try {
-      const { orgType, employeeId, orgPositionId } = oicDTO;
       if (orgType === 'office') return await this.saveEntity({ employeeId, officePositionId: orgPositionId });
       if (orgType === 'department') return await this.saveEntity({ employeeId, departmentPositionId: orgPositionId });
       if (orgType === 'division') return await this.saveEntity({ employeeId, divisionPositionId: orgPositionId });
