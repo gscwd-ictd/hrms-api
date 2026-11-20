@@ -15,7 +15,11 @@ export class QualificationStandardsService extends BaseEntityCrudService<Qualifi
     super(qualificationStandardsRepository);
   }
   async getQsByPositionId(positionId: string) {
-    return await this.qualificationStandardsRepository.findOneOrFail({ where: { positionId }, loadRelationIds: true });
+    // no QS yet: empty fields instead of a 404 (the position page shows an empty form to fill in)
+    return (
+      (await this.qualificationStandardsRepository.findOne({ where: { positionId }, loadRelationIds: true })) ??
+      ({ positionId, education: null, training: null, eligibility: null, experience: null } as unknown as QualificationStandards)
+    );
   }
 
   async updateQSByPositionId(positionId: string, qsDTO: QualificationStandardsDto) {
@@ -27,6 +31,14 @@ export class QualificationStandardsService extends BaseEntityCrudService<Qualifi
       .where('position_id_fk=:positionId', { positionId })
       .execute();
     if (result.affected > 0) return { positionId, ...qsDTO };
+
+    // the position has no qualification standards yet (e.g. a new position): create them
+    await this.entityRepository.query(
+      `INSERT INTO qualification_standards (created_at, updated_at, _id, position_id_fk, education, training, eligibility, experience)
+       SELECT NOW(6), NOW(6), UUID(), _id, ?, ?, ?, ? FROM plantilla_positions WHERE _id = ?;`,
+      [education ?? null, training ?? null, eligibility ?? null, experience ?? null, positionId],
+    );
+    return { positionId, ...qsDTO };
   }
 
   async getAllQs() {
