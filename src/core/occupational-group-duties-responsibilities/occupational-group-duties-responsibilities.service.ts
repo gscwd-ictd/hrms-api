@@ -1,3 +1,4 @@
+import { isArchivedPosition } from 'src/global/utils/archived-position.util';
 import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseEntityCrudService } from 'src/core/base-entity/base-entity.service';
@@ -30,7 +31,8 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     let positions;
     if (oicPositionId.length > 0) positions = (await this.ogdrRepo.query(`CALL sp_get_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
     else positions = (await this.ogdrRepo.query(`CALL sp_get_positions_under_manager(?);`, [positionId]))[0];
-    return positions;
+    // archived positions ("*", separated employees) are not listed
+    return positions.filter((p) => !isArchivedPosition(p));
   }
 
   async getPermanentPositionsUnderManager(positionId: string) {
@@ -42,7 +44,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     let positions;
     if (oicPositionId.length > 0) positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
     else positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_positions_under_manager(?);`, [positionId]))[0];
-    return positions;
+    return positions.filter((p) => !isArchivedPosition(p));
   }
 
   async getPermanentUnfilledFilledUnderManager(positionId: string) {
@@ -55,7 +57,7 @@ export class OccupationalGroupDutiesResponsibilitiesService extends BaseEntityCr
     let positions;
     if (oicPositionId.length > 0) positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_filled_unfilled_positions_under_manager(?);`, [oicPositionId[0].positionId]))[0];
     else positions = (await this.ogdrRepo.query(`CALL sp_get_permanent_filled_unfilled_positions_under_manager(?);`, [positionId]))[0];
-    return positions;
+    return positions.filter((p) => !isArchivedPosition(p));
   }
 
   /**

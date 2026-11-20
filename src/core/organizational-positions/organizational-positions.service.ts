@@ -1,3 +1,4 @@
+import { isArchivedPosition } from 'src/global/utils/archived-position.util';
 import { Injectable } from '@nestjs/common';
 import { DepartmentPositionService } from './department-positions/department-positions.service';
 import { DivisionPositionsService } from './division-positions/division-positions.service';
@@ -216,7 +217,8 @@ export class OrganizationalPositionsService {
           break;
       }
 
-      const _positions = positions.sort((a, b) => {
+      // archived positions ("*", separated employees) cannot be requested
+      const _positions = positions.filter((p) => !isArchivedPosition(p)).sort((a, b) => {
         if (a.positionTitle < b.positionTitle) return -1;
         else return 1;
       });
