@@ -1,3 +1,4 @@
+import { notArchivedPositionSql } from 'src/global/utils/archived-position.util';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QualificationStandards } from 'src/core/qualification-standards/data/entities/qualification-standards.entity';
@@ -39,6 +40,8 @@ export class QualificationStandardsService extends BaseEntityCrudService<Qualifi
       .addSelect('experience')
       .addSelect('training')
       .innerJoin('plantilla_positions', 'pp', 'pp._id = position_id_fk')
+      // archived positions ("*", separated employees) are not listed
+      .where(notArchivedPositionSql('pp'))
       .getRawMany();
   }
 }
