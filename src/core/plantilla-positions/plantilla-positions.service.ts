@@ -18,7 +18,46 @@ export class PlantillaPositionsService extends BaseEntityCrudService<PlantillaPo
     if (result.affectedRows > 0) return addPositionDTO;
   }
 
+  /**
+   * Item no., title, office / department / division and salary grade of a position are locked while it is
+   * occupied, or requested in a PRF (pending, or approved this year — the same rule as the PRF position list).
+   */
+  async getPositionEditLock(positionId: string): Promise<{ isLocked: boolean; lockReason: string | null }> {
+    const [row] = (await this.entityRepository.query(
+      `SELECT pp.employee_id_fk IS NOT NULL occupied, get_employee_fullname2(pp.employee_id_fk) holder,
+              (SELECT pd.prf_no FROM prf_positions prfp INNER JOIN prf_details pd ON pd._id = prfp.prf_details_id_fk
+                WHERE prfp.position_id_fk = pp._id
+                  AND (pd.status = 'Pending' OR (pd.status = 'Approved' AND YEAR(pd.date_requested) = YEAR(NOW())))
+                ORDER BY pd.date_requested DESC LIMIT 1) prfNo
+         FROM plantilla_positions pp WHERE pp._id = ?;`,
+      [positionId],
+    )) as { occupied: string | number; holder: string | null; prfNo: string | null }[];
+    if (!row) return { isLocked: false, lockReason: null };
+    if (Number(row.occupied) === 1)
+      return { isLocked: true, lockReason: `The position is occupied by ${(row.holder ?? '').trim()}.` };
+    if (row.prfNo) return { isLocked: true, lockReason: `The position is requested in ${row.prfNo}.` };
+    return { isLocked: false, lockReason: null };
+  }
+
   async updatePosition(positionId: string, updatePositionDTO: PlantillaPositionsAddDTO) {
+    // locked: only the job summary may change
+    const lock = await this.getPositionEditLock(positionId);
+    if (lock.isLocked) {
+      const [current] = (await this.entityRepository.query(
+        `SELECT item_number itemNumber, position_title positionTitle, salary_grade_id_fk salaryGradeId,
+                get_position_assignment_id(_id) orgId FROM plantilla_positions WHERE _id = ?;`,
+        [positionId],
+      )) as { itemNumber: string; positionTitle: string; salaryGradeId: number; orgId: string }[];
+      const { itemNumber, positionTitle, salaryGrade } = updatePositionDTO.positionData;
+      if (
+        current &&
+        ((itemNumber ?? current.itemNumber) !== current.itemNumber ||
+          (positionTitle ?? current.positionTitle).trim() !== current.positionTitle.trim() ||
+          Number(salaryGrade ?? current.salaryGradeId) !== Number(current.salaryGradeId) ||
+          (updatePositionDTO.orgId ?? current.orgId) !== current.orgId)
+      )
+        throw new HttpException(`${lock.lockReason} Only the job summary can be changed.`, 400);
+    }
     try {
       const updateResult = await this.entityRepository.query(`CALL sp_update_position_data(?,?,?,?,?,?)`, [
         positionId,

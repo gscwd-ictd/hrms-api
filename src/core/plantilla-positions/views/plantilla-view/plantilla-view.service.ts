@@ -178,8 +178,12 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
     //#endregion JD
     const { actualSalary, salaryGradeId, stepIncrement, salaryGrade, ...rest } = result;
 
+    // item no., title, assignment and salary grade cannot change while the position is occupied or requested (PRF)
+    const lock = await this.posService.getPositionEditLock(_id);
+
     return {
       ...rest,
+      ...lock,
       salary: {
         id: salaryGradeId,
         salaryGrade,
