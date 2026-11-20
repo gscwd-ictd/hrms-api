@@ -61,7 +61,15 @@ export class PrfDetailsService extends BaseEntityCrudService<PrfDetails> {
 
         const prfTrailObject = (await this.entityRepository.query('CALL sp_set_prf_trail_init_status2(?)', [prfDetails.employeeId]))[0][0];
 
-        const { divisionStatus, departmentStatus, agmStatus, adminStatus, gmStatus, boardStatus } = prfTrailObject;
+        const { divisionStatus, departmentStatus, agmStatus, gmStatus } = prfTrailObject;
+        let { adminStatus, boardStatus } = prfTrailObject;
+
+        // requested by the General Manager (or the OIC-General Manager): the GM already signed as the requester,
+        // so it goes straight to the HR Department Manager (certified correct) and is final approved there
+        if (gmStatus === 'Sent') {
+          adminStatus = 'For approval';
+          boardStatus = 'N/A';
+        }
 
         const updatedAts = await this.generateUpdatedAt(prfTrailObject);
 
