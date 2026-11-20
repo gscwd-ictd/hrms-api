@@ -1,3 +1,4 @@
+import { isArchivedPosition } from 'src/global/utils/archived-position.util';
 import { PositionCompetencyProficiencyLevelService } from './../../../position-competency-proficiency-level/position-competency-proficiency-level.service';
 import { QualificationStandardsService } from 'src/core/qualification-standards/qualification-standards.service';
 import { HttpException, Injectable } from '@nestjs/common';
@@ -34,9 +35,12 @@ export class PlantillaViewService extends BaseEntityCrudService<PlantillaView> {
     const result = await this.plantillaViewRepository.find({
       order: { itemNumber: 'ASC' },
     });
-    const positions = result.map((item) => {
-      return { ...item, isFilled: item.isFilled.toString() === '0' ? false : true };
-    });
+    // archived positions ("*", separated employees) are not listed
+    const positions = result
+      .filter((item) => !isArchivedPosition(item))
+      .map((item) => {
+        return { ...item, isFilled: item.isFilled.toString() === '0' ? false : true };
+      });
     return positions;
   }
 
