@@ -143,6 +143,27 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
     }
   }
 
+  /** PRF final approved: status Approved and the requested positions go to the vacant position posting (For CSC approval) */
+  private async finalApprovePrf(prfDetailsId: string) {
+    if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Approved', prfDetailsId])).affectedRows === 0) return null;
+    //1. get grouped prf_positions by title, division, occupation, competency; (parameter: prf_details_id)
+    const prfPositions = await this.prfPositionsViewService.entityRepository.find({ where: { prfDetailsId } });
+    return await Promise.all(
+      prfPositions.map(async (vppPosition) => {
+        //2. SAVE TO vpp set vppstatus to For csc approval
+        const vpp = await this.vppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
+        //3. save grouped positions to vpp_positions;
+        const splittedPositions = vppPosition.positionId.split(',');
+        const vppPositions = await Promise.all(
+          splittedPositions.map(async (prfPositionsId) => {
+            return await this.vppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
+          }),
+        );
+        return { vppId: vpp._id, status: vpp.postingStatus, positions: vppPositions };
+      }),
+    );
+  }
+
   async updatePrf(prfDetailsId: string, prfTrailDto: PrfTrailDTO) {
     try {
       const prfTrail = (await this.entityRepository.query('CALL sp_get_prf_for_approval(?,?)', [prfDetailsId, prfTrailDto.employeeId]))[0][0];
@@ -247,6 +268,18 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
           let adminStatus: PrfTrailStatus = PrfTrailStatus.FOR_APPROVAL;
           adminStatus = prfTrailDto.status;
           if (adminStatus === 'Approved') {
+            // requested by the General Manager (GM already signed as the requester): certified correct = final approval
+            const { gmStatus: requesterGm } = (await this.entityRepository.query('SELECT gm_status gmStatus FROM prf_trail WHERE prf_details_id_fk = ?', [prfDetailsId]))[0] ?? {};
+            if (requesterGm === PrfTrailStatus.SENT) {
+              await this.entityRepository
+                .createQueryBuilder()
+                .update()
+                .set({ adminStatus, adminStatusUpdatedAt: getDateTimeNow(), gmStatus: PrfTrailStatus.APPROVED, boardStatus: PrfTrailStatus.NA })
+                .where('prf_details_id_fk = :prfDetailsId', { prfDetailsId })
+                .execute();
+              const vppData = await this.finalApprovePrf(prfDetailsId);
+              return { prfDetailsId, ...prfTrailDto, vppData };
+            }
             if (
               (
                 await this.entityRepository
@@ -349,25 +382,8 @@ export class PrfTrailService extends BaseEntityCrudService<PrfTrail> {
                 .execute()
             ).affected != 0
           ) {
-            if ((await this.entityRepository.query('UPDATE prf_details SET status=? WHERE _id = ?', ['Approved', prfDetailsId])).affectedRows > 0) {
-              //1. get grouped prf_positions by title, division, occupation, competency; (parameter: prf_details_id)
-              const prfPositions = await this.prfPositionsViewService.entityRepository.find({ where: { prfDetailsId } });
-              const vppData = await Promise.all(
-                prfPositions.map(async (vppPosition) => {
-                  //2. SAVE TO vpp set vppstatus to For csc approval
-                  const vpp = await this.vppService.saveEntity({ postingDate: getDateTimeNow(), postingStatus: PostingStatus.FOR_CSC_APPROVAL });
-                  //3. save grouped positions to vpp_positions;
-                  const splittedPositions = vppPosition.positionId.split(',');
-                  const vppPositions = await Promise.all(
-                    splittedPositions.map(async (prfPositionsId) => {
-                      return await this.vppPositionsService.saveEntity({ vppId: vpp._id, prfPositionsId });
-                    }),
-                  );
-                  return { vppId: vpp._id, status: vpp.postingStatus, positions: vppPositions };
-                }),
-              );
-              return { prfDetailsId, ...prfTrailDto, vppData };
-            }
+            const vppData = await this.finalApprovePrf(prfDetailsId);
+            if (vppData) return { prfDetailsId, ...prfTrailDto, vppData };
           }
         }
         if (gmStatus === 'Disapproved') {
