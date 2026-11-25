@@ -1417,6 +1417,16 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   /** Active Job Order employees, for the "Casual from an existing Job Order employee" dropdown: { value, label } */
+  /** the Employee No. the next registration gets: +1 from the latest of this year (same rule as registerCasualJobOrder) */
+  async getNextCasualJobOrderEmployeeNo() {
+    const year = new Date().getFullYear();
+    const [latest] = await this.entityRepository.query(
+      `SELECT company_id companyId FROM employees WHERE company_id REGEXP ? ORDER BY CAST(SUBSTRING_INDEX(company_id, '-', -1) AS UNSIGNED) DESC LIMIT 1;`,
+      [`^${year}-[0-9]+$`],
+    );
+    return { nextEmployeeNo: nextCompanyId(year, latest?.companyId), latestEmployeeNo: latest?.companyId ?? null };
+  }
+
   async getJobOrderEmployeesForCasual() {
     return await this.entityRepository.query(`
       SELECT e._id value, CONCAT(get_employee_fullname2(e._id), ' (', IFNULL(e.company_id, ''), ') - ', pp.position_title) label
