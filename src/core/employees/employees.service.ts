@@ -19,6 +19,7 @@ import { NosiNosaStatus } from 'src/core/salary-grade/utils/types/salary-grade.t
 import { randomUUID } from 'crypto';
 import * as argon from 'argon2';
 import {
+  defaultEmailCandidates,
   defaultPortalPassword,
   initialCasualLeaveCredits,
   nextCompanyId,
@@ -1417,6 +1418,20 @@ export class EmployeesService extends BaseEntityCrudService<Employees> {
   }
 
   /** Active Job Order employees, for the "Casual from an existing Job Order employee" dropdown: { value, label } */
+  /**
+   * Default office email for a new employee: firstName + lastName + nameExtension @gscwd.com; if an Employee Portal
+   * account already uses it (same name and extension), the middle initial is added. taken = all candidates are used.
+   */
+  async getDefaultCasualJobOrderEmail(firstName: string, middleName: string, lastName: string, nameExtension: string) {
+    const candidates = defaultEmailCandidates(firstName, middleName, lastName, nameExtension);
+    const portal = process.env.PORTAL_DB_NAME ?? '';
+    for (const email of candidates) {
+      const [{ n }] = await this.entityRepository.query(`SELECT COUNT(*) n FROM ${portal}users WHERE LOWER(email) = ?;`, [email]);
+      if (Number(n) === 0) return { email, taken: false };
+    }
+    return { email: candidates[candidates.length - 1] ?? '', taken: candidates.length > 0 };
+  }
+
   /** the Employee No. the next registration gets: +1 from the latest of this year (same rule as registerCasualJobOrder) */
   async getNextCasualJobOrderEmployeeNo() {
     const year = new Date().getFullYear();
