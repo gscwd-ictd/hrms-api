@@ -46,6 +46,12 @@ export class EmployeesController {
     return await this.employeesService.getJobOrderEmployeesForCasual();
   }
 
+  /** next Employee No. a new Casual / Job Order registration will get (header counter) */
+  @Get('casual-job-order/next-employee-no')
+  async getNextCasualJobOrderEmployeeNo() {
+    return await this.employeesService.getNextCasualJobOrderEmployeeNo();
+  }
+
   /** Casual / Job Order registration (hris_prod + Employee Portal account) */
   @Post('casual-job-order')
   async registerCasualJobOrder(@Body() dto: RegisterCasualJobOrderDto) {
