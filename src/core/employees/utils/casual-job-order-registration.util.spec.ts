@@ -60,3 +60,13 @@ describe('initial Casual leave credits', () => {
     expect(rows.filter((r) => r.creditDate === '2026-11-16').map((r) => r.creditValue)).toEqual([5, 0, 0, 3, 1]);
   });
 });
+
+describe('defaultEmailCandidates', () => {
+  const { defaultEmailCandidates } = require('./casual-job-order-registration.util');
+  it('first + last + extension, then with the middle initial', () => {
+    expect(defaultEmailCandidates('Juan', 'Santos', 'Dela Cruz', 'Jr.')).toEqual(['juandelacruzjr@gscwd.com', 'juansdelacruzjr@gscwd.com']);
+  });
+  it('accents and punctuation dropped', () => {
+    expect(defaultEmailCandidates('Ma. Niña', null, 'Dela-Cruz', '')).toEqual(['maninadelacruz@gscwd.com']);
+  });
+});

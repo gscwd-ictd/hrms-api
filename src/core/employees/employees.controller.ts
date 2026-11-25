@@ -47,6 +47,17 @@ export class EmployeesController {
   }
 
   /** next Employee No. a new Casual / Job Order registration will get (header counter) */
+  /** default office email that is still free (name + extension, then with the middle initial) */
+  @Get('casual-job-order/default-email')
+  async getDefaultCasualJobOrderEmail(
+    @Query('firstName') firstName: string,
+    @Query('middleName') middleName: string,
+    @Query('lastName') lastName: string,
+    @Query('nameExtension') nameExtension: string,
+  ) {
+    return await this.employeesService.getDefaultCasualJobOrderEmail(firstName, middleName, lastName, nameExtension);
+  }
+
   @Get('casual-job-order/next-employee-no')
   async getNextCasualJobOrderEmployeeNo() {
     return await this.employeesService.getNextCasualJobOrderEmployeeNo();

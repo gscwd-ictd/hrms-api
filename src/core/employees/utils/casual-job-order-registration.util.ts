@@ -46,6 +46,29 @@ export function nextCompanyId(year: number | string, latestCompanyId: string | n
   return `${year}-${String(next).padStart(3, '0')}`;
 }
 
+/** lowercase letters and digits only (accents dropped) */
+const emailPart = (v: string | null | undefined) =>
+  (v ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+/**
+ * Default office emails in order of use: firstName + lastName + nameExtension @gscwd.com; when taken
+ * (same name and same extension), the middle initial is added after the first name.
+ */
+export function defaultEmailCandidates(firstName: string, middleName: string | null | undefined, lastName: string, nameExtension?: string | null): string[] {
+  const first = emailPart(firstName);
+  const last = emailPart(lastName);
+  const ext = emailPart(nameExtension);
+  const mi = emailPart(middleName).charAt(0);
+  if (!first && !last) return [];
+  const list = [`${first}${last}${ext}@gscwd.com`];
+  if (mi) list.push(`${first}${mi}${last}${ext}@gscwd.com`);
+  return list;
+}
+
 export function defaultPortalPassword(firstName: string, companyId: string): string {
   return `@${(firstName ?? '').trim()}${companyId}`;
 }
